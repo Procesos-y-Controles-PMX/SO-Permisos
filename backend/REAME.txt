@@ -1,0 +1,4 @@
+Para activar el venv:
+1. Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process
+2. .\venv\Scripts\activate
+3. Run Backend: python -m uvicorn main:app --reload

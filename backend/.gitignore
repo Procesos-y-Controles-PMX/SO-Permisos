@@ -1,0 +1,19 @@
+# Entornos virtuales (el más importante)
+venv/
+env/
+.env
+__pycache__/
+*.py[cod]
+
+# Distribución / Empaquetado
+dist/
+build/
+*.egg-info/
+
+# Variables de entorno (Seguridad)
+.env
+.flaskenv
+
+# Bases de datos locales (si llegas a usar SQLite)
+*.sqlite3
+*.db
