@@ -1,0 +1,23 @@
+1. Gestión de Accesos y Usuarios
+RF01 - Autenticación de Usuario: El sistema debe permitir el inicio de sesión (Login) de los usuarios.
+RF02 - Clasificación de Roles: El sistema debe gestionar tres tipos de usuarios: Administradores, Tiendas y Regionales.
+RF03 - Control de Acceso por Tienda: Los usuarios de tipo "Tienda" deben tener acceso restringido únicamente a la información generada por su propia sucursal.
+RF04 - Control de Acceso Regional: Los usuarios de tipo "Regional" deben poder visualizar la información de todas las tiendas pertenecientes a su región específica.
+
+2. Directorio y Datos
+RF05 - Directorio Filtrado: El sistema debe incluir un directorio que permita filtrar la información por tienda y region (para el Administrador [es la página que se tiene actualmente, donde se pueden ver todas las tiendas]).
+RF06 - Visualización de Gerencias: El directorio debe mostrar el nombre del gerente regional y del gerente de tienda correspondiente.
+RF07 - Integración de Datos: El sistema utilizará la información del archivo "Directorio PMX.xlsx" como base para la gestión de datos.
+
+3. Módulo de Solicitudes (Workflow)
+RF08 - Gestión de Vencimientos (Tienda): El sistema debe mostrar a la Tienda un listado de permisos o licencias vencidas.
+RF09 - Creación de Solicitudes: Los usuarios de Tienda podrán editar sus permisos, subir archivos digitales de los mismos y asignarles una vigencia para enviar la solicitud de aprobación.
+RF10 - Revisión de Solicitudes (Admin): El Administrador debe contar con un panel donde visualice las solicitudes pendientes organizadas por tienda y tipo de permiso.
+RF11 - Resolución de Solicitudes: El Administrador debe poder aprobar o rechazar solicitudes; en caso de rechazo, el sistema debe permitir adjuntar comentarios con el motivo del error.
+RF12 - Monitoreo Regional: Los usuarios Regionales podrán monitorear la información de sus tiendas, pero no tendrán permisos de edición.
+RF13 - Actualización de Dashboard: Tras la aprobación de una solicitud, el sistema debe actualizar automáticamente el panel de control (dashboard) con la nueva información.
+
+4. Sistema de Notificaciones (una página dentro de la App, para administrador y para tienda)
+RF14 - Alertas de Vencimiento: El sistema debe notificar a la Tienda cuando un permiso haya expirado.
+RF15 - Notificaciones de Estatus: Las Tiendas deben recibir notificaciones automáticas cuando una solicitud sea aprobada o rechazada.
+RF16 - Alerta de Nueva Solicitud: El sistema debe enviar una notificación al Administrador cada vez que una tienda cree una nueva solicitud de aprobación.
