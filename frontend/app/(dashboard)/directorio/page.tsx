@@ -4,40 +4,45 @@ import { useState } from 'react'
 import PageHeader from '@/components/ui/PageHeader'
 import Select from '@/components/ui/Select'
 import Card from '@/components/ui/Card'
-import type { Tienda } from '@/types'
-
-// ── Mock data ──────────────────────────────────────────────
-
-const mockTiendas: (Tienda & { nombre_region: string; gerente_regional: string })[] = [
-  { id: 1, sucursal: 'CEMEX Puebla Centro', centro: '1001', cc: 'CC-01', id_region: 1, gerente_tienda: 'Ana Martínez', celular: '222-111-0001', correo: 'ana.martinez@cemex.com', direccion_sucursal: 'Av. Reforma #123, Puebla', nombre_region: 'Centro', gerente_regional: 'Carlos López' },
-  { id: 2, sucursal: 'CEMEX Monterrey Norte', centro: '2001', cc: 'CC-02', id_region: 2, gerente_tienda: 'Roberto García', celular: '818-222-0002', correo: 'roberto.garcia@cemex.com', direccion_sucursal: 'Blvd. Rogelio Cantú #456, Monterrey', nombre_region: 'Noreste', gerente_regional: 'Laura Sánchez' },
-  { id: 3, sucursal: 'CEMEX CDMX Sur', centro: '3001', cc: 'CC-03', id_region: 3, gerente_tienda: 'María Hernández', celular: '555-333-0003', correo: 'maria.hernandez@cemex.com', direccion_sucursal: 'Calz. de Tlalpan #789, CDMX', nombre_region: 'Metro', gerente_regional: 'Fernando Díaz' },
-  { id: 4, sucursal: 'CEMEX Guadalajara', centro: '4001', cc: 'CC-04', id_region: 4, gerente_tienda: 'José Ramírez', celular: '333-444-0004', correo: 'jose.ramirez@cemex.com', direccion_sucursal: 'Av. Vallarta #012, Guadalajara', nombre_region: 'Pacífico', gerente_regional: 'Patricia Morales' },
-  { id: 5, sucursal: 'CEMEX Mérida', centro: '5001', cc: 'CC-05', id_region: 5, gerente_tienda: 'Claudia Torres', celular: '999-555-0005', correo: 'claudia.torres@cemex.com', direccion_sucursal: 'Calle 60 #345, Mérida', nombre_region: 'Península', gerente_regional: 'Alejandro Ruiz' },
-  { id: 6, sucursal: 'CEMEX Tuxtla', centro: '6001', cc: 'CC-06', id_region: 6, gerente_tienda: 'Ricardo Flores', celular: '961-666-0006', correo: 'ricardo.flores@cemex.com', direccion_sucursal: 'Blvd. Belisario Domínguez #678, Tuxtla', nombre_region: 'Chiapas', gerente_regional: 'Sofía Vega' },
-]
-
-const regionOptions = [
-  { value: '', label: 'Todas las regiones' },
-  { value: 'Centro', label: 'Centro' },
-  { value: 'Noreste', label: 'Noreste' },
-  { value: 'Metro', label: 'Metro' },
-  { value: 'Pacífico', label: 'Pacífico' },
-  { value: 'Península', label: 'Península' },
-  { value: 'Chiapas', label: 'Chiapas' },
-]
+import { useTiendas } from '@/hooks/useTiendas'
 
 // ── Component ──────────────────────────────────────────────
 
 export default function DirectorioPage() {
+  const { data: tiendas, loading, error } = useTiendas()
   const [filterRegion, setFilterRegion] = useState('')
   const [searchText, setSearchText] = useState('')
 
-  const filtered = mockTiendas.filter((t) => {
-    const matchRegion = !filterRegion || t.nombre_region === filterRegion
+  // Unique regions from data
+  const regionOptions = [
+    { value: '', label: 'Todas las regiones' },
+    ...Array.from(new Set(tiendas.map(t => t.regiones?.nombre_region).filter(Boolean)))
+      .map(r => ({ value: r!, label: r! })),
+  ]
+
+  const filtered = tiendas.filter((t) => {
+    const matchRegion = !filterRegion || t.regiones?.nombre_region === filterRegion
     const matchSearch = !searchText || t.sucursal.toLowerCase().includes(searchText.toLowerCase())
     return matchRegion && matchSearch
   })
+
+  if (loading) {
+    return (
+      <>
+        <PageHeader title="Directorio" subtitle="Cargando sucursales..." />
+        <Card className="animate-pulse"><div className="h-64 bg-gray-100 rounded-lg" /></Card>
+      </>
+    )
+  }
+
+  if (error) {
+    return (
+      <>
+        <PageHeader title="Directorio" subtitle="Error al cargar datos" />
+        <Card className="text-center py-10"><p className="text-red-500 text-sm">❌ {error}</p></Card>
+      </>
+    )
+  }
 
   return (
     <>
@@ -92,13 +97,13 @@ export default function DirectorioPage() {
                 {filtered.map((t) => (
                   <tr key={t.id} className="hover:bg-blue-50/30 transition-colors">
                     <td className="py-3 px-4 font-semibold text-slate-700">{t.sucursal}</td>
-                    <td className="py-3 px-4 text-gray-500">{t.nombre_region}</td>
-                    <td className="py-3 px-4 text-gray-500">{t.gerente_regional}</td>
-                    <td className="py-3 px-4 text-gray-500">{t.gerente_tienda}</td>
-                    <td className="py-3 px-4 text-gray-400 text-[11px]">{t.direccion_sucursal}</td>
+                    <td className="py-3 px-4 text-gray-500">{t.regiones?.nombre_region ?? '—'}</td>
+                    <td className="py-3 px-4 text-gray-500">{t.regiones?.gerente_regional ?? '—'}</td>
+                    <td className="py-3 px-4 text-gray-500">{t.gerente_tienda ?? '—'}</td>
+                    <td className="py-3 px-4 text-gray-400 text-[11px]">{t.direccion_sucursal ?? '—'}</td>
                     <td className="py-3 px-4">
-                      <p className="text-gray-500">{t.celular}</p>
-                      <p className="text-gray-400 text-[10px]">{t.correo}</p>
+                      <p className="text-gray-500">{t.celular ?? '—'}</p>
+                      <p className="text-gray-400 text-[10px]">{t.correo ?? ''}</p>
                     </td>
                   </tr>
                 ))}

@@ -1,8 +1,12 @@
 'use client'
 
 import { useState } from 'react'
+import { useAuth } from '@/contexts/AuthContext'
+import { useRouter } from 'next/navigation'
 
 export default function LoginForm() {
+  const { signIn } = useAuth()
+  const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -15,10 +19,20 @@ export default function LoginForm() {
     setError(null)
 
     try {
-      // TODO: Integrar con Supabase Auth
-      // const { error } = await supabase.auth.signInWithPassword({ email, password })
-      // if (error) throw error
-      console.log('Login attempt:', { email, password })
+      const { error: signInError } = await signIn(email, password)
+      if (signInError) {
+        // Translate common Supabase errors to Spanish
+        if (signInError.includes('Invalid login credentials')) {
+          setError('Credenciales incorrectas. Verifica tu correo y contraseña.')
+        } else if (signInError.includes('Email not confirmed')) {
+          setError('Tu correo no ha sido confirmado.')
+        } else {
+          setError(signInError)
+        }
+        return
+      }
+      // Success — redirect to dashboard
+      router.push('/')
     } catch (err: any) {
       setError(err.message || 'Error al iniciar sesión')
     } finally {

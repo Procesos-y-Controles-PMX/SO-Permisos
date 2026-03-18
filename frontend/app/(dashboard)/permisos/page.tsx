@@ -7,39 +7,81 @@ import Card from '@/components/ui/Card'
 import Badge, { statusToBadgeVariant } from '@/components/ui/Badge'
 import Button from '@/components/ui/Button'
 import Modal from '@/components/ui/Modal'
-import type { EstatusPermiso } from '@/types'
-
-// ── Mock data ──────────────────────────────────────────────
-
-interface PermisoRow {
-  id: number
-  sucursal: string
-  tipo_permiso: string
-  fecha_vencimiento: string
-  estatus: EstatusPermiso
-  puntaje: number
-}
-
-const mockPermisos: PermisoRow[] = [
-  { id: 1, sucursal: 'CEMEX Puebla Centro', tipo_permiso: 'Licencia Municipal', fecha_vencimiento: '2026-01-15', estatus: 'Vencido', puntaje: 0 },
-  { id: 2, sucursal: 'CEMEX Puebla Centro', tipo_permiso: 'Uso de Suelo', fecha_vencimiento: '2026-06-30', estatus: 'Vigente', puntaje: 1 },
-  { id: 3, sucursal: 'CEMEX Monterrey Norte', tipo_permiso: 'Protección Civil', fecha_vencimiento: '2026-04-10', estatus: 'Por Vencer', puntaje: 0.5 },
-  { id: 4, sucursal: 'CEMEX CDMX Sur', tipo_permiso: 'Licencia Estatal', fecha_vencimiento: '2025-12-01', estatus: 'Vencido', puntaje: 0 },
-  { id: 5, sucursal: 'CEMEX Guadalajara', tipo_permiso: 'Pago de Tenencia', fecha_vencimiento: '2026-09-15', estatus: 'Vigente', puntaje: 1 },
-  { id: 6, sucursal: 'CEMEX Mérida', tipo_permiso: 'Aviso de Funcionamiento', fecha_vencimiento: '2026-02-28', estatus: 'Vencido', puntaje: 0 },
-  { id: 7, sucursal: 'CEMEX Tuxtla', tipo_permiso: 'Licencia Municipal', fecha_vencimiento: '2026-05-20', estatus: 'Por Vencer', puntaje: 0.5 },
-]
+import { usePermisos } from '@/hooks/usePermisos'
+import { useSolicitudes } from '@/hooks/useSolicitudes'
+import { useAuth } from '@/contexts/AuthContext'
+import { uploadFile } from '@/lib/storage'
 
 // ── Component ──────────────────────────────────────────────
 
 export default function PermisosPage() {
   const [activeTab, setActiveTab] = useState('listado')
-  const [showModal, setShowModal] = useState(false)
-  const [selectedPermiso, setSelectedPermiso] = useState<PermisoRow | null>(null)
+  const { data: permisos, loading, error } = usePermisos()
+  const { crearSolicitud } = useSolicitudes()
+  const { perfil, isTienda } = useAuth()
 
-  const handleSolicitud = (permiso: PermisoRow) => {
+  const [showModal, setShowModal] = useState(false)
+  const [selectedPermiso, setSelectedPermiso] = useState<any | null>(null)
+  const [vigencia, setVigencia] = useState('')
+  const [archivo, setArchivo] = useState<File | null>(null)
+  const [submitting, setSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
+
+  const handleSolicitud = (permiso: any) => {
     setSelectedPermiso(permiso)
+    setVigencia('')
+    setArchivo(null)
+    setSubmitError(null)
     setShowModal(true)
+  }
+
+  const handleSubmitSolicitud = async () => {
+    if (!selectedPermiso || !vigencia) return
+    setSubmitting(true)
+    setSubmitError(null)
+
+    try {
+      let archivoPath: string | null = null
+
+      // Upload file if provided
+      if (archivo && perfil) {
+        const { path, error: uploadErr } = await uploadFile(archivo, selectedPermiso.id_tienda)
+        if (uploadErr) throw new Error(uploadErr)
+        archivoPath = path
+      }
+
+      const { error: createErr } = await crearSolicitud({
+        id_tienda: selectedPermiso.id_tienda,
+        id_tipo_permiso: selectedPermiso.id_tipo_permiso,
+        vigencia_propuesta: vigencia,
+        archivo_adjunto_path: archivoPath,
+      })
+
+      if (createErr) throw new Error(createErr)
+      setShowModal(false)
+    } catch (e: any) {
+      setSubmitError(e.message)
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <>
+        <PageHeader title="Permisos" subtitle="Cargando permisos..." />
+        <Card className="animate-pulse"><div className="h-64 bg-gray-100 rounded-lg" /></Card>
+      </>
+    )
+  }
+
+  if (error) {
+    return (
+      <>
+        <PageHeader title="Permisos" subtitle="Error al cargar datos" />
+        <Card className="text-center py-10"><p className="text-red-500 text-sm">❌ {error}</p></Card>
+      </>
+    )
   }
 
   return (
@@ -78,40 +120,48 @@ export default function PermisosPage() {
 
       {activeTab === 'listado' ? (
         <Card className="p-0 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-[12px]">
-              <thead>
-                <tr className="bg-gray-50/60 border-b border-gray-100">
-                  <th className="text-left py-3 px-4 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Sucursal</th>
-                  <th className="text-left py-3 px-4 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Tipo de Permiso</th>
-                  <th className="text-left py-3 px-4 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Vencimiento</th>
-                  <th className="text-left py-3 px-4 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Estatus</th>
-                  <th className="text-right py-3 px-4 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Acción</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {mockPermisos.map((p) => (
-                  <tr key={p.id} className="hover:bg-blue-50/30 transition-colors">
-                    <td className="py-3 px-4 font-semibold text-slate-700">{p.sucursal}</td>
-                    <td className="py-3 px-4 text-gray-500">{p.tipo_permiso}</td>
-                    <td className="py-3 px-4 text-gray-500 font-mono text-[11px]">
-                      {new Date(p.fecha_vencimiento).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })}
-                    </td>
-                    <td className="py-3 px-4">
-                      <Badge variant={statusToBadgeVariant(p.estatus)}>{p.estatus}</Badge>
-                    </td>
-                    <td className="py-3 px-4 text-right">
-                      {p.estatus === 'Vencido' && (
-                        <Button size="sm" variant="primary" onClick={() => handleSolicitud(p)}>
-                          Crear Solicitud
-                        </Button>
-                      )}
-                    </td>
+          {permisos.length === 0 ? (
+            <div className="text-center py-16 text-gray-400">
+              <p className="text-[13px]">No hay permisos registrados.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-[12px]">
+                <thead>
+                  <tr className="bg-gray-50/60 border-b border-gray-100">
+                    <th className="text-left py-3 px-4 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Sucursal</th>
+                    <th className="text-left py-3 px-4 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Tipo de Permiso</th>
+                    <th className="text-left py-3 px-4 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Vencimiento</th>
+                    <th className="text-left py-3 px-4 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Estatus</th>
+                    <th className="text-right py-3 px-4 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Acción</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {permisos.map((p) => (
+                    <tr key={p.id} className="hover:bg-blue-50/30 transition-colors">
+                      <td className="py-3 px-4 font-semibold text-slate-700">{p.tiendas?.sucursal ?? '—'}</td>
+                      <td className="py-3 px-4 text-gray-500">{p.catalogo_permisos?.nombre_permiso ?? '—'}</td>
+                      <td className="py-3 px-4 text-gray-500 font-mono text-[11px]">
+                        {p.fecha_vencimiento
+                          ? new Date(p.fecha_vencimiento).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })
+                          : '—'}
+                      </td>
+                      <td className="py-3 px-4">
+                        <Badge variant={statusToBadgeVariant(p.estatus)}>{p.estatus}</Badge>
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        {p.estatus === 'Vencido' && (isTienda || true) && (
+                          <Button size="sm" variant="primary" onClick={() => handleSolicitud(p)}>
+                            Crear Solicitud
+                          </Button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </Card>
       ) : (
         <Card className="py-16 text-center">
@@ -127,19 +177,29 @@ export default function PermisosPage() {
         title="Crear Solicitud de Renovación"
         actions={
           <>
-            <Button variant="secondary" onClick={() => setShowModal(false)}>Cancelar</Button>
-            <Button variant="primary" onClick={() => setShowModal(false)}>Enviar Solicitud</Button>
+            <Button variant="secondary" onClick={() => setShowModal(false)} disabled={submitting}>Cancelar</Button>
+            <Button variant="primary" onClick={handleSubmitSolicitud} disabled={submitting || !vigencia}>
+              {submitting ? 'Enviando...' : 'Enviar Solicitud'}
+            </Button>
           </>
         }
       >
         {selectedPermiso && (
           <div className="space-y-4">
+            {submitError && (
+              <div className="bg-red-50 border border-red-100 rounded-lg p-3 text-red-600 text-[12px]">
+                ❌ {submitError}
+              </div>
+            )}
+
             <div className="bg-red-50 border border-red-100 rounded-xl p-4">
               <p className="text-[13px] font-medium text-slate-700">
-                {selectedPermiso.tipo_permiso} — <span className="text-red-600">{selectedPermiso.sucursal}</span>
+                {selectedPermiso.catalogo_permisos?.nombre_permiso} — <span className="text-red-600">{selectedPermiso.tiendas?.sucursal}</span>
               </p>
               <p className="text-[11px] text-gray-400 mt-1">
-                Venció el {new Date(selectedPermiso.fecha_vencimiento).toLocaleDateString('es-MX')}
+                Venció el {selectedPermiso.fecha_vencimiento
+                  ? new Date(selectedPermiso.fecha_vencimiento).toLocaleDateString('es-MX')
+                  : '—'}
               </p>
             </div>
 
@@ -149,6 +209,8 @@ export default function PermisosPage() {
               </label>
               <input
                 type="date"
+                value={vigencia}
+                onChange={(e) => setVigencia(e.target.value)}
                 className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-[13px] focus:outline-none focus:ring-2 focus:ring-red-500/30 focus:border-red-500"
               />
             </div>
@@ -157,13 +219,17 @@ export default function PermisosPage() {
               <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">
                 Archivo PDF
               </label>
-              <div className="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center hover:border-red-300 transition-colors cursor-pointer">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 mx-auto text-gray-300 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                </svg>
-                <p className="text-[11px] text-gray-400">Arrastra tu archivo o haz clic para seleccionar</p>
-                <p className="text-[10px] text-gray-300 mt-1">Solo archivos PDF, máx. 10MB</p>
-              </div>
+              <input
+                type="file"
+                accept=".pdf"
+                onChange={(e) => setArchivo(e.target.files?.[0] ?? null)}
+                className="w-full text-[12px] text-gray-500 file:mr-3 file:py-2 file:px-4
+                  file:rounded-lg file:border-0 file:text-[12px] file:font-medium
+                  file:bg-red-50 file:text-red-600 hover:file:bg-red-100 file:cursor-pointer file:transition-colors"
+              />
+              {archivo && (
+                <p className="text-[11px] text-green-600">✓ {archivo.name} ({(archivo.size / 1024).toFixed(1)} KB)</p>
+              )}
             </div>
           </div>
         )}

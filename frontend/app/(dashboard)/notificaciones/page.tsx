@@ -1,29 +1,12 @@
 'use client'
 
-import { useState } from 'react'
 import PageHeader from '@/components/ui/PageHeader'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
+import { useNotificaciones } from '@/hooks/useNotificaciones'
 import type { TipoAlerta } from '@/types'
 
-// ── Mock data ──────────────────────────────────────────────
-
-interface NotificacionRow {
-  id: number
-  mensaje: string
-  tipo_alerta: TipoAlerta
-  leida: boolean
-  fecha_creacion: string
-}
-
-const mockNotificaciones: NotificacionRow[] = [
-  { id: 1, mensaje: 'La Licencia Municipal de CEMEX Puebla Centro ha vencido.', tipo_alerta: 'vencimiento', leida: false, fecha_creacion: '2026-03-17T08:30:00' },
-  { id: 2, mensaje: 'Nueva solicitud de renovación recibida: Licencia Estatal — CEMEX CDMX Sur.', tipo_alerta: 'solicitud_nueva', leida: false, fecha_creacion: '2026-03-16T14:15:00' },
-  { id: 3, mensaje: 'Tu solicitud de Aviso de Funcionamiento fue aprobada.', tipo_alerta: 'solicitud_aprobada', leida: true, fecha_creacion: '2026-03-15T10:00:00' },
-  { id: 4, mensaje: 'Tu solicitud de Protección Civil fue rechazada. Motivo: Documento ilegible.', tipo_alerta: 'solicitud_rechazada', leida: true, fecha_creacion: '2026-03-14T16:45:00' },
-  { id: 5, mensaje: 'El permiso de Uso de Suelo de CEMEX Tuxtla está por vencer (faltan 15 días).', tipo_alerta: 'vencimiento', leida: false, fecha_creacion: '2026-03-14T09:00:00' },
-  { id: 6, mensaje: 'Nueva solicitud de renovación recibida: Pago de Tenencia — CEMEX Guadalajara.', tipo_alerta: 'solicitud_nueva', leida: true, fecha_creacion: '2026-03-13T11:20:00' },
-]
+// ── Alert config ───────────────────────────────────────────
 
 const alertConfig: Record<TipoAlerta, { icon: React.ReactNode; bg: string; border: string; dot: string }> = {
   vencimiento: {
@@ -68,8 +51,8 @@ const alertConfig: Record<TipoAlerta, { icon: React.ReactNode; bg: string; borde
   },
 }
 
-function groupByDate(items: NotificacionRow[]) {
-  const groups: Record<string, NotificacionRow[]> = {}
+function groupByDate(items: any[]) {
+  const groups: Record<string, any[]> = {}
   items.forEach((n) => {
     const date = new Date(n.fecha_creacion).toLocaleDateString('es-MX', {
       weekday: 'long',
@@ -86,18 +69,28 @@ function groupByDate(items: NotificacionRow[]) {
 // ── Component ──────────────────────────────────────────────
 
 export default function NotificacionesPage() {
-  const [notificaciones, setNotificaciones] = useState(mockNotificaciones)
-
-  const unreadCount = notificaciones.filter((n) => !n.leida).length
+  const { data: notificaciones, loading, error, unreadCount, markAsRead, markAllRead } = useNotificaciones()
   const grouped = groupByDate(notificaciones)
 
-  const markAllRead = () => {
-    setNotificaciones((prev) => prev.map((n) => ({ ...n, leida: true })))
+  if (loading) {
+    return (
+      <>
+        <PageHeader title="Notificaciones" subtitle="Cargando notificaciones..." />
+        <div className="space-y-2">
+          {[1,2,3].map(i => (
+            <Card key={i} className="animate-pulse"><div className="h-16 bg-gray-100 rounded-lg" /></Card>
+          ))}
+        </div>
+      </>
+    )
   }
 
-  const toggleRead = (id: number) => {
-    setNotificaciones((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, leida: !n.leida } : n))
+  if (error) {
+    return (
+      <>
+        <PageHeader title="Notificaciones" subtitle="Error al cargar datos" />
+        <Card className="text-center py-10"><p className="text-red-500 text-sm">❌ {error}</p></Card>
+      </>
     )
   }
 
@@ -115,58 +108,60 @@ export default function NotificacionesPage() {
         }
       />
 
-      <div className="space-y-6">
-        {Object.entries(grouped).map(([date, items]) => (
-          <div key={date}>
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.15em] mb-3 pl-1">
-              {date}
-            </p>
+      {notificaciones.length === 0 ? (
+        <Card className="text-center py-16">
+          <p className="text-gray-300 text-lg mb-1">🔔</p>
+          <p className="text-gray-400 text-[13px]">No tienes notificaciones.</p>
+        </Card>
+      ) : (
+        <div className="space-y-6">
+          {Object.entries(grouped).map(([date, items]) => (
+            <div key={date}>
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.15em] mb-3 pl-1">
+                {date}
+              </p>
 
-            <div className="space-y-2">
-              {items.map((notif) => {
-                const cfg = alertConfig[notif.tipo_alerta]
-                return (
-                  <Card
-                    key={notif.id}
-                    className={`
-                      !p-4 cursor-pointer transition-all duration-200
-                      ${notif.leida
-                        ? 'opacity-60 hover:opacity-90'
-                        : `!border-l-4 ${cfg.border} shadow-[0_2px_8px_rgba(0,0,0,0.04)]`
-                      }
-                    `}
-                  >
-                    <button
-                      onClick={() => toggleRead(notif.id)}
-                      className="w-full text-left flex items-start gap-3.5"
+              <div className="space-y-2">
+                {items.map((notif) => {
+                  const cfg = alertConfig[notif.tipo_alerta as TipoAlerta] || alertConfig.vencimiento
+                  return (
+                    <Card
+                      key={notif.id}
+                      className={`
+                        !p-4 cursor-pointer transition-all duration-200
+                        ${notif.leida
+                          ? 'opacity-60 hover:opacity-90'
+                          : `!border-l-4 ${cfg.border} shadow-[0_2px_8px_rgba(0,0,0,0.04)]`
+                        }
+                      `}
                     >
-                      {/* Icon */}
-                      <div className={`w-9 h-9 rounded-full ${cfg.bg} flex items-center justify-center shrink-0`}>
-                        {cfg.icon}
-                      </div>
-
-                      {/* Content */}
-                      <div className="flex-1 min-w-0">
-                        <p className={`text-[13px] leading-relaxed ${notif.leida ? 'text-gray-500' : 'text-slate-700 font-medium'}`}>
-                          {notif.mensaje}
-                        </p>
-                        <p className="text-[11px] text-gray-400 mt-1">
-                          {new Date(notif.fecha_creacion).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}
-                        </p>
-                      </div>
-
-                      {/* Unread dot */}
-                      {!notif.leida && (
-                        <span className={`w-2 h-2 rounded-full ${cfg.dot} shrink-0 mt-2`} />
-                      )}
-                    </button>
-                  </Card>
-                )
-              })}
+                      <button
+                        onClick={() => markAsRead(notif.id)}
+                        className="w-full text-left flex items-start gap-3.5"
+                      >
+                        <div className={`w-9 h-9 rounded-full ${cfg.bg} flex items-center justify-center shrink-0`}>
+                          {cfg.icon}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className={`text-[13px] leading-relaxed ${notif.leida ? 'text-gray-500' : 'text-slate-700 font-medium'}`}>
+                            {notif.mensaje}
+                          </p>
+                          <p className="text-[11px] text-gray-400 mt-1">
+                            {new Date(notif.fecha_creacion).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}
+                          </p>
+                        </div>
+                        {!notif.leida && (
+                          <span className={`w-2 h-2 rounded-full ${cfg.dot} shrink-0 mt-2`} />
+                        )}
+                      </button>
+                    </Card>
+                  )
+                })}
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </>
   )
 }
