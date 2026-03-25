@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 
@@ -12,21 +12,24 @@ interface UseTiendasReturn {
 }
 
 export function useTiendas(): UseTiendasReturn {
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
   const { perfil, isAdmin, isRegional, isTienda } = useAuth()
   const [data, setData] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   const fetch = useCallback(async () => {
-    if (!perfil) return
+    if (!perfil) {
+      setLoading(false)
+      return
+    }
     setLoading(true)
     setError(null)
 
     try {
       let query = supabase
         .from('tiendas')
-        .select('*, regiones:id_region(id, nombre_region, gerente_regional, celular, correo)')
+        .select('*, region:id_region(id, nombre_region, gerente_regional, celular, correo)')
         .order('sucursal')
 
       // RLS handles security, but we also filter client-side for UX

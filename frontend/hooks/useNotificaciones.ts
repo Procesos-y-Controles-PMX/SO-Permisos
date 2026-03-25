@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 
@@ -15,22 +15,26 @@ interface UseNotificacionesReturn {
 }
 
 export function useNotificaciones(): UseNotificacionesReturn {
-  const supabase = createClient()
-  const { user } = useAuth()
+  const supabase = useMemo(() => createClient(), [])
+  const { perfil } = useAuth()
   const [data, setData] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   const fetch = useCallback(async () => {
-    if (!user) return
+    if (!perfil) {
+      setLoading(false)
+      return
+    }
     setLoading(true)
     setError(null)
 
     try {
-      // RLS ensures only own notifications are returned
+      // Filter by perfil.id (Integer) — no RLS, explicit filter
       const { data: result, error: err } = await supabase
         .from('notificaciones')
         .select('*')
+        .eq('id_usuario', perfil.id)
         .order('fecha_creacion', { ascending: false })
 
       if (err) throw err
@@ -40,11 +44,11 @@ export function useNotificaciones(): UseNotificacionesReturn {
     } finally {
       setLoading(false)
     }
-  }, [supabase, user])
+  }, [supabase, perfil])
 
   useEffect(() => {
-    if (user) fetch()
-  }, [user, fetch])
+    if (perfil) fetch()
+  }, [perfil, fetch])
 
   const unreadCount = data.filter(n => !n.leida).length
 

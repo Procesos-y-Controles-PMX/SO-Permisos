@@ -21,14 +21,7 @@ export default function LoginForm() {
     try {
       const { error: signInError } = await signIn(email, password)
       if (signInError) {
-        // Translate common Supabase errors to Spanish
-        if (signInError.includes('Invalid login credentials')) {
-          setError('Credenciales incorrectas. Verifica tu correo y contraseña.')
-        } else if (signInError.includes('Email not confirmed')) {
-          setError('Tu correo no ha sido confirmado.')
-        } else {
-          setError(signInError)
-        }
+        setError(signInError)
         return
       }
       // Success — redirect to dashboard

@@ -11,7 +11,7 @@ export type EstatusPermiso = 'Vigente' | 'Vencido' | 'Por Vencer'
 export type TipoAlerta = 'vencimiento' | 'solicitud_nueva' | 'solicitud_aprobada' | 'solicitud_rechazada'
 
 // ============================================================
-// Models (match SQL schema exactly)
+// Models (match SQL schema — custom auth, integer IDs)
 // ============================================================
 
 export interface Rol {
@@ -42,13 +42,14 @@ export interface Tienda {
 }
 
 export interface Perfil {
-  id: string // UUID from auth.users
-  username: string | null
+  id: number // SERIAL integer (no longer UUID)
+  email: string
+  password?: string // Excluded from selects for security
   nombre_completo: string | null
   id_rol: number
   id_tienda: number | null
   id_region: number | null
-  updated_at: string
+  created_at: string
   // Joined
   rol?: Rol
   tienda?: Tienda
@@ -76,6 +77,17 @@ export interface PermisoVigente {
   tipo_permiso?: CatalogoPermiso
 }
 
+export interface ConfiguracionTiendaPermiso {
+  id: number
+  id_tienda: number
+  id_tipo_permiso: number
+  obligatorio: boolean
+  // Joined
+  tienda?: Tienda
+  tipo_permiso?: CatalogoPermiso
+  permiso_vigente?: PermisoVigente // Merged status from join
+}
+
 export interface Solicitud {
   id: number
   id_tienda: number
@@ -85,7 +97,7 @@ export interface Solicitud {
   archivo_adjunto_path: string | null
   estatus_solicitud: EstatusSolicitud
   comentarios_admin: string | null
-  id_admin_revisor: string | null
+  id_admin_revisor: number | null // Integer reference to perfiles.id
   // Joined
   tienda?: Tienda
   tipo_permiso?: CatalogoPermiso
@@ -93,7 +105,7 @@ export interface Solicitud {
 
 export interface Notificacion {
   id: number
-  id_usuario: string
+  id_usuario: number // Integer reference to perfiles.id
   mensaje: string
   tipo_alerta: TipoAlerta
   leida: boolean

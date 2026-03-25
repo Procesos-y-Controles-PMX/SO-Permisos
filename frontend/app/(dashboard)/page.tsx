@@ -43,12 +43,12 @@ export default function DashboardPage() {
   const { data: permisos, loading, error, stats } = usePermisos()
   const { perfil } = useAuth()
 
-  // Group by region for bar chart
+  // Group by tienda for bar chart (using the config which has tienda linked)
   const regionStats = permisos.reduce<Record<string, { total: number; vigentes: number }>>((acc, p) => {
-    const regionName = p.tiendas?.sucursal || 'Sin Región'
+    const regionName = p.tienda?.sucursal || 'Sin Tienda'
     if (!acc[regionName]) acc[regionName] = { total: 0, vigentes: 0 }
     acc[regionName].total++
-    if (p.estatus === 'Vigente') acc[regionName].vigentes++
+    if (p.permiso_vigente?.estatus === 'Vigente') acc[regionName].vigentes++
     return acc
   }, {})
 
@@ -65,7 +65,7 @@ export default function DashboardPage() {
       if (!tiendaMap.has(tid)) tiendaMap.set(tid, { total: 0, vigentes: 0 })
       const entry = tiendaMap.get(tid)!
       entry.total++
-      if (p.estatus === 'Vigente') entry.vigentes++
+      if (p.permiso_vigente?.estatus === 'Vigente') entry.vigentes++
     })
     let count = 0
     tiendaMap.forEach((v) => { if (v.total > 0 && v.vigentes === v.total) count++ })
@@ -208,21 +208,27 @@ export default function DashboardPage() {
               <tbody className="divide-y divide-gray-50">
                 {permisos.map((p) => (
                   <tr key={p.id} className="hover:bg-blue-50/30 transition-colors">
-                    <td className="py-3 px-4 font-semibold text-slate-700">{p.tiendas?.sucursal ?? '-'}</td>
-                    <td className="py-3 px-4 text-gray-500">{p.catalogo_permisos?.nombre_permiso ?? '-'}</td>
+                    <td className="py-3 px-4 font-semibold text-slate-700">{p.tienda?.sucursal ?? '-'}</td>
+                    <td className="py-3 px-4 text-gray-500">{p.tipo_permiso?.nombre_permiso ?? '-'}</td>
                     <td className="py-3 px-4 text-gray-500 font-mono text-[11px]">
-                      {p.fecha_vencimiento
-                        ? new Date(p.fecha_vencimiento).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })
+                      {p.permiso_vigente?.fecha_vencimiento
+                        ? new Date(p.permiso_vigente.fecha_vencimiento).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })
                         : '—'}
                     </td>
                     <td className="py-3 px-4">
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
-                        p.estatus === 'Vigente' ? 'bg-green-50 text-green-600' :
-                        p.estatus === 'Por Vencer' ? 'bg-orange-50 text-orange-600' :
-                        'bg-red-50 text-red-600'
-                      }`}>
-                        {p.estatus}
-                      </span>
+                      {p.permiso_vigente ? (
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                          p.permiso_vigente.estatus === 'Vigente' ? 'bg-green-50 text-green-600' :
+                          p.permiso_vigente.estatus === 'Por Vencer' ? 'bg-orange-50 text-orange-600' :
+                          'bg-red-50 text-red-600'
+                        }`}>
+                          {p.permiso_vigente.estatus}
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-gray-50 text-gray-400">
+                          No Subido
+                        </span>
+                      )}
                     </td>
                   </tr>
                 ))}

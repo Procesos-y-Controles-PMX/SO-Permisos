@@ -16,12 +16,12 @@ export default function DirectorioPage() {
   // Unique regions from data
   const regionOptions = [
     { value: '', label: 'Todas las regiones' },
-    ...Array.from(new Set(tiendas.map(t => t.regiones?.nombre_region).filter(Boolean)))
+    ...Array.from(new Set(tiendas.map(t => t.region?.nombre_region).filter(Boolean)))
       .map(r => ({ value: r!, label: r! })),
   ]
 
   const filtered = tiendas.filter((t) => {
-    const matchRegion = !filterRegion || t.regiones?.nombre_region === filterRegion
+    const matchRegion = !filterRegion || t.region?.nombre_region === filterRegion
     const matchSearch = !searchText || t.sucursal.toLowerCase().includes(searchText.toLowerCase())
     return matchRegion && matchSearch
   })
@@ -97,8 +97,8 @@ export default function DirectorioPage() {
                 {filtered.map((t) => (
                   <tr key={t.id} className="hover:bg-blue-50/30 transition-colors">
                     <td className="py-3 px-4 font-semibold text-slate-700">{t.sucursal}</td>
-                    <td className="py-3 px-4 text-gray-500">{t.regiones?.nombre_region ?? '—'}</td>
-                    <td className="py-3 px-4 text-gray-500">{t.regiones?.gerente_regional ?? '—'}</td>
+                    <td className="py-3 px-4 text-gray-500">{t.region?.nombre_region ?? '—'}</td>
+                    <td className="py-3 px-4 text-gray-500">{t.region?.gerente_regional ?? '—'}</td>
                     <td className="py-3 px-4 text-gray-500">{t.gerente_tienda ?? '—'}</td>
                     <td className="py-3 px-4 text-gray-400 text-[11px]">{t.direccion_sucursal ?? '—'}</td>
                     <td className="py-3 px-4">

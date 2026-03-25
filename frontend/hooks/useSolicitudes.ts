@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 
@@ -9,7 +9,6 @@ interface UseSolicitudesReturn {
   loading: boolean
   error: string | null
   refetch: () => Promise<void>
-  // Mutations
   aprobar: (id: number, comentarios?: string) => Promise<{ error: string | null }>
   rechazar: (id: number, comentarios: string) => Promise<{ error: string | null }>
   crearSolicitud: (payload: {
@@ -21,14 +20,17 @@ interface UseSolicitudesReturn {
 }
 
 export function useSolicitudes(): UseSolicitudesReturn {
-  const supabase = createClient()
-  const { perfil, user, isTienda, isRegional, isAdmin } = useAuth()
+  const supabase = useMemo(() => createClient(), [])
+  const { perfil, isTienda, isRegional, isAdmin } = useAuth()
   const [data, setData] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   const fetch = useCallback(async () => {
-    if (!perfil) return
+    if (!perfil) {
+      setLoading(false)
+      return
+    }
     setLoading(true)
     setError(null)
 
@@ -37,8 +39,8 @@ export function useSolicitudes(): UseSolicitudesReturn {
         .from('solicitudes')
         .select(`
           *,
-          tiendas:id_tienda(id, sucursal),
-          catalogo_permisos:id_tipo_permiso(id, nombre_permiso)
+          tienda:id_tienda(id, sucursal),
+          tipo_permiso:id_tipo_permiso(id, nombre_permiso)
         `)
         .order('fecha_solicitud', { ascending: false })
 
@@ -77,16 +79,14 @@ export function useSolicitudes(): UseSolicitudesReturn {
         .update({
           estatus_solicitud: 'Aprobado',
           comentarios_admin: comentarios || null,
-          id_admin_revisor: user?.id,
+          id_admin_revisor: perfil?.id ?? null, // Integer reference
         })
         .eq('id', id)
 
       if (err) throw err
 
-      // Get the solicitud data to update permisos_vigentes
       const solicitud = data.find(s => s.id === id)
       if (solicitud) {
-        // Upsert into permisos_vigentes
         await supabase
           .from('permisos_vigentes')
           .upsert({
@@ -118,7 +118,7 @@ export function useSolicitudes(): UseSolicitudesReturn {
         .update({
           estatus_solicitud: 'Rechazado',
           comentarios_admin: comentarios,
-          id_admin_revisor: user?.id,
+          id_admin_revisor: perfil?.id ?? null, // Integer reference
         })
         .eq('id', id)
 

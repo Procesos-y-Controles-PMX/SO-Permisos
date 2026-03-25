@@ -128,8 +128,8 @@ export default function SolicitudesPage() {
                 {filtered.map((s) => (
                   <tr key={s.id} className="hover:bg-blue-50/30 transition-colors">
                     <td className="py-3 px-4 text-gray-400 font-mono text-[11px]">#{s.id}</td>
-                    <td className="py-3 px-4 font-semibold text-slate-700">{s.tiendas?.sucursal ?? '—'}</td>
-                    <td className="py-3 px-4 text-gray-500">{s.catalogo_permisos?.nombre_permiso ?? '—'}</td>
+                    <td className="py-3 px-4 font-semibold text-slate-700">{s.tienda?.sucursal ?? '—'}</td>
+                    <td className="py-3 px-4 text-gray-500">{s.tipo_permiso?.nombre_permiso ?? '—'}</td>
                     <td className="py-3 px-4 text-gray-500 font-mono text-[11px]">
                       {new Date(s.fecha_solicitud).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })}
                     </td>
@@ -206,7 +206,7 @@ export default function SolicitudesPage() {
 
             <div className={`${accion === 'aprobar' ? 'bg-green-50 border-green-100' : 'bg-red-50 border-red-100'} border rounded-xl p-4`}>
               <p className="text-[13px] font-medium text-slate-700">
-                {selectedSolicitud.catalogo_permisos?.nombre_permiso} — <span className="font-semibold">{selectedSolicitud.tiendas?.sucursal}</span>
+                {selectedSolicitud.tipo_permiso?.nombre_permiso} — <span className="font-semibold">{selectedSolicitud.tienda?.sucursal}</span>
               </p>
               <p className="text-[11px] text-gray-400 mt-1">
                 Solicitud #{selectedSolicitud.id} • Vigencia propuesta: {selectedSolicitud.vigencia_propuesta
