@@ -6,7 +6,7 @@ export type RolUsuario = 'Admin' | 'Tienda' | 'Regional'
 
 export type EstatusSolicitud = 'Pendiente' | 'Aprobado' | 'Rechazado'
 
-export type EstatusPermiso = 'Vigente' | 'Vencido' | 'Por Vencer'
+export type EstatusPermiso = 'Vigente' | 'Vencido' | 'Por Vencer' | 'Aprobado'
 
 export type TipoAlerta = 'vencimiento' | 'solicitud_nueva' | 'solicitud_aprobada' | 'solicitud_rechazada'
 

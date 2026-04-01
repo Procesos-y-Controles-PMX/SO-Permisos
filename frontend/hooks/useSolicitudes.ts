@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
+import { promoteFile } from '@/lib/storage'
 
 interface UseSolicitudesReturn {
   data: any[]
@@ -19,9 +20,9 @@ interface UseSolicitudesReturn {
   }) => Promise<{ error: string | null }>
 }
 
-export function useSolicitudes(): UseSolicitudesReturn {
+export function useSolicitudes(idTienda?: number): UseSolicitudesReturn {
   const supabase = useMemo(() => createClient(), [])
-  const { perfil, isTienda, isRegional, isAdmin } = useAuth()
+  const { perfil, isTienda, isRegional } = useAuth()
   const [data, setData] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -44,7 +45,10 @@ export function useSolicitudes(): UseSolicitudesReturn {
         `)
         .order('fecha_solicitud', { ascending: false })
 
-      if (isTienda && perfil.id_tienda) {
+      // If a specific tienda ID is passed, filter by it (for detail view)
+      if (idTienda) {
+        query = query.eq('id_tienda', idTienda)
+      } else if (isTienda && perfil.id_tienda) {
         query = query.eq('id_tienda', perfil.id_tienda)
       } else if (isRegional && perfil.id_region) {
         const { data: tiendasRegion } = await supabase
@@ -65,7 +69,7 @@ export function useSolicitudes(): UseSolicitudesReturn {
     } finally {
       setLoading(false)
     }
-  }, [supabase, perfil, isTienda, isRegional])
+  }, [supabase, perfil, isTienda, isRegional, idTienda])
 
   useEffect(() => {
     if (perfil) fetch()
@@ -73,39 +77,110 @@ export function useSolicitudes(): UseSolicitudesReturn {
 
   // ─ Aprobar Solicitud ─
   const aprobar = async (id: number, comentarios?: string) => {
+    console.log(`[useSolicitudes] Iniciando aprobación de solicitud ID: ${id}`)
     try {
-      const { error: err } = await supabase
+      // 1. Update solicitud as 'Aprobado' and get details
+      const { data: updatedSolicitud, error: err } = await supabase
         .from('solicitudes')
         .update({
           estatus_solicitud: 'Aprobado',
           comentarios_admin: comentarios || null,
-          id_admin_revisor: perfil?.id ?? null, // Integer reference
+          id_admin_revisor: perfil?.id ?? null,
         })
         .eq('id', id)
+        .select(`
+          *,
+          tipo_permiso:id_tipo_permiso(nombre_permiso)
+        `)
+        .single()
 
       if (err) throw err
+      if (!updatedSolicitud) throw new Error('No se encontró la solicitud aprobada.')
 
-      const solicitud = data.find(s => s.id === id)
-      if (solicitud) {
+      console.log('[useSolicitudes] Datos de solicitud aprobada:', {
+        tienda: updatedSolicitud.id_tienda,
+        tipo_permiso: updatedSolicitud.id_tipo_permiso,
+        nombre: updatedSolicitud.tipo_permiso?.nombre_permiso
+      })
+
+      // 2. VALIDATION: Check if this pair exists in configuration (prevents FK violation)
+      const { data: configCheck, error: configErr } = await supabase
+        .from('configuracion_tienda_permisos')
+        .select('id')
+        .eq('id_tienda', updatedSolicitud.id_tienda)
+        .eq('id_tipo_permiso', updatedSolicitud.id_tipo_permiso)
+        .single()
+
+      if (configErr || !configCheck) {
+        console.error('[useSolicitudes] Error de validación: El permiso no está configurado para esta tienda.', configErr)
+        throw new Error('El permiso no está configurado para esta tienda (FK check failed).')
+      }
+
+      console.log('[useSolicitudes] Configuración válida encontrada ID:', configCheck.id)
+
+      let finalPath = updatedSolicitud.archivo_adjunto_path
+
+      // 3. Move file to 'activos' folder if it exists and is in 'solicitudes'
+      if (finalPath && finalPath.startsWith('solicitudes/')) {
+        const { newPath, error: moveErr } = await promoteFile(
+          finalPath,
+          updatedSolicitud.id_tienda,
+          updatedSolicitud.tipo_permiso?.nombre_permiso || 'Permiso'
+        )
+        if (moveErr) throw new Error(`Error al mover archivo: ${moveErr}`)
+        finalPath = newPath
+
+        // Update the solicitud record with the new final path
         await supabase
+          .from('solicitudes')
+          .update({ archivo_adjunto_path: finalPath })
+          .eq('id', updatedSolicitud.id)
+      }
+
+      // 4. MANUAL UPSERT into permisos_vigentes (fixes "ON CONFLICT" error)
+      console.log('[useSolicitudes] Buscando registro existente en permisos_vigentes...')
+      const { data: existingVigente } = await supabase
+        .from('permisos_vigentes')
+        .select('id')
+        .eq('id_tienda', updatedSolicitud.id_tienda)
+        .eq('id_tipo_permiso', updatedSolicitud.id_tipo_permiso)
+        .maybeSingle()
+
+      const payloadVigente = {
+        id_tienda: updatedSolicitud.id_tienda,
+        id_tipo_permiso: updatedSolicitud.id_tipo_permiso,
+        fecha_vencimiento: updatedSolicitud.vigencia_propuesta,
+        estatus: 'Aprobado',
+        archivo_path: finalPath,
+        puntaje: 1,
+        ultima_actualizacion: new Date().toISOString(),
+      }
+
+      let vigenteErr
+      if (existingVigente) {
+        console.log('[useSolicitudes] Registro encontrado (ID: ' + existingVigente.id + '). Realizando UPDATE...')
+        const { error } = await supabase
           .from('permisos_vigentes')
-          .upsert({
-            id_tienda: solicitud.id_tienda,
-            id_tipo_permiso: solicitud.id_tipo_permiso,
-            fecha_vencimiento: solicitud.vigencia_propuesta,
-            estatus: 'Vigente',
-            archivo_path: solicitud.archivo_adjunto_path,
-            puntaje: 1,
-            ultima_actualizacion: new Date().toISOString(),
-          }, {
-            onConflict: 'id_tienda,id_tipo_permiso',
-            ignoreDuplicates: false,
-          })
+          .update(payloadVigente)
+          .eq('id', existingVigente.id)
+        vigenteErr = error
+      } else {
+        console.log('[useSolicitudes] Registro no encontrado. Realizando INSERT...')
+        const { error } = await supabase
+          .from('permisos_vigentes')
+          .insert(payloadVigente)
+        vigenteErr = error
+      }
+
+      if (vigenteErr) {
+        console.error('[useSolicitudes] Error en persistencia de permisos_vigentes:', vigenteErr)
+        throw vigenteErr
       }
 
       await fetch()
       return { error: null }
     } catch (e: any) {
+      console.error('[useSolicitudes] Error fatal en aprobación:', e.message)
       return { error: e.message }
     }
   }
@@ -118,7 +193,7 @@ export function useSolicitudes(): UseSolicitudesReturn {
         .update({
           estatus_solicitud: 'Rechazado',
           comentarios_admin: comentarios,
-          id_admin_revisor: perfil?.id ?? null, // Integer reference
+          id_admin_revisor: perfil?.id ?? null,
         })
         .eq('id', id)
 

@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
-import Button from './Button'
 
 interface ModalProps {
   open: boolean
@@ -33,7 +32,7 @@ export default function Modal({ open, onClose, title, children, actions }: Modal
   return (
     <div
       ref={overlayRef}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 md:p-8"
       onClick={(e) => {
         if (e.target === overlayRef.current) onClose()
       }}
@@ -41,10 +40,10 @@ export default function Modal({ open, onClose, title, children, actions }: Modal
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
 
-      {/* Panel */}
-      <div className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl animate-in">
+      {/* Panel — responsive with vertical margin */}
+      <div className="relative w-full max-w-lg max-h-[calc(100vh-4rem)] bg-white rounded-2xl shadow-2xl animate-in flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0">
           <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
           <button
             onClick={onClose}
@@ -56,12 +55,12 @@ export default function Modal({ open, onClose, title, children, actions }: Modal
           </button>
         </div>
 
-        {/* Body */}
-        <div className="px-6 py-5">{children}</div>
+        {/* Body — scrollable */}
+        <div className="px-6 py-5 overflow-y-auto flex-1">{children}</div>
 
         {/* Actions */}
         {actions && (
-          <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-100">
+          <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-100 shrink-0">
             {actions}
           </div>
         )}

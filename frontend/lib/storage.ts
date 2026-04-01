@@ -3,25 +3,26 @@ import { createClient } from '@/lib/supabase'
 const BUCKET = process.env.NEXT_PUBLIC_SUPABASE_BUCKET || 'permisos-bucket'
 
 /**
- * Upload a file to Supabase Storage.
- * Files are organized as: tienda_{id_tienda}/{filename}
+ * Upload a file as a new request (solicitud).
+ * Organized as: solicitudes/[id_tienda]/[nombre_permiso]_solicitud.pdf
  */
 export async function uploadFile(
   file: File,
   idTienda: number,
+  nombrePermiso: string
 ): Promise<{ path: string | null; error: string | null }> {
   const supabase = createClient()
 
-  // Create a unique filename to avoid collisions
-  const timestamp = Date.now()
-  const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
-  const filePath = `tienda_${idTienda}/${timestamp}_${safeName}`
+  // Sanitize permit name
+  const safePermitName = nombrePermiso.trim().replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_-]/g, '')
+  const extension = file.name.split('.').pop() || 'pdf'
+  const filePath = `solicitudes/${idTienda}/${safePermitName}_solicitud.${extension}`
 
   const { error } = await supabase.storage
     .from(BUCKET)
     .upload(filePath, file, {
       cacheControl: '3600',
-      upsert: false,
+      upsert: true, // Overwrite if same permit is re-submitted
     })
 
   if (error) {
@@ -29,6 +30,34 @@ export async function uploadFile(
   }
 
   return { path: filePath, error: null }
+}
+
+/**
+ * Promote a file from 'solicitudes' to 'activos'.
+ * Returns the new path.
+ */
+export async function promoteFile(
+  oldPath: string,
+  idTienda: number,
+  nombrePermiso: string
+): Promise<{ newPath: string | null; error: string | null }> {
+  if (!oldPath) return { newPath: null, error: 'Ruta original vacía' }
+
+  const supabase = createClient()
+  const safePermitName = nombrePermiso.trim().replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_-]/g, '')
+  const extension = oldPath.split('.').pop() || 'pdf'
+  const newPath = `activos/${idTienda}/${safePermitName}_activo.${extension}`
+
+  // 1. Move the file (effectively Copy + Delete in Supabase)
+  const { error: moveErr } = await supabase.storage
+    .from(BUCKET)
+    .move(oldPath, newPath)
+
+  if (moveErr) {
+    return { newPath: null, error: moveErr.message }
+  }
+
+  return { newPath, error: null }
 }
 
 /**
