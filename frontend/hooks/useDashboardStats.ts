@@ -8,6 +8,7 @@ export interface RegionalCount {
   id: number
   nombre_region: string
   vencidos: number
+  cumplimiento: number
 }
 
 export interface StoreAlertDetail {
@@ -36,6 +37,9 @@ export function useDashboardStats() {
   const [error, setError] = useState<string | null>(null)
 
   const [totalAlertas, setTotalAlertas] = useState(0)
+  const [totalRequirements, setTotalRequirements] = useState(0)
+  const [compliancePercentage, setCompliancePercentage] = useState(0)
+  const [storeComplianceMap, setStoreComplianceMap] = useState<Record<number, number>>({})
   const [regionalCounts, setRegionalCounts] = useState<RegionalCount[]>([])
   const [storesAlerts, setStoresAlerts] = useState<StoreAlertDetail[]>([])
 
@@ -47,10 +51,7 @@ export function useDashboardStats() {
     setError(null)
 
     try {
-      // Base query logic to find all alerts (Missing Mandatory or Expired)
-      // Logic: configuracion_tienda_permisos.obligatorio = true
-      // AND (permisos_vigentes IS NULL OR permisos_vigentes.estatus = 'Vencido')
-      
+      // 1. Fetch ALL mandatory configurations for the current context (Admin: All, Regional: Their region)
       let query = supabase
         .from('configuracion_tienda_permisos')
         .select(`
@@ -70,9 +71,11 @@ export function useDashboardStats() {
       const { data, error: err } = await query
       if (err) throw err
 
-      // Since Supabase join filters for NULL is tricky locally, we filter in memory
-      // to correctly identify 'Faltante' vs 'Vencido'
-      const allAlertsRaw = (data || []).map((item: any) => {
+      const rawData = data || []
+      setTotalRequirements(rawData.length)
+
+      // 2. Identify Alerts in memory (Missing or Expired)
+      const allAlertsRaw = rawData.map((item: any) => {
         const vigente = Array.isArray(item.permiso_vigente) ? item.permiso_vigente[0] : item.permiso_vigente
         
         let tipo_alerta: 'Faltante' | 'Vencido' | null = null
@@ -97,15 +100,58 @@ export function useDashboardStats() {
       setTotalAlertas(allAlertsRaw.length)
       setStoresAlerts(allAlertsRaw)
 
-      // Calculate Regional Counts (only for Admin)
+      // 3. Global Compliance %
+      const globalCompliance = rawData.length > 0 
+        ? Math.round(((rawData.length - allAlertsRaw.length) / rawData.length) * 1000) / 10 
+        : 0
+      setCompliancePercentage(globalCompliance)
+
+      // 4. Per Store Compliance %
+      const storeMap: Record<number, { total: number; alerts: number }> = {}
+      rawData.forEach((item: any) => {
+        const tid = item.id_tienda
+        if (!storeMap[tid]) storeMap[tid] = { total: 0, alerts: 0 }
+        storeMap[tid].total++
+      })
+      allAlertsRaw.forEach((alert) => {
+        const tid = alert.tienda?.id
+        if (tid && storeMap[tid]) {
+          storeMap[tid].alerts++
+        }
+      })
+      
+      const finalStoreCompliance: Record<number, number> = {}
+      Object.keys(storeMap).forEach((tid) => {
+        const id = Number(tid)
+        const s = storeMap[id]
+        finalStoreCompliance[id] = s.total > 0 
+          ? Math.round(((s.total - s.alerts) / s.total) * 1000) / 10 
+          : 0
+      })
+      setStoreComplianceMap(finalStoreCompliance)
+
+      // 5. Regional Counts (Admin only)
       if (isAdmin) {
         const { data: regiones } = await supabase.from('regiones').select('id, nombre_region').order('nombre_region')
         if (regiones) {
-          const counts = regiones.map(reg => ({
-            id: reg.id,
-            nombre_region: reg.nombre_region,
-            vencidos: allAlertsRaw.filter(a => a.tienda?.id_region === reg.id).length
-          }))
+          const counts = regiones.map(reg => {
+            const regReqs = rawData.filter(r => {
+              const t = Array.isArray(r.tienda) ? r.tienda[0] : r.tienda
+              return t?.id_region === reg.id
+            }).length
+            
+            const regAlerts = allAlertsRaw.filter(a => {
+              const t = Array.isArray(a.tienda) ? a.tienda[0] : a.tienda
+              return t?.id_region === reg.id
+            }).length
+            
+            return {
+              id: reg.id,
+              nombre_region: reg.nombre_region,
+              vencidos: regAlerts,
+              cumplimiento: regReqs > 0 ? Math.round(((regReqs - regAlerts) / regReqs) * 1000) / 10 : 0
+            }
+          })
           setRegionalCounts(counts)
         }
       }
@@ -129,6 +175,7 @@ export function useDashboardStats() {
     const channel = supabase.channel('dashboard-compliance')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'permisos_vigentes' }, fetchStats)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'configuracion_tienda_permisos' }, fetchStats)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'tiendas' }, fetchStats)
       .subscribe()
 
     return () => {
@@ -137,10 +184,11 @@ export function useDashboardStats() {
   }, [supabase, isAdmin, isRegional, fetchStats])
 
   return {
-    totalVencidos: totalAlertas, // Maintain key name if possible or update components
     totalAlertas,
+    totalRequirements,
+    compliancePercentage,
+    storeComplianceMap,
     regionalCounts,
-    storesExpired: storesAlerts, // Maintain key name or update
     storesAlerts,
     loading,
     error,
