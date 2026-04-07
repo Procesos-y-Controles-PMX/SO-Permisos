@@ -10,7 +10,8 @@ import Modal from '@/components/ui/Modal'
 import { useTiendaDetalle } from '@/hooks/useTiendaDetalle'
 import { useSolicitudes } from '@/hooks/useSolicitudes'
 import { useAuth } from '@/contexts/AuthContext'
-import { uploadFile, getFileUrl } from '@/lib/storage'
+import { uploadFile, uploadActiveFile, getFileUrl, deleteFile } from '@/lib/storage'
+import { createClient } from '@/lib/supabase'
 import type { ConfiguracionTiendaPermiso } from '@/types'
 
 // ── Icons ──────────────────────────────────────────────────
@@ -18,6 +19,12 @@ import type { ConfiguracionTiendaPermiso } from '@/types'
 const BackIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+  </svg>
+)
+
+const TrashIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
   </svg>
 )
 
@@ -86,6 +93,11 @@ export default function TiendaDetallePage() {
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
 
+  // ── Direct Upload Modal state (Admin Bypass) ──
+  const [showDirectUploadModal, setShowDirectUploadModal] = useState(false)
+  const [directSubmitting, setDirectSubmitting] = useState(false)
+  const [directSubmitError, setDirectSubmitError] = useState<string | null>(null)
+
   // ── Review Modal state ──
   const [showReviewModal, setShowReviewModal] = useState(false)
   const [selectedSolicitud, setSelectedSolicitud] = useState<any | null>(null)
@@ -93,6 +105,11 @@ export default function TiendaDetallePage() {
   const [comentarios, setComentarios] = useState('')
   const [reviewing, setReviewing] = useState(false)
   const [reviewError, setReviewError] = useState<string | null>(null)
+
+  // ── Delete Modal state ──
+  const [permisoToDelete, setPermisoToDelete] = useState<ConfiguracionTiendaPermiso | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
 
   // ── Derived data ──
   const permisosVigentes = useMemo(() =>
@@ -139,6 +156,14 @@ export default function TiendaDetallePage() {
     setShowUploadModal(true)
   }
 
+  const handleOpenDirectUpload = (config: ConfiguracionTiendaPermiso) => {
+    setSelectedConfig(config)
+    setVigencia('')
+    setArchivo(null)
+    setDirectSubmitError(null)
+    setShowDirectUploadModal(true)
+  }
+
   const handleSubmitUpload = async () => {
     if (!selectedConfig || !vigencia) return
     setSubmitting(true)
@@ -170,6 +195,49 @@ export default function TiendaDetallePage() {
       setSubmitError(e.message)
     } finally {
       setSubmitting(false)
+    }
+  }
+
+  const handleDirectUploadConfirm = async () => {
+    if (!selectedConfig || !vigencia || !archivo) return
+    setDirectSubmitting(true)
+    setDirectSubmitError(null)
+
+    try {
+      // 1. Delete physical file if it exists
+      if (selectedConfig.permiso_vigente?.archivo_path) {
+        await deleteFile(selectedConfig.permiso_vigente.archivo_path)
+      }
+
+      // 2. Upload file to activos/
+      const { path, error: uploadErr } = await uploadActiveFile(
+        archivo,
+        selectedConfig.id_tienda,
+        selectedConfig.tipo_permiso?.nombre_permiso || 'Permiso_Bypass'
+      )
+      if (uploadErr) throw new Error(`Error subiendo archivo: ${uploadErr}`)
+
+      // 3. Upsert record in permisos_vigentes
+      const supabase = createClient()
+      const { error: dbErr } = await supabase
+        .from('permisos_vigentes')
+        .upsert({
+          id_tienda: selectedConfig.id_tienda,
+          id_tipo_permiso: selectedConfig.id_tipo_permiso,
+          fecha_vencimiento: vigencia,
+          archivo_path: path,
+          estatus: 'Aprobado',
+          ultima_actualizacion: new Date().toISOString()
+        })
+
+      if (dbErr) throw new Error(`Error al actualizar estado en DB: ${dbErr.message}`)
+
+      setShowDirectUploadModal(false)
+      await refetch()
+    } catch (e: any) {
+      setDirectSubmitError(e.message)
+    } finally {
+      setDirectSubmitting(false)
     }
   }
 
@@ -205,6 +273,39 @@ export default function TiendaDetallePage() {
     const { url, error } = await getFileUrl(path)
     if (url) window.open(url, '_blank')
     if (error) alert('Error al abrir archivo: ' + error)
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!permisoToDelete || !permisoToDelete.permiso_vigente) return
+    setIsDeleting(true)
+    setDeleteError(null)
+
+    try {
+      // 1. Delete file physically from storage
+      const pathToDelete = permisoToDelete.permiso_vigente.archivo_path
+      if (pathToDelete) {
+        const { error: storageErr } = await deleteFile(pathToDelete)
+        if (storageErr) throw new Error(`Error eliminando archivo: ${storageErr}`)
+      }
+
+      // 2. Delete the record from DB
+      const supabase = createClient()
+      const { error: dbErr } = await supabase
+        .from('permisos_vigentes')
+        .delete()
+        .eq('id_tienda', permisoToDelete.id_tienda)
+        .eq('id_tipo_permiso', permisoToDelete.id_tipo_permiso)
+
+      if (dbErr) throw new Error(`Error en DB: ${dbErr.message}`)
+
+      // 3. Success -> UI update
+      setPermisoToDelete(null)
+      await refetch()
+    } catch (e: any) {
+      setDeleteError(e.message)
+    } finally {
+      setIsDeleting(false)
+    }
   }
 
   // ── Loading / Error ──
@@ -288,6 +389,7 @@ export default function TiendaDetallePage() {
                   <Th>Vencimiento</Th>
                   <Th>Estatus</Th>
                   <Th align="right">Archivo</Th>
+                  {isAdmin && <Th align="right">Acciones</Th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
@@ -317,6 +419,17 @@ export default function TiendaDetallePage() {
                         </button>
                       )}
                     </Td>
+                    {isAdmin && (
+                      <Td align="right">
+                        <button
+                          onClick={() => setPermisoToDelete(p)}
+                          className="inline-flex items-center gap-1.5 text-red-500 hover:text-red-700 text-[11px] font-medium transition-colors ml-2"
+                          title="Borrar Permiso"
+                        >
+                          <TrashIcon /> Borrar
+                        </button>
+                      </Td>
+                    )}
                   </tr>
                 ))}
               </tbody>
@@ -346,7 +459,8 @@ export default function TiendaDetallePage() {
                 <tr className="border-b border-gray-100">
                   <Th>Permiso Requerido</Th>
                   <Th>Estatus</Th>
-                  <Th align="right">Acción</Th>
+                  {isTienda && <Th align="right">Acción</Th>}
+                  {isAdmin && <Th align="right">Carga Directa</Th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
@@ -367,8 +481,8 @@ export default function TiendaDetallePage() {
                           </span>
                         )}
                       </Td>
-                      <Td align="right">
-                        {isTienda && (
+                      {isTienda && (
+                        <Td align="right">
                           <Button
                             size="sm"
                             variant="primary"
@@ -377,8 +491,19 @@ export default function TiendaDetallePage() {
                           >
                             {upload.blocked ? upload.reason : (p.permiso_vigente ? 'Renovar' : 'Subir Documento')}
                           </Button>
-                        )}
-                      </Td>
+                        </Td>
+                      )}
+                      {isAdmin && (
+                        <Td align="right">
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            onClick={() => handleOpenDirectUpload(p)}
+                          >
+                            Carga Directa
+                          </Button>
+                        </Td>
+                      )}
                     </tr>
                   )
                 })}
@@ -508,7 +633,7 @@ export default function TiendaDetallePage() {
         actions={
           <>
             <Button variant="secondary" onClick={() => setShowUploadModal(false)} disabled={submitting}>Cancelar</Button>
-            <Button variant="primary" onClick={handleSubmitUpload} disabled={submitting || !vigencia}>
+            <Button variant="primary" onClick={handleSubmitUpload} disabled={submitting || !vigencia || !archivo}>
               {submitting ? 'Enviando...' : 'Enviar a Revisión'}
             </Button>
           </>
@@ -600,6 +725,94 @@ export default function TiendaDetallePage() {
       </Modal>
 
       {/* ══════════════════════════════════════════════════════
+           Modal: Direct Upload Document (Admin Bypass)
+         ══════════════════════════════════════════════════════ */}
+      <Modal
+        open={showDirectUploadModal}
+        onClose={() => setShowDirectUploadModal(false)}
+        title="⚠️ Carga Directa (Administrador)"
+        actions={
+          <>
+            <Button variant="secondary" onClick={() => setShowDirectUploadModal(false)} disabled={directSubmitting}>Cancelar</Button>
+            <Button variant="primary" onClick={handleDirectUploadConfirm} disabled={directSubmitting || !vigencia || !archivo}>
+              {directSubmitting ? 'Subiendo...' : 'Subir Archivo'}
+            </Button>
+          </>
+        }
+      >
+        {selectedConfig && (
+          <div className="space-y-5">
+            <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-800 text-[13px] flex items-start gap-3">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 shrink-0 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <div>
+                <p className="font-bold mb-1">¿Está seguro de que desea subir este archivo manualmente?</p>
+                <p className="opacity-90">Esta acción omitirá el proceso de solicitud de la tienda y establecerá este documento como oficial inmediatamente.</p>
+              </div>
+            </div>
+
+            {directSubmitError && (
+              <div className="bg-orange-50 border border-orange-200 rounded-xl p-3 text-orange-600 text-[13px]">
+                {directSubmitError}
+              </div>
+            )}
+
+            <div className="space-y-1.5">
+              <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-widest">
+                Nueva Fecha de Vencimiento
+              </label>
+              <input
+                type="date"
+                value={vigencia}
+                onChange={(e) => setVigencia(e.target.value)}
+                className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-[14px] text-slate-700
+                  focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-widest">
+                Documento Probatorio (PDF)
+              </label>
+              <div
+                className={`
+                  border-2 border-dashed rounded-2xl p-6 transition-all duration-200 text-center
+                  ${archivo ? 'border-green-200 bg-green-50/30' : 'border-gray-200 bg-gray-50/50 hover:bg-gray-50 hover:border-blue-200'}
+                `}
+              >
+                <input
+                  id="file-upload-direct"
+                  type="file"
+                  accept=".pdf"
+                  onChange={(e) => setArchivo(e.target.files?.[0] ?? null)}
+                  className="hidden"
+                />
+                <label htmlFor="file-upload-direct" className="cursor-pointer">
+                  {!archivo ? (
+                    <div className="flex flex-col items-center">
+                      <div className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center text-blue-500 mb-3">
+                        <UploadIcon />
+                      </div>
+                      <p className="text-[13px] font-semibold text-slate-700">Click para seleccionar</p>
+                      <p className="text-[11px] text-gray-400 mt-1">Máximo 10MB • Solo archivos PDF</p>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center">
+                      <div className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center text-green-500 mb-3">
+                        <CheckCircleIcon />
+                      </div>
+                      <p className="text-[13px] font-semibold text-green-700 truncate w-64 px-4">{archivo.name}</p>
+                    </div>
+                  )}
+                </label>
+              </div>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* ══════════════════════════════════════════════════════
            Modal: Review (Aprobar / Rechazar) — Admin only
          ══════════════════════════════════════════════════════ */}
       <Modal
@@ -655,6 +868,55 @@ export default function TiendaDetallePage() {
             </div>
           </div>
         )}
+      </Modal>
+
+      {/* ── Delete Modal ── */}
+      <Modal
+        open={!!permisoToDelete}
+        onClose={() => {
+          if (!isDeleting) {
+            setPermisoToDelete(null)
+            setDeleteError(null)
+          }
+        }}
+        title="Borrar Permiso"
+      >
+        <div className="space-y-4">
+          <p className="text-[13px] text-gray-600">
+            ¿Estás seguro de que deseas borrar el permiso <span className="font-semibold text-slate-800">{permisoToDelete?.tipo_permiso?.nombre_permiso}</span>?
+          </p>
+          <div className="bg-red-50/50 border border-red-100 rounded-lg p-3">
+            <p className="text-[12px] text-red-600 font-medium whitespace-pre-wrap">
+              Esta acción eliminará el archivo físico y marcará el permiso como pendiente de carga.
+            </p>
+          </div>
+          
+          {deleteError && (
+            <div className="p-3 bg-red-100 text-red-700 text-sm rounded-lg">
+              {deleteError}
+            </div>
+          )}
+
+          <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setPermisoToDelete(null)
+                setDeleteError(null)
+              }}
+              disabled={isDeleting}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="danger"
+              onClick={handleConfirmDelete}
+              disabled={isDeleting}
+            >
+              {isDeleting ? 'Borrando...' : 'Borrar Permiso'}
+            </Button>
+          </div>
+        </div>
       </Modal>
     </>
   )

@@ -87,9 +87,48 @@ export async function deleteFile(
 ): Promise<{ error: string | null }> {
   const supabase = createClient()
 
-  const { error } = await supabase.storage
+  const { data, error } = await supabase.storage
     .from(BUCKET)
     .remove([filePath])
 
-  return { error: error?.message ?? null }
+  if (error) {
+    return { error: error.message }
+  }
+
+  // Supabase remove returns empty array if file wasn't deleted (e.g., due to RLS blocking or file not existing)
+  if (!data || data.length === 0) {
+    return { error: 'No se pudo eliminar el archivo del Storage (posible bloqueo de RLS).' }
+  }
+
+  return { error: null }
+}
+
+/**
+ * Upload a file directly as an active file (bypass).
+ * Organized as: activos/[id_tienda]/[nombre_permiso]_activo.pdf
+ */
+export async function uploadActiveFile(
+  file: File,
+  idTienda: number,
+  nombrePermiso: string
+): Promise<{ path: string | null; error: string | null }> {
+  const supabase = createClient()
+
+  // Sanitize permit name
+  const safePermitName = nombrePermiso.trim().replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_-]/g, '')
+  const extension = file.name.split('.').pop() || 'pdf'
+  const filePath = `activos/${idTienda}/${safePermitName}_activo.${extension}`
+
+  const { error } = await supabase.storage
+    .from(BUCKET)
+    .upload(filePath, file, {
+      cacheControl: '3600',
+      upsert: true, // Overwrite if same permit is re-submitted
+    })
+
+  if (error) {
+    return { path: null, error: error.message }
+  }
+
+  return { path: filePath, error: null }
 }
