@@ -102,6 +102,24 @@ export function usePermisos(): UsePermisosReturn {
   
   const cumplimiento = total > 0 ? Math.round((vigentes / total) * 1000) / 10 : 0
 
+  // ─ Real-time ─
+  useEffect(() => {
+    const channel = supabase.channel('permisos-updates')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'permisos_vigentes' },
+        () => {
+          console.log('[usePermisos] Real-time update triggered')
+          fetch()
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [supabase, fetch])
+
   return {
     data,
     loading,

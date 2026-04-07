@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
+import { useUI } from '@/contexts/UIContext'
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
@@ -24,6 +25,16 @@ const navGroups: NavGroup[] = [
   {
     title: 'General',
     items: [
+      {
+        label: 'Dashboard',
+        href: '/',
+        roles: ['Admin', 'Regional'],
+        icon: (
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+          </svg>
+        ),
+      },
       {
         label: 'Directorio',
         href: '/directorio',
@@ -62,10 +73,10 @@ const navGroups: NavGroup[] = [
 export default function Sidebar() {
   const pathname = usePathname()
   const { perfil, rol, signOut } = useAuth()
-  const [collapsed, setCollapsed] = useState(false)
+  const { sidebarCollapsed, toggleSidebar } = useUI()
 
   const isActive = (href: string) => {
-    if (href === '/directorio') return pathname === '/directorio' || pathname === '/'
+    if (href === '/') return pathname === '/'
     return pathname.startsWith(href)
   }
 
@@ -96,7 +107,7 @@ export default function Sidebar() {
       className={`
         fixed top-0 left-0 z-40 h-screen bg-white border-r border-gray-100
         flex flex-col transition-all duration-300 ease-in-out shadow-sm
-        ${collapsed ? 'w-[72px]' : 'w-[250px]'}
+        ${sidebarCollapsed ? 'w-[72px]' : 'w-[250px]'}
       `}
     >
       {/* ── Header: Logo + Collapse ── */}
@@ -109,7 +120,7 @@ export default function Sidebar() {
             height={30}
             className="shrink-0"
           />
-          {!collapsed && (
+          {!sidebarCollapsed && (
             <div className="min-w-0">
               <p className="text-sm font-bold text-slate-800 leading-none">Promexma</p>
               <p className="text-[10px] text-blue-500 font-medium mt-0.5">SO Permisos</p>
@@ -118,13 +129,13 @@ export default function Sidebar() {
         </Link>
 
         <button
-          onClick={() => setCollapsed(!collapsed)}
+          onClick={toggleSidebar}
           className="w-7 h-7 rounded-lg border border-gray-200 flex items-center justify-center
             text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-all shrink-0"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            className={`h-3.5 w-3.5 transition-transform duration-300 ${collapsed ? 'rotate-180' : ''}`}
+            className={`h-3.5 w-3.5 transition-transform duration-300 ${sidebarCollapsed ? 'rotate-180' : ''}`}
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -139,7 +150,7 @@ export default function Sidebar() {
       <nav className="flex-1 overflow-y-auto overflow-x-hidden py-4 px-3">
         {filteredGroups.map((group) => (
           <div key={group.title} className="mb-5">
-            {!collapsed && (
+            {!sidebarCollapsed && (
               <p className="px-3 mb-2 text-[10px] font-bold text-gray-400 uppercase tracking-[0.15em]">
                 {group.title}
               </p>
@@ -156,7 +167,7 @@ export default function Sidebar() {
                     className={`
                       flex items-center gap-3 rounded-xl text-[13px] font-medium
                       transition-all duration-200 relative
-                      ${collapsed ? 'px-3 py-2.5 justify-center' : 'px-3 py-2.5'}
+                      ${sidebarCollapsed ? 'px-3 py-2.5 justify-center' : 'px-3 py-2.5'}
                       ${active
                         ? 'bg-red-50 text-red-600'
                         : 'text-slate-500 hover:bg-gray-50 hover:text-slate-700'
@@ -164,7 +175,7 @@ export default function Sidebar() {
                     `}
                   >
                     <span className="shrink-0">{item.icon}</span>
-                    {!collapsed && (
+                    {!sidebarCollapsed && (
                       <span className="truncate">{item.label}</span>
                     )}
                   </Link>
@@ -177,18 +188,18 @@ export default function Sidebar() {
 
       {/* ── User Footer ── */}
       <div className="border-t border-gray-100 px-3 py-3 shrink-0">
-        <div className={`flex items-center gap-3 ${collapsed ? 'justify-center' : ''}`}>
-          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 text-white flex items-center justify-center text-xs font-bold shrink-0 shadow-sm">
+        <div className={`flex items-center gap-3 ${sidebarCollapsed ? 'justify-center' : ''}`}>
+          <div className="w-9 h-9 rounded-full bg-linear-to-br from-blue-500 to-blue-600 text-white flex items-center justify-center text-xs font-bold shrink-0 shadow-sm">
             {initials}
           </div>
-          {!collapsed && (
+          {!sidebarCollapsed && (
             <div className="flex-1 min-w-0">
               <p className="text-[10px] text-gray-400 uppercase tracking-wider font-medium">Usuario</p>
               <p className="text-xs font-semibold text-slate-800 truncate">{displayName}</p>
               <p className="text-[10px] text-gray-400">{displayRole}</p>
             </div>
           )}
-          {!collapsed && (
+          {!sidebarCollapsed && (
             <button
               onClick={signOut}
               className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"

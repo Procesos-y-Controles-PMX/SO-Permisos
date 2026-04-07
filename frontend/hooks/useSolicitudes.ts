@@ -228,5 +228,23 @@ export function useSolicitudes(idTienda?: number): UseSolicitudesReturn {
     }
   }
 
+  // ─ Real-time ─
+  useEffect(() => {
+    const channel = supabase.channel('solicitudes-updates')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'solicitudes' },
+        () => {
+          console.log('[useSolicitudes] Real-time update triggered')
+          fetch()
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [supabase, fetch])
+
   return { data, loading, error, refetch: fetch, aprobar, rechazar, crearSolicitud }
 }
