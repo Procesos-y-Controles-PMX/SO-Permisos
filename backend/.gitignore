@@ -17,3 +17,7 @@ build/
 # Bases de datos locales (si llegas a usar SQLite)
 *.sqlite3
 *.db
+
+# Gmail API
+**/client_secret.json
+**/token.json
