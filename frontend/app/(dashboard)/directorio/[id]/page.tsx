@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import PageHeader from '@/components/ui/PageHeader'
 import Card from '@/components/ui/Card'
@@ -90,8 +90,35 @@ export default function TiendaDetallePage() {
   const [selectedConfig, setSelectedConfig] = useState<ConfiguracionTiendaPermiso | null>(null)
   const [vigencia, setVigencia] = useState('')
   const [archivo, setArchivo] = useState<File | null>(null)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
+
+  // ── Accepted file types ──
+  const ACCEPTED_TYPES = 'application/pdf,image/jpeg,image/png,image/jpg,image/webp'
+  const isImageFile = (file: File) => file.type.startsWith('image/')
+
+  // ── File select handler with preview ──
+  const handleFileSelect = useCallback((file: File | null) => {
+    setPreviewUrl(prev => {
+      if (prev) URL.revokeObjectURL(prev)
+      return null
+    })
+    setArchivo(file)
+    if (file && isImageFile(file)) {
+      setPreviewUrl(URL.createObjectURL(file))
+    }
+  }, [])
+
+  // Cleanup preview URLs on unmount
+  useEffect(() => {
+    return () => {
+      setPreviewUrl(prev => {
+        if (prev) URL.revokeObjectURL(prev)
+        return null
+      })
+    }
+  }, [])
 
   // ── Direct Upload Modal state (Admin Bypass) ──
   const [showDirectUploadModal, setShowDirectUploadModal] = useState(false)
@@ -151,7 +178,7 @@ export default function TiendaDetallePage() {
   const handleOpenUpload = (config: ConfiguracionTiendaPermiso) => {
     setSelectedConfig(config)
     setVigencia('')
-    setArchivo(null)
+    handleFileSelect(null)
     setSubmitError(null)
     setShowUploadModal(true)
   }
@@ -159,7 +186,7 @@ export default function TiendaDetallePage() {
   const handleOpenDirectUpload = (config: ConfiguracionTiendaPermiso) => {
     setSelectedConfig(config)
     setVigencia('')
-    setArchivo(null)
+    handleFileSelect(null)
     setDirectSubmitError(null)
     setShowDirectUploadModal(true)
   }
@@ -353,8 +380,8 @@ export default function TiendaDetallePage() {
       </div>
 
       {/* ── Store Info Card ── */}
-      <Card className="mb-6 !p-0 overflow-hidden">
-        <div className="bg-gradient-to-r from-slate-800 to-slate-700 px-6 py-4">
+      <Card className="mb-6 p-0! overflow-hidden">
+        <div className="bg-linear-to-r from-slate-800 to-slate-700 px-6 py-4">
           <h2 className="text-white font-semibold text-[14px]">Información de la Sucursal</h2>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-4 px-6 py-5">
@@ -628,11 +655,11 @@ export default function TiendaDetallePage() {
          ══════════════════════════════════════════════════════ */}
       <Modal
         open={showUploadModal}
-        onClose={() => setShowUploadModal(false)}
+        onClose={() => { handleFileSelect(null); setShowUploadModal(false) }}
         title={selectedConfig?.permiso_vigente ? 'Renovación de Permiso' : 'Nueva Carga de Documento'}
         actions={
           <>
-            <Button variant="secondary" onClick={() => setShowUploadModal(false)} disabled={submitting}>Cancelar</Button>
+            <Button variant="secondary" onClick={() => { handleFileSelect(null); setShowUploadModal(false) }} disabled={submitting}>Cancelar</Button>
             <Button variant="primary" onClick={handleSubmitUpload} disabled={submitting || !vigencia || !archivo}>
               {submitting ? 'Enviando...' : 'Enviar a Revisión'}
             </Button>
@@ -650,14 +677,16 @@ export default function TiendaDetallePage() {
               </div>
             )}
 
-            <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-4">
-              <div className="flex justify-between items-start mb-1">
+            {/* ── Security badge: nombre del permiso ── */}
+            <div className="bg-blue-50/60 border border-blue-200 rounded-xl p-4">
+              <p className="text-[10px] font-bold text-blue-500 uppercase tracking-widest mb-1">📄 Subiendo</p>
+              <div className="flex justify-between items-start">
                 <h4 className="text-[15px] font-bold text-slate-800">{selectedConfig.tipo_permiso?.nombre_permiso}</h4>
                 <Badge variant={selectedConfig.obligatorio ? 'danger' : 'neutral'}>
                   {selectedConfig.obligatorio ? 'Crítico' : 'Opcional'}
                 </Badge>
               </div>
-              <p className="text-[12px] text-slate-500">Tienda: <span className="font-semibold text-slate-700">{tienda?.sucursal}</span></p>
+              <p className="text-[12px] text-slate-500 mt-1">Tienda: <span className="font-semibold text-slate-700">{tienda?.sucursal}</span></p>
             </div>
 
             <div className="space-y-1.5">
@@ -675,7 +704,7 @@ export default function TiendaDetallePage() {
 
             <div className="space-y-2">
               <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-widest">
-                Documento Probatorio (PDF)
+                Documento Probatorio (PDF o Imagen)
               </label>
               <div
                 className={`
@@ -686,8 +715,8 @@ export default function TiendaDetallePage() {
                 <input
                   id="file-upload-detail"
                   type="file"
-                  accept=".pdf"
-                  onChange={(e) => setArchivo(e.target.files?.[0] ?? null)}
+                  accept={ACCEPTED_TYPES}
+                  onChange={(e) => handleFileSelect(e.target.files?.[0] ?? null)}
                   className="hidden"
                 />
                 <label htmlFor="file-upload-detail" className="cursor-pointer">
@@ -697,7 +726,17 @@ export default function TiendaDetallePage() {
                         <UploadIcon />
                       </div>
                       <p className="text-[13px] font-semibold text-slate-700">Click para seleccionar</p>
-                      <p className="text-[11px] text-gray-400 mt-1">Máximo 10MB • Solo archivos PDF</p>
+                      <p className="text-[11px] text-gray-400 mt-1">Máximo 10MB • PDF, JPG, PNG, WEBP</p>
+                    </div>
+                  ) : previewUrl ? (
+                    <div className="flex flex-col items-center gap-2">
+                      <img
+                        src={previewUrl}
+                        alt="Vista previa"
+                        className="w-24 h-24 object-cover rounded-xl shadow-sm border border-green-200"
+                      />
+                      <p className="text-[13px] font-semibold text-green-700 truncate max-w-[200px]">{archivo.name}</p>
+                      <p className="text-[11px] text-green-600/70">{(archivo.size / 1024 / 1024).toFixed(2)} MB • Imagen lista</p>
                     </div>
                   ) : (
                     <div className="flex flex-col items-center">
@@ -705,7 +744,7 @@ export default function TiendaDetallePage() {
                         <CheckCircleIcon />
                       </div>
                       <p className="text-[13px] font-semibold text-green-700 truncate w-64 px-4">{archivo.name}</p>
-                      <p className="text-[11px] text-green-600/70 mt-1">{(archivo.size / 1024 / 1024).toFixed(2)} MB • Listo para subir</p>
+                      <p className="text-[11px] text-green-600/70 mt-1">{(archivo.size / 1024 / 1024).toFixed(2)} MB • PDF listo para subir</p>
                     </div>
                   )}
                 </label>
@@ -729,11 +768,11 @@ export default function TiendaDetallePage() {
          ══════════════════════════════════════════════════════ */}
       <Modal
         open={showDirectUploadModal}
-        onClose={() => setShowDirectUploadModal(false)}
+        onClose={() => { handleFileSelect(null); setShowDirectUploadModal(false) }}
         title="⚠️ Carga Directa (Administrador)"
         actions={
           <>
-            <Button variant="secondary" onClick={() => setShowDirectUploadModal(false)} disabled={directSubmitting}>Cancelar</Button>
+            <Button variant="secondary" onClick={() => { handleFileSelect(null); setShowDirectUploadModal(false) }} disabled={directSubmitting}>Cancelar</Button>
             <Button variant="primary" onClick={handleDirectUploadConfirm} disabled={directSubmitting || !vigencia || !archivo}>
               {directSubmitting ? 'Subiendo...' : 'Subir Archivo'}
             </Button>
@@ -742,6 +781,29 @@ export default function TiendaDetallePage() {
       >
         {selectedConfig && (
           <div className="space-y-5">
+
+            {/* ── Admin security context: Sucursal + Documento ── */}
+            <div className="bg-slate-800 rounded-xl p-4 flex flex-col gap-2">
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Contexto de carga</p>
+              <div className="flex flex-wrap gap-x-6 gap-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-base">🏪</span>
+                  <div>
+                    <p className="text-[9px] text-slate-400 uppercase tracking-wide">Sucursal</p>
+                    <p className="text-[13px] font-bold text-white">{tienda?.sucursal ?? '—'}</p>
+                  </div>
+                </div>
+                <div className="w-px bg-slate-600 self-stretch" />
+                <div className="flex items-center gap-2">
+                  <span className="text-base">📄</span>
+                  <div>
+                    <p className="text-[9px] text-slate-400 uppercase tracking-wide">Documento</p>
+                    <p className="text-[13px] font-bold text-white">{selectedConfig.tipo_permiso?.nombre_permiso ?? '—'}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-800 text-[13px] flex items-start gap-3">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 shrink-0 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
@@ -773,7 +835,7 @@ export default function TiendaDetallePage() {
 
             <div className="space-y-2">
               <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-widest">
-                Documento Probatorio (PDF)
+                Documento Probatorio (PDF o Imagen)
               </label>
               <div
                 className={`
@@ -784,8 +846,8 @@ export default function TiendaDetallePage() {
                 <input
                   id="file-upload-direct"
                   type="file"
-                  accept=".pdf"
-                  onChange={(e) => setArchivo(e.target.files?.[0] ?? null)}
+                  accept={ACCEPTED_TYPES}
+                  onChange={(e) => handleFileSelect(e.target.files?.[0] ?? null)}
                   className="hidden"
                 />
                 <label htmlFor="file-upload-direct" className="cursor-pointer">
@@ -795,7 +857,17 @@ export default function TiendaDetallePage() {
                         <UploadIcon />
                       </div>
                       <p className="text-[13px] font-semibold text-slate-700">Click para seleccionar</p>
-                      <p className="text-[11px] text-gray-400 mt-1">Máximo 10MB • Solo archivos PDF</p>
+                      <p className="text-[11px] text-gray-400 mt-1">Máximo 10MB • PDF, JPG, PNG, WEBP</p>
+                    </div>
+                  ) : previewUrl ? (
+                    <div className="flex flex-col items-center gap-2">
+                      <img
+                        src={previewUrl}
+                        alt="Vista previa"
+                        className="w-24 h-24 object-cover rounded-xl shadow-sm border border-green-200"
+                      />
+                      <p className="text-[13px] font-semibold text-green-700 truncate max-w-[200px]">{archivo.name}</p>
+                      <p className="text-[11px] text-green-600/70">{(archivo.size / 1024 / 1024).toFixed(2)} MB • Imagen lista</p>
                     </div>
                   ) : (
                     <div className="flex flex-col items-center">
@@ -803,6 +875,7 @@ export default function TiendaDetallePage() {
                         <CheckCircleIcon />
                       </div>
                       <p className="text-[13px] font-semibold text-green-700 truncate w-64 px-4">{archivo.name}</p>
+                      <p className="text-[11px] text-green-600/70 mt-1">{(archivo.size / 1024 / 1024).toFixed(2)} MB • PDF listo para subir</p>
                     </div>
                   )}
                 </label>
