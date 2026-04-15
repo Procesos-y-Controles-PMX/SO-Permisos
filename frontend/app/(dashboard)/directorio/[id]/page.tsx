@@ -12,6 +12,7 @@ import { useSolicitudes } from '@/hooks/useSolicitudes'
 import { useAuth } from '@/contexts/AuthContext'
 import { uploadFile, uploadActiveFile, getFileUrl, deleteFile } from '@/lib/storage'
 import { createClient } from '@/lib/supabase'
+import TopSearchBar from '@/components/layout/TopSearchBar'
 import type { ConfiguracionTiendaPermiso } from '@/types'
 
 // ── Icons ──────────────────────────────────────────────────
@@ -363,19 +364,24 @@ export default function TiendaDetallePage() {
   return (
     <>
       {/* Back button + Header */}
-      <div className="flex items-center gap-3 mb-6">
-        {(!isTienda) && (
-          <button
-            onClick={() => router.push('/directorio')}
-            className="p-2 rounded-xl text-gray-400 hover:text-slate-700 hover:bg-white hover:shadow-sm border border-transparent hover:border-gray-200 transition-all"
-            title="Volver al Directorio"
-          >
-            <BackIcon />
-          </button>
-        )}
-        <div>
-          <h1 className="text-xl font-bold text-slate-800">{tienda.sucursal}</h1>
-          <p className="text-[12px] text-gray-400">{tienda.region?.nombre_region ?? 'Sin región asignada'}</p>
+      <div className="flex items-center justify-between gap-4 mb-6 relative z-30">
+        <div className="flex items-center gap-3">
+          {(!isTienda) && (
+            <button
+              onClick={() => router.push('/directorio')}
+              className="p-2 rounded-xl text-gray-400 hover:text-slate-700 hover:bg-white hover:shadow-sm border border-transparent hover:border-gray-200 transition-all shrink-0"
+              title="Volver al Directorio"
+            >
+              <BackIcon />
+            </button>
+          )}
+          <div>
+            <h1 className="text-xl font-bold text-slate-800 line-clamp-1">{tienda.sucursal}</h1>
+            <p className="text-[12px] text-gray-400 line-clamp-1">{tienda.region?.nombre_region ?? 'Sin región asignada'}</p>
+          </div>
+        </div>
+        <div className="min-w-0">
+          <TopSearchBar />
         </div>
       </div>
 

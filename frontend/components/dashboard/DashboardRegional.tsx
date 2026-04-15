@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
+import { useRouter } from 'next/navigation'
 import { useDashboardStats } from '@/hooks/useDashboardStats'
 import { useAuth } from '@/contexts/AuthContext'
 import { ProgressBar } from './ProgressBar'
@@ -16,9 +17,25 @@ export function DashboardRegional() {
     storesAlerts 
   } = useDashboardStats()
   const { perfil } = useAuth()
+  const router = useRouter()
 
   const [currentPage, setCurrentPage] = useState(0)
   const pageSize = 10
+
+  const uniqueStoresWithAlerts = useMemo(() => {
+    const storeMap = new Map<number, any>()
+    storesAlerts.forEach(alert => {
+      if (alert.tienda && !storeMap.has(alert.tienda.id)) {
+        storeMap.set(alert.tienda.id, alert.tienda)
+      }
+    })
+    
+    return Array.from(storeMap.values()).sort((a, b) => {
+      const compA = storeComplianceMap[a.id] || 0
+      const compB = storeComplianceMap[b.id] || 0
+      return compA - compB
+    })
+  }, [storesAlerts, storeComplianceMap])
 
   // Get the region name from the profile if available, otherwise fallback
   const regionName = perfil?.region?.nombre_region 
@@ -75,9 +92,9 @@ export function DashboardRegional() {
           <div className="flex items-center gap-2">
             <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg> Detalle de Tiendas (Región)
           </div>
-          {storesAlerts.length > pageSize && (
+          {uniqueStoresWithAlerts.length > pageSize && (
             <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-400 font-normal mr-2">Página {currentPage + 1} de {Math.ceil(storesAlerts.length / pageSize)}</span>
+              <span className="text-xs text-gray-400 font-normal mr-2">Página {currentPage + 1} de {Math.ceil(uniqueStoresWithAlerts.length / pageSize)}</span>
               <div className="flex gap-1">
                 <button 
                   onClick={() => setCurrentPage(p => Math.max(0, p - 1))}
@@ -87,8 +104,8 @@ export function DashboardRegional() {
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
                 </button>
                 <button 
-                  onClick={() => setCurrentPage(p => Math.min(Math.ceil(storesAlerts.length / pageSize) - 1, p + 1))}
-                  disabled={currentPage >= Math.ceil(storesAlerts.length / pageSize) - 1}
+                  onClick={() => setCurrentPage(p => Math.min(Math.ceil(uniqueStoresWithAlerts.length / pageSize) - 1, p + 1))}
+                  disabled={currentPage >= Math.ceil(uniqueStoresWithAlerts.length / pageSize) - 1}
                   className="p-1 rounded-md border border-gray-200 disabled:opacity-30 hover:bg-gray-50 transition-colors"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
@@ -98,14 +115,18 @@ export function DashboardRegional() {
           )}
         </h2>
         <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm transition-all duration-300">
-          {storesAlerts.length > 0 ? (
+          {uniqueStoresWithAlerts.length > 0 ? (
             <div className="divide-y divide-gray-100">
-              {storesAlerts.slice(currentPage * pageSize, (currentPage + 1) * pageSize).map((item) => {
-                const storeComp = item.tienda ? storeComplianceMap[item.tienda.id] : 0
+              {uniqueStoresWithAlerts.slice(currentPage * pageSize, (currentPage + 1) * pageSize).map((tienda) => {
+                const storeComp = storeComplianceMap[tienda.id] || 0
                 return (
-                  <div key={item.id} className="p-4 flex items-center justify-between hover:bg-gray-50 transition-colors group">
+                  <button 
+                    key={tienda.id} 
+                    onClick={() => router.push(`/directorio/${tienda.id}`)}
+                    className="w-full text-left p-4 flex items-center justify-between hover:bg-gray-50 transition-colors group"
+                  >
                     <div className="flex items-center gap-4">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center text-[10px] font-bold border-2 ${
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center text-[10px] font-bold border-2 shrink-0 ${
                         storeComp < 50 ? 'border-red-100 text-red-600 bg-red-50' : 
                         storeComp < 85 ? 'border-orange-100 text-orange-600 bg-orange-50' : 
                         'border-green-100 text-green-600 bg-green-50'
@@ -113,23 +134,18 @@ export function DashboardRegional() {
                         {storeComp.toFixed(0)}%
                       </div>
                       <div>
-                        <h3 className="font-semibold text-gray-900 group-hover:text-brand-orange transition-colors">{item.tienda?.sucursal || 'Sin Sucursal'}</h3>
+                        <h3 className="font-semibold text-gray-900 group-hover:text-brand-orange transition-colors">{tienda.sucursal || 'Sin Sucursal'}</h3>
                         <p className="text-sm text-gray-500">
-                          Permiso: <span className="font-medium text-gray-700">{item.tipo_permiso?.nombre_permiso || 'Desconocido'}</span>
+                          Ir a detalle de la sucursal
                         </p>
                       </div>
                     </div>
-                    <div className="text-right shrink-0">
-                      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                        item.tipo_alerta === 'Faltante' ? 'bg-orange-100 text-orange-800' : 'bg-red-100 text-red-800'
-                      }`}>
-                        {item.tipo_alerta}
-                      </span>
-                      <p className="text-xs text-gray-400 mt-1 font-medium tabular-nums">
-                        {item.fecha_vencimiento ? new Date(item.fecha_vencimiento).toLocaleDateString() : 'Carga pendiente'}
-                      </p>
+                    <div className="text-gray-300 group-hover:text-brand-orange transition-colors shrink-0">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                      </svg>
                     </div>
-                  </div>
+                  </button>
                 )
               })}
             </div>

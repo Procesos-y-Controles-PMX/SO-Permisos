@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import PageHeader from '@/components/ui/PageHeader'
 import Card from '@/components/ui/Card'
 import { useTiendas } from '@/hooks/useTiendas'
+import { useStoreCompliance } from '@/hooks/useStoreCompliance'
 import { useAuth } from '@/contexts/AuthContext'
 
 // ── Component ──────────────────────────────────────────────
@@ -12,9 +13,22 @@ import { useAuth } from '@/contexts/AuthContext'
 export default function DirectorioPage() {
   const router = useRouter()
   const { data: tiendas, loading, error } = useTiendas()
+  const { storeComplianceMap, loading: loadingCompliance } = useStoreCompliance()
   const { perfil, isTienda, isRegional } = useAuth()
   const [searchText, setSearchText] = useState('')
   const [filterRegion, setFilterRegion] = useState('')
+
+  // Load saved region filter
+  useEffect(() => {
+    const saved = sessionStorage.getItem('directorio_region_filter')
+    if (saved) setFilterRegion(saved)
+  }, [])
+
+  const handleRegionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const val = e.target.value
+    setFilterRegion(val)
+    sessionStorage.setItem('directorio_region_filter', val)
+  }
 
   // Auto-redirect: Tienda users go straight to their store detail
   useEffect(() => {
@@ -41,7 +55,7 @@ export default function DirectorioPage() {
   ]
 
   const filtered = tiendas.filter((t) => {
-    const matchRegion = !filterRegion || t.region?.nombre_region === filterRegion
+    const matchRegion = isRegional || !filterRegion || t.region?.nombre_region === filterRegion
     const matchSearch = !searchText || t.sucursal.toLowerCase().includes(searchText.toLowerCase())
     return matchRegion && matchSearch
   })
@@ -78,7 +92,7 @@ export default function DirectorioPage() {
           <div className="w-full sm:w-52">
             <select
               value={filterRegion}
-              onChange={(e) => setFilterRegion(e.target.value)}
+              onChange={handleRegionChange}
               className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-[13px] text-gray-700
                 focus:outline-none focus:ring-2 focus:ring-red-500/30 focus:border-red-500
                 transition-all duration-200 shadow-[0_1px_2px_rgba(0,0,0,0.04)] appearance-none cursor-pointer"
@@ -113,6 +127,7 @@ export default function DirectorioPage() {
             <table className="w-full text-[12px]">
               <thead>
                 <tr className="bg-gray-50/60 border-b border-gray-100">
+                  <th className="text-center py-3 px-4 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Cumplimiento</th>
                   <th className="text-left py-3 px-4 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Sucursal</th>
                   <th className="text-left py-3 px-4 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Región</th>
                   <th className="text-left py-3 px-4 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Gte. Tienda</th>
@@ -128,6 +143,19 @@ export default function DirectorioPage() {
                     onClick={() => router.push(`/directorio/${t.id}`)}
                     className="hover:bg-blue-50/40 transition-colors cursor-pointer group"
                   >
+                    <td className="py-3 px-4 text-center">
+                      {loadingCompliance ? (
+                        <div className="w-8 h-8 rounded-full bg-gray-100 animate-pulse mx-auto" />
+                      ) : (
+                        <div className={`inline-flex w-8 h-8 rounded-full items-center justify-center text-[9px] font-bold border-2 mx-auto ${
+                          (storeComplianceMap[t.id] ?? 0) < 50 ? 'border-red-100 text-red-600 bg-red-50' : 
+                          (storeComplianceMap[t.id] ?? 0) < 85 ? 'border-orange-100 text-orange-600 bg-orange-50' : 
+                          'border-green-100 text-green-600 bg-green-50'
+                        }`}>
+                          {storeComplianceMap[t.id] !== undefined ? `${storeComplianceMap[t.id].toFixed(0)}%` : '0%'}
+                        </div>
+                      )}
+                    </td>
                     <td className="py-3 px-4 font-semibold text-slate-700">{t.sucursal}</td>
                     <td className="py-3 px-4 text-gray-500">{t.region?.nombre_region ?? '—'}</td>
                     <td className="py-3 px-4 text-gray-500">{t.gerente_tienda ?? '—'}</td>

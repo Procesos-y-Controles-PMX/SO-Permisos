@@ -1,6 +1,7 @@
 'use client'
 
 import Sidebar from './Sidebar'
+import TopSearchBar from './TopSearchBar'
 
 interface DashboardLayoutProps {
   children: React.ReactNode
