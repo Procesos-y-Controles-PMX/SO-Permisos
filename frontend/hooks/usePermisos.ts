@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
+import { deleteFile } from '@/lib/storage'
 import type { ConfiguracionTiendaPermiso, EstatusPermiso } from '@/types'
 
 interface UsePermisosReturn {
@@ -26,6 +27,7 @@ export function usePermisos(): UsePermisosReturn {
   const [data, setData] = useState<ConfiguracionTiendaPermiso[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const ACTIVE_STATUSES = new Set(['Activo', 'Aprobado'])
 
   const fetch = useCallback(async () => {
     if (!perfil) {
@@ -81,6 +83,41 @@ export function usePermisos(): UsePermisosReturn {
           : item.permiso_vigente
       }))
 
+      if (isTienda) {
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+        const expired = transformed.filter((item: any) => {
+          const vigente = item.permiso_vigente
+          if (!vigente?.fecha_vencimiento) return false
+          if (!ACTIVE_STATUSES.has(vigente.estatus)) return false
+          const expiration = new Date(vigente.fecha_vencimiento)
+          expiration.setHours(0, 0, 0, 0)
+          return expiration < today
+        })
+
+        for (const item of expired) {
+          const path = item.permiso_vigente?.archivo_path
+          if (path) {
+            await deleteFile(path)
+          }
+          await supabase
+            .from('permisos_vigentes')
+            .update({
+              estatus: 'Vencido',
+              archivo_path: null,
+              ultima_actualizacion: new Date().toISOString(),
+            })
+            .eq('id_tienda', item.id_tienda)
+            .eq('id_tipo_permiso', item.id_tipo_permiso)
+
+          item.permiso_vigente = {
+            ...item.permiso_vigente,
+            estatus: 'Vencido',
+            archivo_path: null,
+          }
+        }
+      }
+
       setData(transformed as ConfiguracionTiendaPermiso[])
     } catch (e: any) {
       setError(e.message)
@@ -95,9 +132,9 @@ export function usePermisos(): UsePermisosReturn {
 
   // Compute stats based on required vs status
   const total = data.length
-  const vigentes = data.filter(p => p.permiso_vigente?.estatus === 'Vigente').length
+  const vigentes = data.filter(p => p.permiso_vigente?.estatus && ACTIVE_STATUSES.has(p.permiso_vigente.estatus)).length
   const vencidos = data.filter(p => p.permiso_vigente?.estatus === 'Vencido').length
-  const porVencer = data.filter(p => p.permiso_vigente?.estatus === 'Por Vencer').length
+  const porVencer = 0
   const noSubidos = data.filter(p => !p.permiso_vigente).length
   
   const cumplimiento = total > 0 ? Math.round((vigentes / total) * 1000) / 10 : 0

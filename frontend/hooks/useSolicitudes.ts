@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
-import { promoteFile } from '@/lib/storage'
+import { deleteFile, promoteFile } from '@/lib/storage'
 
 interface UseSolicitudesReturn {
   data: any[]
@@ -26,6 +26,22 @@ export function useSolicitudes(idTienda?: number): UseSolicitudesReturn {
   const [data, setData] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const isPastDate = (dateValue: string | null | undefined) => {
+    if (!dateValue) return false
+    const target = new Date(dateValue)
+    target.setHours(0, 0, 0, 0)
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    return target < today
+  }
+  const isExpiredDate = (dateValue: string | null | undefined) => {
+    if (!dateValue) return false
+    const target = new Date(dateValue)
+    target.setHours(0, 0, 0, 0)
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    return target < today
+  }
 
   const fetch = useCallback(async () => {
     if (!perfil) {
@@ -119,6 +135,7 @@ export function useSolicitudes(idTienda?: number): UseSolicitudesReturn {
       console.log('[useSolicitudes] Configuración válida encontrada ID:', configCheck.id)
 
       let finalPath = updatedSolicitud.archivo_adjunto_path
+      const expiredAtApproval = isExpiredDate(updatedSolicitud.vigencia_propuesta)
 
       // 3. Move file to 'activos' folder if it exists and is in 'solicitudes'
       if (finalPath && finalPath.startsWith('solicitudes/')) {
@@ -137,32 +154,48 @@ export function useSolicitudes(idTienda?: number): UseSolicitudesReturn {
           .eq('id', updatedSolicitud.id)
       }
 
+      // 3.1 If approved with an already expired date, keep DB as expired and purge storage file.
+      if (expiredAtApproval && finalPath) {
+        const { error: deleteErr } = await deleteFile(finalPath)
+        if (deleteErr) {
+          console.warn('[useSolicitudes] No se pudo eliminar archivo vencido tras aprobación:', deleteErr)
+        }
+        finalPath = null
+        await supabase
+          .from('solicitudes')
+          .update({ archivo_adjunto_path: null })
+          .eq('id', updatedSolicitud.id)
+      }
+
       // 4. MANUAL UPSERT into permisos_vigentes (fixes "ON CONFLICT" error)
       console.log('[useSolicitudes] Buscando registro existente en permisos_vigentes...')
-      const { data: existingVigente } = await supabase
+      const { data: existingVigentes, error: findErr } = await supabase
         .from('permisos_vigentes')
         .select('id')
         .eq('id_tienda', updatedSolicitud.id_tienda)
         .eq('id_tipo_permiso', updatedSolicitud.id_tipo_permiso)
-        .maybeSingle()
+        .order('id', { ascending: false })
+
+      if (findErr) throw findErr
 
       const payloadVigente = {
         id_tienda: updatedSolicitud.id_tienda,
         id_tipo_permiso: updatedSolicitud.id_tipo_permiso,
         fecha_vencimiento: updatedSolicitud.vigencia_propuesta,
-        estatus: 'Aprobado',
+        estatus: expiredAtApproval ? 'Vencido' : 'Activo',
         archivo_path: finalPath,
         puntaje: 1,
         ultima_actualizacion: new Date().toISOString(),
       }
 
       let vigenteErr
-      if (existingVigente) {
-        console.log('[useSolicitudes] Registro encontrado (ID: ' + existingVigente.id + '). Realizando UPDATE...')
+      if ((existingVigentes || []).length > 0) {
+        console.log('[useSolicitudes] Registro(s) encontrado(s). Realizando UPDATE...')
         const { error } = await supabase
           .from('permisos_vigentes')
           .update(payloadVigente)
-          .eq('id', existingVigente.id)
+          .eq('id_tienda', updatedSolicitud.id_tienda)
+          .eq('id_tipo_permiso', updatedSolicitud.id_tipo_permiso)
         vigenteErr = error
       } else {
         console.log('[useSolicitudes] Registro no encontrado. Realizando INSERT...')
@@ -188,6 +221,14 @@ export function useSolicitudes(idTienda?: number): UseSolicitudesReturn {
   // ─ Rechazar Solicitud ─
   const rechazar = async (id: number, comentarios: string) => {
     try {
+      const { data: solicitud, error: getErr } = await supabase
+        .from('solicitudes')
+        .select('id_tienda, id_tipo_permiso')
+        .eq('id', id)
+        .single()
+
+      if (getErr) throw getErr
+
       const { error: err } = await supabase
         .from('solicitudes')
         .update({
@@ -198,6 +239,39 @@ export function useSolicitudes(idTienda?: number): UseSolicitudesReturn {
         .eq('id', id)
 
       if (err) throw err
+
+      const payload = {
+        id_tienda: solicitud.id_tienda,
+        id_tipo_permiso: solicitud.id_tipo_permiso,
+        estatus: 'Vencido',
+        archivo_path: null,
+        ultima_actualizacion: new Date().toISOString(),
+      }
+
+      const { data: existingVigentes, error: findErr } = await supabase
+        .from('permisos_vigentes')
+        .select('id')
+        .eq('id_tienda', solicitud.id_tienda)
+        .eq('id_tipo_permiso', solicitud.id_tipo_permiso)
+
+      if (findErr) throw findErr
+
+      let vigenteErr = null
+      if ((existingVigentes || []).length > 0) {
+        const { error } = await supabase
+          .from('permisos_vigentes')
+          .update(payload)
+          .eq('id_tienda', solicitud.id_tienda)
+          .eq('id_tipo_permiso', solicitud.id_tipo_permiso)
+        vigenteErr = error
+      } else {
+        const { error } = await supabase
+          .from('permisos_vigentes')
+          .insert(payload)
+        vigenteErr = error
+      }
+
+      if (vigenteErr) throw vigenteErr
       await fetch()
       return { error: null }
     } catch (e: any) {
@@ -213,6 +287,10 @@ export function useSolicitudes(idTienda?: number): UseSolicitudesReturn {
     archivo_adjunto_path: string | null
   }) => {
     try {
+      if (isPastDate(payload.vigencia_propuesta)) {
+        throw new Error('La vigencia propuesta no puede ser anterior al día de hoy.')
+      }
+
       const { error: err } = await supabase
         .from('solicitudes')
         .insert({
@@ -221,6 +299,40 @@ export function useSolicitudes(idTienda?: number): UseSolicitudesReturn {
         })
 
       if (err) throw err
+
+      const payloadVigente = {
+        id_tienda: payload.id_tienda,
+        id_tipo_permiso: payload.id_tipo_permiso,
+        fecha_vencimiento: payload.vigencia_propuesta,
+        estatus: 'Pendiente',
+        archivo_path: null,
+        ultima_actualizacion: new Date().toISOString(),
+      }
+
+      const { data: existingVigentes, error: findErr } = await supabase
+        .from('permisos_vigentes')
+        .select('id')
+        .eq('id_tienda', payload.id_tienda)
+        .eq('id_tipo_permiso', payload.id_tipo_permiso)
+
+      if (findErr) throw findErr
+
+      let vigenteErr = null
+      if ((existingVigentes || []).length > 0) {
+        const { error } = await supabase
+          .from('permisos_vigentes')
+          .update(payloadVigente)
+          .eq('id_tienda', payload.id_tienda)
+          .eq('id_tipo_permiso', payload.id_tipo_permiso)
+        vigenteErr = error
+      } else {
+        const { error } = await supabase
+          .from('permisos_vigentes')
+          .insert(payloadVigente)
+        vigenteErr = error
+      }
+
+      if (vigenteErr) throw vigenteErr
       await fetch()
       return { error: null }
     } catch (e: any) {

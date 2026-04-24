@@ -94,10 +94,26 @@ export default function TiendaDetallePage() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const [isDraggingUpload, setIsDraggingUpload] = useState(false)
+  const [isDraggingDirectUpload, setIsDraggingDirectUpload] = useState(false)
+
+  // ── Direct Upload Modal state (Admin Bypass) ──
+  const [showDirectUploadModal, setShowDirectUploadModal] = useState(false)
+  const [directSubmitting, setDirectSubmitting] = useState(false)
+  const [directSubmitError, setDirectSubmitError] = useState<string | null>(null)
 
   // ── Accepted file types ──
   const ACCEPTED_TYPES = 'application/pdf,image/jpeg,image/png,image/jpg,image/webp'
   const isImageFile = (file: File) => file.type.startsWith('image/')
+  const isExpiredPermiso = useCallback((permiso: ConfiguracionTiendaPermiso) => {
+    const fecha = permiso.permiso_vigente?.fecha_vencimiento
+    if (!fecha) return false
+    const expiration = new Date(fecha)
+    expiration.setHours(0, 0, 0, 0)
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    return expiration < today
+  }, [])
 
   // ── File select handler with preview ──
   const handleFileSelect = useCallback((file: File | null) => {
@@ -111,6 +127,36 @@ export default function TiendaDetallePage() {
     }
   }, [])
 
+  const validateAndSelectFile = useCallback((file: File | null) => {
+    if (!file) return
+    const maxSize = 10 * 1024 * 1024
+    if (file.size > maxSize) {
+      setSubmitError('El archivo supera el límite de 10MB.')
+      setDirectSubmitError('El archivo supera el límite de 10MB.')
+      return
+    }
+    const isAccepted = ACCEPTED_TYPES.split(',').includes(file.type)
+    if (!isAccepted) {
+      setSubmitError('Formato no permitido. Usa PDF, JPG, PNG o WEBP.')
+      setDirectSubmitError('Formato no permitido. Usa PDF, JPG, PNG o WEBP.')
+      return
+    }
+    setSubmitError(null)
+    setDirectSubmitError(null)
+    handleFileSelect(file)
+  }, [ACCEPTED_TYPES, handleFileSelect])
+
+  const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>, direct = false) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (direct) {
+      setIsDraggingDirectUpload(false)
+    } else {
+      setIsDraggingUpload(false)
+    }
+    validateAndSelectFile(e.dataTransfer.files?.[0] ?? null)
+  }, [validateAndSelectFile])
+
   // Cleanup preview URLs on unmount
   useEffect(() => {
     return () => {
@@ -120,11 +166,6 @@ export default function TiendaDetallePage() {
       })
     }
   }, [])
-
-  // ── Direct Upload Modal state (Admin Bypass) ──
-  const [showDirectUploadModal, setShowDirectUploadModal] = useState(false)
-  const [directSubmitting, setDirectSubmitting] = useState(false)
-  const [directSubmitError, setDirectSubmitError] = useState<string | null>(null)
 
   // ── Review Modal state ──
   const [showReviewModal, setShowReviewModal] = useState(false)
@@ -138,16 +179,25 @@ export default function TiendaDetallePage() {
   const [permisoToDelete, setPermisoToDelete] = useState<ConfiguracionTiendaPermiso | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState<string | null>(null)
+  const ACTIVE_STATUSES = new Set(['Activo', 'Aprobado'])
+  const todayStr = useMemo(() => {
+    const now = new Date()
+    const y = now.getFullYear()
+    const m = String(now.getMonth() + 1).padStart(2, '0')
+    const d = String(now.getDate()).padStart(2, '0')
+    return `${y}-${m}-${d}`
+  }, [])
+  const isPastDate = useCallback((value: string) => value < todayStr, [todayStr])
 
   // ── Derived data ──
   const permisosVigentes = useMemo(() =>
-    permisos.filter(p => p.permiso_vigente?.estatus === 'Aprobado'),
-    [permisos]
+    permisos.filter(p => p.permiso_vigente?.estatus && ACTIVE_STATUSES.has(p.permiso_vigente.estatus) && !isExpiredPermiso(p)),
+    [permisos, isExpiredPermiso]
   )
 
   const permisosVencidos = useMemo(() =>
-    permisos.filter(p => p.permiso_vigente?.estatus !== 'Aprobado'),
-    [permisos]
+    permisos.filter(p => !p.permiso_vigente?.estatus || !ACTIVE_STATUSES.has(p.permiso_vigente.estatus) || isExpiredPermiso(p)),
+    [permisos, isExpiredPermiso]
   )
 
   const solicitudesPendientes = useMemo(() =>
@@ -160,20 +210,57 @@ export default function TiendaDetallePage() {
     // Find solicitudes for this specific permiso type
     const relatedSolicitudes = solicitudes.filter(s => s.id_tipo_permiso === config.id_tipo_permiso)
     const hasPendiente = relatedSolicitudes.some(s => s.estatus_solicitud === 'Pendiente')
-    const hasAprobada = relatedSolicitudes.some(s => s.estatus_solicitud === 'Aprobado')
     const vigente = config.permiso_vigente
+    const expiredByDate = isExpiredPermiso(config)
 
     if (hasPendiente) {
       return { blocked: true, reason: 'Ya tienes una solicitud pendiente de revisión' }
     }
-    if (vigente?.estatus === 'Aprobado' || vigente?.estatus === 'Vigente') {
+    if (vigente?.estatus && ACTIVE_STATUSES.has(vigente.estatus) && !expiredByDate) {
       return { blocked: true, reason: 'Este permiso ya está vigente' }
-    }
-    if (hasAprobada && vigente?.estatus !== 'Vencido') {
-      return { blocked: true, reason: 'Solicitud ya aprobada' }
     }
     return { blocked: false, reason: '' }
   }
+
+  useEffect(() => {
+    if (permisos.length === 0) return
+
+    const syncExpiredPermisos = async () => {
+      const supabase = createClient()
+      const expired = permisos.filter(
+        (p) =>
+          p.permiso_vigente &&
+          ACTIVE_STATUSES.has(p.permiso_vigente.estatus) &&
+          isExpiredPermiso(p)
+      )
+
+      if (expired.length === 0) return
+
+      for (const permiso of expired) {
+        try {
+          const path = permiso.permiso_vigente?.archivo_path
+          if (path) {
+            await deleteFile(path)
+          }
+          await supabase
+            .from('permisos_vigentes')
+            .update({
+              estatus: 'Vencido',
+              archivo_path: null,
+              ultima_actualizacion: new Date().toISOString(),
+            })
+            .eq('id_tienda', permiso.id_tienda)
+            .eq('id_tipo_permiso', permiso.id_tipo_permiso)
+        } catch (error) {
+          console.error('No se pudo sincronizar permiso vencido:', error)
+        }
+      }
+
+      await refetch()
+    }
+
+    void syncExpiredPermisos()
+  }, [permisos, isExpiredPermiso, refetch])
 
   // ── Handlers ──
   const handleOpenUpload = (config: ConfiguracionTiendaPermiso) => {
@@ -198,6 +285,10 @@ export default function TiendaDetallePage() {
     setSubmitError(null)
 
     try {
+      if (isPastDate(vigencia)) {
+        throw new Error('La fecha de vigencia no puede ser anterior al día de hoy.')
+      }
+
       let archivoPath: string | null = null
       if (archivo && perfil) {
         const { path, error: uploadErr } = await uploadFile(
@@ -232,6 +323,10 @@ export default function TiendaDetallePage() {
     setDirectSubmitError(null)
 
     try {
+      if (isPastDate(vigencia)) {
+        throw new Error('La fecha de vigencia no puede ser anterior al día de hoy.')
+      }
+
       // 1. Delete physical file if it exists
       if (selectedConfig.permiso_vigente?.archivo_path) {
         await deleteFile(selectedConfig.permiso_vigente.archivo_path)
@@ -245,18 +340,40 @@ export default function TiendaDetallePage() {
       )
       if (uploadErr) throw new Error(`Error subiendo archivo: ${uploadErr}`)
 
-      // 3. Upsert record in permisos_vigentes
+      // 3. Update/Insert record in permisos_vigentes
       const supabase = createClient()
-      const { error: dbErr } = await supabase
+      const { data: existingVigentes, error: findErr } = await supabase
         .from('permisos_vigentes')
-        .upsert({
-          id_tienda: selectedConfig.id_tienda,
-          id_tipo_permiso: selectedConfig.id_tipo_permiso,
-          fecha_vencimiento: vigencia,
-          archivo_path: path,
-          estatus: 'Aprobado',
-          ultima_actualizacion: new Date().toISOString()
-        })
+        .select('id')
+        .eq('id_tienda', selectedConfig.id_tienda)
+        .eq('id_tipo_permiso', selectedConfig.id_tipo_permiso)
+        .order('id', { ascending: false })
+
+      if (findErr) throw new Error(`Error consultando vigente actual: ${findErr.message}`)
+
+      const payload = {
+        id_tienda: selectedConfig.id_tienda,
+        id_tipo_permiso: selectedConfig.id_tipo_permiso,
+        fecha_vencimiento: vigencia,
+        archivo_path: path,
+        estatus: 'Activo',
+        ultima_actualizacion: new Date().toISOString()
+      }
+
+      let dbErr = null
+      if ((existingVigentes || []).length > 0) {
+        const { error } = await supabase
+          .from('permisos_vigentes')
+          .update(payload)
+          .eq('id_tienda', selectedConfig.id_tienda)
+          .eq('id_tipo_permiso', selectedConfig.id_tipo_permiso)
+        dbErr = error
+      } else {
+        const { error } = await supabase
+          .from('permisos_vigentes')
+          .insert(payload)
+        dbErr = error
+      }
 
       if (dbErr) throw new Error(`Error al actualizar estado en DB: ${dbErr.message}`)
 
@@ -499,6 +616,10 @@ export default function TiendaDetallePage() {
               <tbody className="divide-y divide-gray-50">
                 {permisosVencidos.map((p) => {
                   const upload = isUploadBlocked(p)
+                  const shouldBeExpiredByDate = isExpiredPermiso(p)
+                  const visibleStatus = p.permiso_vigente
+                    ? (shouldBeExpiredByDate ? 'Vencido' : p.permiso_vigente.estatus)
+                    : 'No Subido'
                   return (
                     <tr key={p.id} className="hover:bg-red-50/20 transition-colors">
                       <Td>
@@ -507,7 +628,7 @@ export default function TiendaDetallePage() {
                       </Td>
                       <Td>
                         {p.permiso_vigente ? (
-                          <Badge variant="danger">{p.permiso_vigente.estatus}</Badge>
+                          <Badge variant="danger">{visibleStatus}</Badge>
                         ) : (
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-gray-100 text-gray-500 border border-gray-200">
                             No Subido
@@ -703,6 +824,7 @@ export default function TiendaDetallePage() {
                 type="date"
                 value={vigencia}
                 onChange={(e) => setVigencia(e.target.value)}
+                min={todayStr}
                 className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-[14px] text-slate-700
                   focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all"
               />
@@ -715,14 +837,18 @@ export default function TiendaDetallePage() {
               <div
                 className={`
                   border-2 border-dashed rounded-2xl p-6 transition-all duration-200 text-center
+                  ${isDraggingUpload ? 'border-blue-400 bg-blue-50/40' : ''}
                   ${archivo ? 'border-green-200 bg-green-50/30' : 'border-gray-200 bg-gray-50/50 hover:bg-gray-50 hover:border-blue-200'}
                 `}
+                onDragOver={(e) => { e.preventDefault(); setIsDraggingUpload(true) }}
+                onDragLeave={(e) => { e.preventDefault(); setIsDraggingUpload(false) }}
+                onDrop={(e) => handleDrop(e)}
               >
                 <input
                   id="file-upload-detail"
                   type="file"
                   accept={ACCEPTED_TYPES}
-                  onChange={(e) => handleFileSelect(e.target.files?.[0] ?? null)}
+                  onChange={(e) => validateAndSelectFile(e.target.files?.[0] ?? null)}
                   className="hidden"
                 />
                 <label htmlFor="file-upload-detail" className="cursor-pointer">
@@ -731,7 +857,7 @@ export default function TiendaDetallePage() {
                       <div className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center text-blue-500 mb-3">
                         <UploadIcon />
                       </div>
-                      <p className="text-[13px] font-semibold text-slate-700">Click para seleccionar</p>
+                      <p className="text-[13px] font-semibold text-slate-700">Click para seleccionar o arrastra aquí</p>
                       <p className="text-[11px] text-gray-400 mt-1">Máximo 10MB • PDF, JPG, PNG, WEBP</p>
                     </div>
                   ) : previewUrl ? (
@@ -834,6 +960,7 @@ export default function TiendaDetallePage() {
                 type="date"
                 value={vigencia}
                 onChange={(e) => setVigencia(e.target.value)}
+                min={todayStr}
                 className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-[14px] text-slate-700
                   focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all"
               />
@@ -846,14 +973,18 @@ export default function TiendaDetallePage() {
               <div
                 className={`
                   border-2 border-dashed rounded-2xl p-6 transition-all duration-200 text-center
+                  ${isDraggingDirectUpload ? 'border-blue-400 bg-blue-50/40' : ''}
                   ${archivo ? 'border-green-200 bg-green-50/30' : 'border-gray-200 bg-gray-50/50 hover:bg-gray-50 hover:border-blue-200'}
                 `}
+                onDragOver={(e) => { e.preventDefault(); setIsDraggingDirectUpload(true) }}
+                onDragLeave={(e) => { e.preventDefault(); setIsDraggingDirectUpload(false) }}
+                onDrop={(e) => handleDrop(e, true)}
               >
                 <input
                   id="file-upload-direct"
                   type="file"
                   accept={ACCEPTED_TYPES}
-                  onChange={(e) => handleFileSelect(e.target.files?.[0] ?? null)}
+                  onChange={(e) => validateAndSelectFile(e.target.files?.[0] ?? null)}
                   className="hidden"
                 />
                 <label htmlFor="file-upload-direct" className="cursor-pointer">
@@ -862,7 +993,7 @@ export default function TiendaDetallePage() {
                       <div className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center text-blue-500 mb-3">
                         <UploadIcon />
                       </div>
-                      <p className="text-[13px] font-semibold text-slate-700">Click para seleccionar</p>
+                      <p className="text-[13px] font-semibold text-slate-700">Click para seleccionar o arrastra aquí</p>
                       <p className="text-[11px] text-gray-400 mt-1">Máximo 10MB • PDF, JPG, PNG, WEBP</p>
                     </div>
                   ) : previewUrl ? (

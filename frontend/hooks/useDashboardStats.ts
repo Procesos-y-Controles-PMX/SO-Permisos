@@ -29,6 +29,15 @@ export interface StoreAlertDetail {
   } | null
 }
 
+export interface StoreSummary {
+  id: number
+  sucursal: string
+  id_region: number
+  region: {
+    nombre_region: string
+  } | null
+}
+
 export function useDashboardStats() {
   const supabase = useMemo(() => createClient(), [])
   const { perfil, isAdmin, isRegional } = useAuth()
@@ -42,6 +51,8 @@ export function useDashboardStats() {
   const [storeComplianceMap, setStoreComplianceMap] = useState<Record<number, number>>({})
   const [regionalCounts, setRegionalCounts] = useState<RegionalCount[]>([])
   const [storesAlerts, setStoresAlerts] = useState<StoreAlertDetail[]>([])
+  const [stores, setStores] = useState<StoreSummary[]>([])
+  const ACTIVE_STATUSES = new Set(['Activo', 'Aprobado'])
 
   const fetchStats = useCallback(async () => {
     if (!perfil) return
@@ -74,14 +85,28 @@ export function useDashboardStats() {
       const rawData = data || []
       setTotalRequirements(rawData.length)
 
-      // 2. Identify Alerts in memory (Missing or Expired)
+      // 2. Build full store list from mandatory requirements
+      const allStoresMap = new Map<number, StoreSummary>()
+      rawData.forEach((item: any) => {
+        const tienda = Array.isArray(item.tienda) ? item.tienda[0] : item.tienda
+        if (tienda?.id && !allStoresMap.has(tienda.id)) {
+          allStoresMap.set(tienda.id, tienda)
+        }
+      })
+      setStores(Array.from(allStoresMap.values()))
+
+      // 3. Identify Alerts in memory (Missing or Expired)
       const allAlertsRaw = rawData.map((item: any) => {
         const vigente = Array.isArray(item.permiso_vigente) ? item.permiso_vigente[0] : item.permiso_vigente
-        
+        const isExpiredByDate = Boolean(
+          vigente?.fecha_vencimiento &&
+          new Date(vigente.fecha_vencimiento).setHours(0, 0, 0, 0) < new Date().setHours(0, 0, 0, 0)
+        )
+
         let tipo_alerta: 'Faltante' | 'Vencido' | null = null
         if (!vigente) {
           tipo_alerta = 'Faltante'
-        } else if (vigente.estatus === 'Vencido') {
+        } else if (!ACTIVE_STATUSES.has(vigente.estatus) || isExpiredByDate) {
           tipo_alerta = 'Vencido'
         }
 
@@ -100,13 +125,13 @@ export function useDashboardStats() {
       setTotalAlertas(allAlertsRaw.length)
       setStoresAlerts(allAlertsRaw)
 
-      // 3. Global Compliance %
+      // 4. Global Compliance %
       const globalCompliance = rawData.length > 0 
         ? Math.round(((rawData.length - allAlertsRaw.length) / rawData.length) * 1000) / 10 
         : 0
       setCompliancePercentage(globalCompliance)
 
-      // 4. Per Store Compliance %
+      // 5. Per Store Compliance %
       const storeMap: Record<number, { total: number; alerts: number }> = {}
       rawData.forEach((item: any) => {
         const tid = item.id_tienda
@@ -130,7 +155,7 @@ export function useDashboardStats() {
       })
       setStoreComplianceMap(finalStoreCompliance)
 
-      // 5. Regional Counts (Admin only)
+      // 6. Regional Counts (Admin only)
       if (isAdmin) {
         const { data: regiones } = await supabase.from('regiones').select('id, nombre_region').order('nombre_region')
         if (regiones) {
@@ -190,6 +215,7 @@ export function useDashboardStats() {
     storeComplianceMap,
     regionalCounts,
     storesAlerts,
+    stores,
     loading,
     error,
     refetch: fetchStats

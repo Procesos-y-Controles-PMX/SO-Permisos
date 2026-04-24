@@ -15,7 +15,7 @@ export function DashboardAdmin() {
     compliancePercentage, 
     storeComplianceMap, 
     regionalCounts, 
-    storesAlerts 
+    stores
   } = useDashboardStats()
 
   const router = useRouter()
@@ -26,20 +26,13 @@ export function DashboardAdmin() {
     return [...regionalCounts].sort((a, b) => b.vencidos - a.vencidos)
   }, [regionalCounts])
 
-  const uniqueStoresWithAlerts = useMemo(() => {
-    const storeMap = new Map<number, any>()
-    storesAlerts.forEach(alert => {
-      if (alert.tienda && !storeMap.has(alert.tienda.id)) {
-        storeMap.set(alert.tienda.id, alert.tienda)
-      }
-    })
-    
-    return Array.from(storeMap.values()).sort((a, b) => {
+  const sortedStores = useMemo(() => {
+    return [...stores].sort((a, b) => {
       const compA = storeComplianceMap[a.id] || 0
       const compB = storeComplianceMap[b.id] || 0
       return compA - compB
     })
-  }, [storesAlerts, storeComplianceMap])
+  }, [stores, storeComplianceMap])
 
   if (loading) {
     return (
@@ -122,11 +115,11 @@ export function DashboardAdmin() {
       <div>
         <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg> Tiendas con Incumplimientos
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg> Cumplimiento por Tienda
           </div>
-          {uniqueStoresWithAlerts.length > pageSize && (
+          {sortedStores.length > pageSize && (
             <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-400 font-normal mr-2">Página {currentPage + 1} de {Math.ceil(uniqueStoresWithAlerts.length / pageSize)}</span>
+              <span className="text-xs text-gray-400 font-normal mr-2">Página {currentPage + 1} de {Math.ceil(sortedStores.length / pageSize)}</span>
               <div className="flex gap-1">
                 <button 
                   onClick={() => setCurrentPage(p => Math.max(0, p - 1))}
@@ -136,8 +129,8 @@ export function DashboardAdmin() {
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
                 </button>
                 <button 
-                  onClick={() => setCurrentPage(p => Math.min(Math.ceil(uniqueStoresWithAlerts.length / pageSize) - 1, p + 1))}
-                  disabled={currentPage >= Math.ceil(uniqueStoresWithAlerts.length / pageSize) - 1}
+                  onClick={() => setCurrentPage(p => Math.min(Math.ceil(sortedStores.length / pageSize) - 1, p + 1))}
+                  disabled={currentPage >= Math.ceil(sortedStores.length / pageSize) - 1}
                   className="p-1 rounded-md border border-gray-200 disabled:opacity-30 hover:bg-gray-50 transition-colors"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
@@ -147,9 +140,9 @@ export function DashboardAdmin() {
           )}
         </h2>
         <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm transition-all duration-300">
-          {uniqueStoresWithAlerts.length > 0 ? (
+          {sortedStores.length > 0 ? (
             <div className="divide-y divide-gray-100">
-              {uniqueStoresWithAlerts.slice(currentPage * pageSize, (currentPage + 1) * pageSize).map((tienda) => {
+              {sortedStores.slice(currentPage * pageSize, (currentPage + 1) * pageSize).map((tienda) => {
                 const storeComp = storeComplianceMap[tienda.id] || 0
                 return (
                   <button 
@@ -183,7 +176,7 @@ export function DashboardAdmin() {
             </div>
           ) : (
             <div className="p-8 text-center text-gray-500">
-              No hay alertas de cumplimiento activas.
+              No hay sucursales configuradas para mostrar.
             </div>
           )}
         </div>

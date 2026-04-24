@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase'
 
 export function useStoreCompliance() {
   const supabase = useMemo(() => createClient(), [])
+  const ACTIVE_STATUSES = new Set(['Activo', 'Aprobado'])
   const [storeComplianceMap, setStoreComplianceMap] = useState<Record<number, number>>({})
   const [loading, setLoading] = useState(true)
 
@@ -35,7 +36,7 @@ export function useStoreCompliance() {
         let isAlert = false
         if (!vigente) {
           isAlert = true
-        } else if (vigente.estatus === 'Vencido') {
+        } else if (!ACTIVE_STATUSES.has(vigente.estatus)) {
           isAlert = true
         }
 

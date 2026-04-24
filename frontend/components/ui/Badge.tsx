@@ -31,14 +31,13 @@ export default function Badge({ children, variant = 'neutral', className = '' }:
 // Helper to map permit/solicitud status to badge variant
 export function statusToBadgeVariant(estatus: string): BadgeVariant {
   switch (estatus) {
-    case 'Vigente':
+    case 'Activo':
     case 'Aprobado':
       return 'success'
     case 'Vencido':
     case 'Rechazado':
       return 'danger'
     case 'Pendiente':
-    case 'Por Vencer':
       return 'warning'
     default:
       return 'neutral'
