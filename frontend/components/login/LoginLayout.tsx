@@ -43,7 +43,7 @@ export default function LoginLayout({ children }: LoginLayoutProps) {
         {/* Hero text */}
         <div className="relative z-10 my-auto py-10 lg:py-0">
           <h1 className="text-3xl md:text-4xl lg:text-[2.6rem] font-bold leading-tight tracking-tight">
-            <span className="text-slate-200">Sistema de Gestión</span>
+            <span className="text-slate-200">Sistema Integral</span>
             <br />
             <span className="text-white">de Permisos</span>
           </h1>

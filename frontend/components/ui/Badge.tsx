@@ -33,11 +33,13 @@ export function statusToBadgeVariant(estatus: string): BadgeVariant {
   switch (estatus) {
     case 'Activo':
     case 'Aprobado':
+    case 'Aceptado':
       return 'success'
     case 'Vencido':
     case 'Rechazado':
       return 'danger'
     case 'Pendiente':
+    case 'En Revisión':
       return 'warning'
     default:
       return 'neutral'

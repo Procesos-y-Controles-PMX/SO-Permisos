@@ -121,3 +121,5 @@ export interface NavItem {
   href: string
   icon: React.ReactNode
 }
+
+export type HistorialPermisoEstado = 'No Subido' | 'En Revisión' | 'Aceptado' | 'Rechazado'
