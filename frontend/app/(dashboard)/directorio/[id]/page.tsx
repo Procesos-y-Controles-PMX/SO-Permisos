@@ -670,17 +670,17 @@ export default function TiendaDetallePage() {
       {/* ── Section 3: Solicitudes ── */}
       {(() => {
         // Tienda sees only "Pendiente" (active outbox); Admin/Regional see all
-        const solicitudesVisibles = (isTienda || isAdmin)
+        const solicitudesVisibles = (isTienda || isAdmin || isRegional)
           ? solicitudes.filter(s => s.estatus_solicitud === 'Pendiente')
           : solicitudes
         const seccionTitulo = isTienda
           ? 'Solicitudes En Revisión'
-          : isAdmin
+          : (isAdmin || isRegional)
             ? 'Solicitudes Pendientes'
             : 'Solicitudes'
         const emptyMsg = isTienda
           ? 'No tienes solicitudes pendientes de revisión.'
-          : isAdmin
+          : (isAdmin || isRegional)
             ? 'No hay solicitudes pendientes por aprobar o rechazar en esta sucursal.'
             : 'No hay solicitudes registradas para esta sucursal.'
 
