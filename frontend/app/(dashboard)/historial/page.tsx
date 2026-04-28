@@ -29,7 +29,7 @@ export default function HistorialPage() {
   const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
   const { perfil, isTienda, loading: authLoading } = useAuth()
-  const { crearSolicitud } = useSolicitudes(perfil?.id_tienda)
+  const { crearSolicitud } = useSolicitudes(perfil?.id_tienda ?? undefined)
 
   const [items, setItems] = useState<HistorialPermisoItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -61,6 +61,7 @@ export default function HistorialPage() {
     }
     setLoading(true)
     setError(null)
+    const tiendaId = perfil.id_tienda as number
 
     try {
       const { data: configData, error: configErr } = await supabase
@@ -126,7 +127,7 @@ export default function HistorialPage() {
 
         if (pendiente) {
           return {
-            idTienda: perfil.id_tienda,
+            idTienda: tiendaId,
             idTipoPermiso,
             nombrePermiso,
             obligatorio: cfg.obligatorio ?? true,
@@ -140,7 +141,7 @@ export default function HistorialPage() {
 
         if (ultimaSolicitud?.estatus_solicitud === 'Rechazado') {
           return {
-            idTienda: perfil.id_tienda,
+            idTienda: tiendaId,
             idTipoPermiso,
             nombrePermiso,
             obligatorio: cfg.obligatorio ?? true,
@@ -154,7 +155,7 @@ export default function HistorialPage() {
 
         if (vigente && activeStatuses.has(vigente.estatus) && !isExpired) {
           return {
-            idTienda: perfil.id_tienda,
+            idTienda: tiendaId,
             idTipoPermiso,
             nombrePermiso,
             obligatorio: cfg.obligatorio ?? true,
@@ -167,7 +168,7 @@ export default function HistorialPage() {
         }
 
         return {
-          idTienda: perfil.id_tienda,
+          idTienda: tiendaId,
           idTipoPermiso,
           nombrePermiso,
           obligatorio: cfg.obligatorio ?? true,
