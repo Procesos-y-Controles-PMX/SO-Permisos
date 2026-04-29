@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import JSZip from 'jszip'
 
 type Scope = 'all' | 'region' | 'store'
@@ -17,6 +17,11 @@ type PermisoActivoRow = {
       nombre_region: string | null
     } | null
   } | null
+}
+
+type PerfilRolRow = {
+  id: number
+  roles: { nombre_rol: string } | { nombre_rol: string }[] | null
 }
 
 const ACTIVE_STATUSES = new Set(['Activo', 'Aprobado'])
@@ -46,7 +51,7 @@ function extractFileName(path: string): string {
   return parts[parts.length - 1] || 'archivo'
 }
 
-async function isAdminUser(supabase: ReturnType<typeof createClient>, adminId: number): Promise<boolean> {
+async function isAdminUser(supabase: SupabaseClient, adminId: number): Promise<boolean> {
   const { data, error } = await supabase
     .from('perfiles')
     .select('id, roles:id_rol(nombre_rol)')
@@ -54,7 +59,8 @@ async function isAdminUser(supabase: ReturnType<typeof createClient>, adminId: n
     .single()
 
   if (error || !data) return false
-  const rol = Array.isArray(data.roles) ? data.roles[0] : data.roles
+  const perfil = data as unknown as PerfilRolRow
+  const rol = Array.isArray(perfil.roles) ? perfil.roles[0] : perfil.roles
   return rol?.nombre_rol === 'Admin'
 }
 
@@ -123,7 +129,30 @@ export async function POST(req: Request) {
     }
 
     const today = todayISODate()
-    const rows = ((data || []) as PermisoActivoRow[]).filter((row) => {
+    const rawRows = ((data || []) as unknown[]).map((row: any) => {
+      const tienda = Array.isArray(row.tienda) ? row.tienda[0] || null : row.tienda
+      const region = Array.isArray(tienda?.region) ? tienda.region[0] || null : tienda?.region || null
+      return {
+        fecha_vencimiento: row.fecha_vencimiento,
+        estatus: row.estatus,
+        archivo_path: row.archivo_path,
+        tienda: tienda
+          ? {
+              id: tienda.id,
+              sucursal: tienda.sucursal,
+              id_region: tienda.id_region,
+              region: region
+                ? {
+                    id: region.id,
+                    nombre_region: region.nombre_region,
+                  }
+                : null,
+            }
+          : null,
+      } as PermisoActivoRow
+    })
+
+    const rows = rawRows.filter((row) => {
       if (!row.archivo_path || !row.tienda) return false
       if (!ACTIVE_STATUSES.has(row.estatus)) return false
       if (!row.fecha_vencimiento) return false
@@ -177,7 +206,7 @@ export async function POST(req: Request) {
     const zipBuffer = await zip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE', compressionOptions: { level: 6 } })
     const filename = buildZipFileName(scope, firstRegionName, firstStoreName)
 
-    return new NextResponse(zipBuffer, {
+    return new NextResponse(new Uint8Array(zipBuffer), {
       status: 200,
       headers: {
         'Content-Type': 'application/zip',
