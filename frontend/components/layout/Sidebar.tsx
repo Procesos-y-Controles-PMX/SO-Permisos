@@ -55,6 +55,16 @@ const navGroups: NavGroup[] = [
         ),
       },
       {
+        label: 'Descargas',
+        href: '/descargas',
+        roles: ['Admin'],
+        icon: (
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v11m0 0l-4-4m4 4l4-4m3 8v2a1 1 0 01-1 1H6a1 1 0 01-1-1v-2" />
+          </svg>
+        ),
+      },
+      {
         label: 'Historial',
         href: '/historial',
         roles: ['Tienda'],

@@ -179,6 +179,8 @@ export default function TiendaDetallePage() {
   const [permisoToDelete, setPermisoToDelete] = useState<ConfiguracionTiendaPermiso | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState<string | null>(null)
+  const [downloadingStoreZip, setDownloadingStoreZip] = useState(false)
+  const [storeZipError, setStoreZipError] = useState<string | null>(null)
   const ACTIVE_STATUSES = new Set(['Activo', 'Aprobado'])
   const todayStr = useMemo(() => {
     const now = new Date()
@@ -188,6 +190,12 @@ export default function TiendaDetallePage() {
     return `${y}-${m}-${d}`
   }, [])
   const isPastDate = useCallback((value: string) => value < todayStr, [todayStr])
+
+  const getFileNameFromDisposition = useCallback((value: string | null): string | null => {
+    if (!value) return null
+    const match = value.match(/filename="([^"]+)"/)
+    return match?.[1] || null
+  }, [])
 
   // ── Derived data ──
   const permisosVigentes = useMemo(() =>
@@ -453,6 +461,48 @@ export default function TiendaDetallePage() {
     }
   }
 
+  const handleDownloadStoreZip = async () => {
+    if (!isAdmin || !perfil?.id) return
+
+    setDownloadingStoreZip(true)
+    setStoreZipError(null)
+    try {
+      const response = await fetch('/api/admin/permisos-activos-zip', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          scope: 'store',
+          tiendaId: idTienda,
+          adminId: perfil.id,
+        }),
+      })
+
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({ error: 'No se pudo generar el ZIP.' }))
+        throw new Error(payload.error || 'No se pudo generar el ZIP.')
+      }
+
+      const blob = await response.blob()
+      const disposition = response.headers.get('Content-Disposition')
+      const filename =
+        getFileNameFromDisposition(disposition) ||
+        `permisos_activos_tienda_${idTienda}_${new Date().toISOString().slice(0, 10)}.zip`
+
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = filename
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      URL.revokeObjectURL(url)
+    } catch (e: any) {
+      setStoreZipError(e.message || 'Error al descargar permisos de la tienda.')
+    } finally {
+      setDownloadingStoreZip(false)
+    }
+  }
+
   // ── Loading / Error ──
   if (loading) {
     return (
@@ -497,10 +547,26 @@ export default function TiendaDetallePage() {
             <p className="text-[12px] text-gray-400 line-clamp-1">{tienda.region?.nombre_region ?? 'Sin región asignada'}</p>
           </div>
         </div>
-        <div className="min-w-0">
+        <div className="min-w-0 flex items-center gap-2">
+          {isAdmin && (
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={handleDownloadStoreZip}
+              disabled={downloadingStoreZip}
+            >
+              <DownloadIcon />
+              {downloadingStoreZip ? 'Generando ZIP...' : 'Descargar permisos vigentes'}
+            </Button>
+          )}
           <TopSearchBar />
         </div>
       </div>
+      {storeZipError && (
+        <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-[13px] text-red-600">
+          {storeZipError}
+        </div>
+      )}
 
       {/* ── Store Info Card ── */}
       <Card className="mb-6 p-0! overflow-hidden">
