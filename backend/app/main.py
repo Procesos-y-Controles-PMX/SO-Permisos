@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from supabase import create_client, Client
@@ -7,11 +8,13 @@ from dotenv import load_dotenv
 # Importamos el router que creamos en el paso anterior
 from app.routes import solicitudes 
 
-load_dotenv()
+BASE_DIR = Path(__file__).resolve().parents[1]
+load_dotenv(BASE_DIR / ".env")
 
 # --- Configuración de Supabase ---
 url: str = os.getenv("SUPABASE_URL")
-key: str = os.getenv("SUPABASE_KEY")
+key: str = os.getenv("SUPABASE_SERVICE_ROLE_KEY") or os.getenv("SUPABASE_KEY")
+frontend_url: str = os.getenv("FRONTEND_URL", "http://localhost:3000")
 
 if not url or not key:
     print("⚠️ ERROR: No se encontraron variables de Supabase en el .env")
@@ -26,7 +29,7 @@ app = FastAPI(title="SO-Permisos API")
 app.add_middleware(
     CORSMiddleware,
     # Aquí permitimos que tu frontend en el puerto 3000 pueda hacer peticiones
-    allow_origins=["http://localhost:3000"], 
+    allow_origins=[frontend_url],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

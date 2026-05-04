@@ -1,6 +1,7 @@
 import os
 import base64
 from email.mime.text import MIMEText
+from typing import Iterable
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
@@ -27,7 +28,7 @@ def get_gmail_service():
 
     return build('gmail', 'v1', credentials=creds)
 
-def enviar_correo(destinatario, asunto, cuerpo):
+def enviar_correo(destinatario: str, asunto: str, cuerpo: str):
     service = get_gmail_service()
     message = MIMEText(cuerpo)
     message['to'] = destinatario
@@ -40,3 +41,23 @@ def enviar_correo(destinatario, asunto, cuerpo):
     except Exception as e:
         print(f"Error enviando correo: {e}")
         return False
+
+
+def enviar_correo_multiple(destinatarios: Iterable[str], asunto: str, cuerpo: str):
+    service = get_gmail_service()
+    lista = [email.strip() for email in destinatarios if email and email.strip()]
+    if not lista:
+        return False, "No hay destinatarios validos."
+
+    message = MIMEText(cuerpo)
+    message['to'] = ", ".join(lista)
+    message['subject'] = asunto
+
+    raw = base64.urlsafe_b64encode(message.as_bytes()).decode()
+    try:
+        service.users().messages().send(userId="me", body={'raw': raw}).execute()
+        return True, None
+    except Exception as e:
+        error_msg = f"Error enviando correo multiple: {e}"
+        print(error_msg)
+        return False, error_msg

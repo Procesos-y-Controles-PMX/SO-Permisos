@@ -22,6 +22,7 @@ interface UseSolicitudesReturn {
 
 export function useSolicitudes(idTienda?: number): UseSolicitudesReturn {
   const supabase = useMemo(() => createClient(), [])
+  const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL
   const { perfil, isTienda, isRegional } = useAuth()
   const [data, setData] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -43,7 +44,32 @@ export function useSolicitudes(idTienda?: number): UseSolicitudesReturn {
     return target < today
   }
 
-  const fetch = useCallback(async () => {
+  const notifyBackend = useCallback(
+    async (path: string, body: Record<string, unknown>) => {
+      if (!apiBaseUrl) {
+        console.warn('[useSolicitudes] NEXT_PUBLIC_API_URL no esta configurada, se omite notificacion backend.')
+        return
+      }
+
+      try {
+        const response = await fetch(`${apiBaseUrl}${path}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        })
+
+        if (!response.ok) {
+          const message = await response.text()
+          console.warn(`[useSolicitudes] Notificacion backend fallo (${path}):`, message)
+        }
+      } catch (error) {
+        console.warn(`[useSolicitudes] Error enviando notificacion (${path}):`, error)
+      }
+    },
+    [apiBaseUrl]
+  )
+
+  const fetchSolicitudes = useCallback(async () => {
     if (!perfil) {
       setLoading(false)
       return
@@ -88,8 +114,8 @@ export function useSolicitudes(idTienda?: number): UseSolicitudesReturn {
   }, [supabase, perfil, isTienda, isRegional, idTienda])
 
   useEffect(() => {
-    if (perfil) fetch()
-  }, [perfil, fetch])
+    if (perfil) fetchSolicitudes()
+  }, [perfil, fetchSolicitudes])
 
   // ─ Aprobar Solicitud ─
   const aprobar = async (id: number, comentarios?: string) => {
@@ -210,7 +236,13 @@ export function useSolicitudes(idTienda?: number): UseSolicitudesReturn {
         throw vigenteErr
       }
 
-      await fetch()
+      await notifyBackend('/api/v1/notificaciones/solicitud-resuelta', {
+        id_solicitud: id,
+        estatus: 'Aprobado',
+        comentarios: comentarios || null,
+      })
+
+      await fetchSolicitudes()
       return { error: null }
     } catch (e: any) {
       console.error('[useSolicitudes] Error fatal en aprobación:', e.message)
@@ -272,7 +304,14 @@ export function useSolicitudes(idTienda?: number): UseSolicitudesReturn {
       }
 
       if (vigenteErr) throw vigenteErr
-      await fetch()
+
+      await notifyBackend('/api/v1/notificaciones/solicitud-resuelta', {
+        id_solicitud: id,
+        estatus: 'Rechazado',
+        comentarios,
+      })
+
+      await fetchSolicitudes()
       return { error: null }
     } catch (e: any) {
       return { error: e.message }
@@ -291,12 +330,14 @@ export function useSolicitudes(idTienda?: number): UseSolicitudesReturn {
         throw new Error('La vigencia propuesta no puede ser anterior al día de hoy.')
       }
 
-      const { error: err } = await supabase
+      const { data: nuevaSolicitud, error: err } = await supabase
         .from('solicitudes')
         .insert({
           ...payload,
           estatus_solicitud: 'Pendiente',
         })
+        .select('id')
+        .single()
 
       if (err) throw err
 
@@ -333,7 +374,14 @@ export function useSolicitudes(idTienda?: number): UseSolicitudesReturn {
       }
 
       if (vigenteErr) throw vigenteErr
-      await fetch()
+
+      if (nuevaSolicitud?.id) {
+        await notifyBackend('/api/v1/notificaciones/solicitud-creada', {
+          id_solicitud: nuevaSolicitud.id,
+        })
+      }
+
+      await fetchSolicitudes()
       return { error: null }
     } catch (e: any) {
       return { error: e.message }
@@ -348,7 +396,7 @@ export function useSolicitudes(idTienda?: number): UseSolicitudesReturn {
         { event: '*', schema: 'public', table: 'solicitudes' },
         () => {
           console.log('[useSolicitudes] Real-time update triggered')
-          fetch()
+          fetchSolicitudes()
         }
       )
       .subscribe()
@@ -356,7 +404,7 @@ export function useSolicitudes(idTienda?: number): UseSolicitudesReturn {
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [supabase, fetch])
+  }, [supabase, fetchSolicitudes])
 
-  return { data, loading, error, refetch: fetch, aprobar, rechazar, crearSolicitud }
+  return { data, loading, error, refetch: fetchSolicitudes, aprobar, rechazar, crearSolicitud }
 }
