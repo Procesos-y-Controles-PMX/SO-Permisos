@@ -32,6 +32,8 @@ En `.env`, configura `ADMIN_NOTIFICATION_EMAILS` como lista separada por comas.
 Ejemplo:
 `ADMIN_NOTIFICATION_EMAILS=icker.villalon@ext.cemex.com,otro@correo.com`
 
+Para **activar el envio real por Gmail**, pon `GMAIL_NOTIFICATIONS_ENABLED=true`. Con `false` o sin definir, no se llama a Gmail (solo logica y respuesta JSON).
+
 ## 4) Ejecutar el backend
 ```bash
 uvicorn app.main:app --reload

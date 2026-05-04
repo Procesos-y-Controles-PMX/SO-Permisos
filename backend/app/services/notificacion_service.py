@@ -27,6 +27,11 @@ def _get_admin_emails() -> List[str]:
     return [email.strip() for email in raw.split(",") if email.strip()]
 
 
+def _gmail_notifications_enabled() -> bool:
+    v = os.getenv("GMAIL_NOTIFICATIONS_ENABLED", "false").strip().lower()
+    return v in ("1", "true", "yes", "on")
+
+
 def _fetch_solicitud(id_solicitud: int) -> Tuple[Optional[Dict], Optional[str]]:
     supabase = _get_supabase_client()
     if not supabase:
@@ -98,6 +103,14 @@ def procesar_solicitud_creada(id_solicitud: int) -> Dict:
     if not admin_emails:
         return {"ok": False, "sent": False, "reason": "ADMIN_NOTIFICATION_EMAILS no esta configurado."}
 
+    if not _gmail_notifications_enabled():
+        return {
+            "ok": True,
+            "sent": False,
+            "reason": "Gmail deshabilitado (GMAIL_NOTIFICATIONS_ENABLED=false).",
+            "pending_count": pendientes,
+        }
+
     tienda = solicitud.get("tienda") or {}
     tipo_permiso = solicitud.get("tipo_permiso") or {}
     asunto = f"Nueva solicitud de revision - {tienda.get('sucursal', 'Tienda')} - {tipo_permiso.get('nombre_permiso', 'Permiso')}"
@@ -132,6 +145,13 @@ def procesar_solicitud_resuelta(id_solicitud: int, estatus: str, comentarios: Op
     correo_tienda = tienda.get("correo")
     if not correo_tienda:
         return {"ok": False, "sent": False, "reason": "La tienda no tiene correo configurado."}
+
+    if not _gmail_notifications_enabled():
+        return {
+            "ok": True,
+            "sent": False,
+            "reason": "Gmail deshabilitado (GMAIL_NOTIFICATIONS_ENABLED=false).",
+        }
 
     asunto = f"Resultado de revision de permiso - {tipo_permiso.get('nombre_permiso', 'Permiso')}"
     cuerpo = (
