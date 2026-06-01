@@ -4,6 +4,13 @@
 
 export type RolUsuario = 'Admin' | 'Tienda' | 'Regional'
 
+/** IDs en tabla `roles` (orden del INSERT del esquema SQL) */
+export const ROL_IDS = {
+  Admin: 1,
+  Tienda: 2,
+  Regional: 3,
+} as const
+
 export type EstatusSolicitud = 'Pendiente' | 'Aprobado' | 'Rechazado'
 
 export type EstatusPermiso = 'Pendiente' | 'Activo' | 'Vencido' | 'Aprobado'
@@ -54,6 +61,16 @@ export interface Perfil {
   rol?: Rol
   tienda?: Tienda
   region?: Region
+}
+
+/** Valores del formulario crear/editar usuario (Admin) */
+export interface PerfilFormValues {
+  email: string
+  password?: string
+  nombre_completo: string
+  id_rol: number
+  id_tienda: number | null
+  id_region: number | null
 }
 
 export interface CatalogoPermiso {
