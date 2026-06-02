@@ -1,22 +1,20 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Modal from '@/components/ui/Modal'
-import type { Perfil, PerfilFormValues, Rol, Region, Tienda } from '@/types'
+import type { Perfil, PerfilFormValues, Rol, Region } from '@/types'
 import { ROL_IDS } from '@/types'
+import type { TiendaFormOption } from '@/hooks/useUsuarios'
 
 const inputClass =
   'w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-[13px] text-gray-700 focus:outline-none focus:ring-2 focus:ring-red-500/30 focus:border-red-500 transition-all'
-
-const readOnlyClass =
-  'w-full px-4 py-2.5 bg-gray-50 border border-gray-100 rounded-lg text-[13px] text-gray-600 cursor-not-allowed'
 
 interface UsuarioFormModalProps {
   open: boolean
   onClose: () => void
   usuario?: Perfil | null
   roles: Rol[]
-  tiendas: Pick<Tienda, 'id' | 'sucursal'>[]
+  tiendas: TiendaFormOption[]
   regiones: Pick<Region, 'id' | 'nombre_region'>[]
   onSubmit: (values: PerfilFormValues) => Promise<{ error: string | null }>
   saving?: boolean
@@ -34,13 +32,21 @@ function emptyForm(): PerfilFormValues {
 }
 
 function perfilToForm(usuario: Perfil): PerfilFormValues {
+  const regionFiltroTienda =
+    usuario.tienda?.id_region || usuario.tienda?.region?.id || null
+
   return {
     email: usuario.email,
     password: '',
     nombre_completo: usuario.nombre_completo ?? '',
     id_rol: usuario.id_rol,
     id_tienda: usuario.id_tienda,
-    id_region: usuario.id_region,
+    id_region:
+      usuario.id_rol === ROL_IDS.Tienda
+        ? regionFiltroTienda
+        : usuario.id_rol === ROL_IDS.Regional
+          ? usuario.id_region
+          : null,
   }
 }
 
@@ -64,16 +70,55 @@ export default function UsuarioFormModal({
     setForm(usuario ? perfilToForm(usuario) : emptyForm())
   }, [open, usuario])
 
+  const showRegionRegional = form.id_rol === ROL_IDS.Regional
+  const showRegionFiltroTienda = form.id_rol === ROL_IDS.Tienda
   const showTienda = form.id_rol === ROL_IDS.Tienda
-  const showRegion = form.id_rol === ROL_IDS.Regional
+
+  const tiendasEnRegion = useMemo(() => {
+    if (!form.id_region) return []
+    return tiendas.filter((t) => t.id_region === form.id_region)
+  }, [tiendas, form.id_region])
 
   const handleRolChange = (idRol: number) => {
-    setForm((prev) => ({
-      ...prev,
-      id_rol: idRol,
-      id_tienda: idRol === ROL_IDS.Tienda ? prev.id_tienda : null,
-      id_region: idRol === ROL_IDS.Regional ? prev.id_region : null,
-    }))
+    setForm((prev) => {
+      if (idRol === ROL_IDS.Admin) {
+        return { ...prev, id_rol: idRol, id_tienda: null, id_region: null }
+      }
+      if (idRol === ROL_IDS.Regional) {
+        return {
+          ...prev,
+          id_rol: idRol,
+          id_tienda: null,
+          id_region:
+            prev.id_rol === ROL_IDS.Tienda || prev.id_rol === ROL_IDS.Regional
+              ? prev.id_region
+              : null,
+        }
+      }
+      // Tienda
+      const regionFiltro =
+        prev.id_rol === ROL_IDS.Regional || prev.id_rol === ROL_IDS.Tienda
+          ? prev.id_region
+          : null
+      const tiendaValida =
+        prev.id_tienda &&
+        tiendas.find((t) => t.id === prev.id_tienda && t.id_region === regionFiltro)
+      return {
+        ...prev,
+        id_rol: idRol,
+        id_region: regionFiltro,
+        id_tienda: tiendaValida ? prev.id_tienda : null,
+      }
+    })
+  }
+
+  const handleRegionFiltroChange = (idRegion: number | null) => {
+    setForm((prev) => {
+      const tienda = prev.id_tienda ? tiendas.find((t) => t.id === prev.id_tienda) : null
+      const id_tienda =
+        tienda && idRegion && tienda.id_region === idRegion ? prev.id_tienda : null
+      return { ...prev, id_region: idRegion, id_tienda }
+    })
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -167,100 +212,108 @@ export default function UsuarioFormModal({
 
         <div>
           <label className="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-            Rol {isEdit ? '' : '*'}
+            Rol *
           </label>
-          {isEdit ? (
-            <>
-              <div className={readOnlyClass}>{usuario?.rol?.nombre_rol ?? '—'}</div>
-              <p className="text-[11px] text-gray-400 mt-1">El rol no se puede modificar.</p>
-            </>
-          ) : (
+          <select
+            required
+            value={form.id_rol}
+            onChange={(e) => handleRolChange(Number(e.target.value))}
+            className={`${inputClass} appearance-none cursor-pointer`}
+          >
+            {roles.map((r) => (
+              <option key={r.id} value={r.id}>
+                {r.nombre_rol}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {showRegionRegional && (
+          <div>
+            <label className="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+              Región *
+            </label>
             <select
               required
-              value={form.id_rol}
-              onChange={(e) => handleRolChange(Number(e.target.value))}
+              value={form.id_region ?? ''}
+              onChange={(e) =>
+                setForm((p) => ({
+                  ...p,
+                  id_region: e.target.value ? Number(e.target.value) : null,
+                }))
+              }
               className={`${inputClass} appearance-none cursor-pointer`}
             >
-              {roles.map((r) => (
+              <option value="">Seleccionar región...</option>
+              {regiones.map((r) => (
                 <option key={r.id} value={r.id}>
-                  {r.nombre_rol}
+                  {r.nombre_region}
                 </option>
               ))}
             </select>
-          )}
-        </div>
+          </div>
+        )}
 
-        {isEdit ? (
-          <>
-            <div>
-              <label className="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-                Tienda
-              </label>
-              <div className={readOnlyClass}>{usuario?.tienda?.sucursal ?? '—'}</div>
-              <p className="text-[11px] text-gray-400 mt-1">La asignación de tienda no se puede modificar.</p>
-            </div>
-            <div>
-              <label className="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-                Región
-              </label>
-              <div className={readOnlyClass}>{usuario?.region?.nombre_region ?? '—'}</div>
-              <p className="text-[11px] text-gray-400 mt-1">La asignación de región no se puede modificar.</p>
-            </div>
-          </>
-        ) : (
-          <>
-            {showTienda && (
-              <div>
-                <label className="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-                  Tienda *
-                </label>
-                <select
-                  required
-                  value={form.id_tienda ?? ''}
-                  onChange={(e) =>
-                    setForm((p) => ({
-                      ...p,
-                      id_tienda: e.target.value ? Number(e.target.value) : null,
-                    }))
-                  }
-                  className={`${inputClass} appearance-none cursor-pointer`}
-                >
-                  <option value="">Seleccionar tienda...</option>
-                  {tiendas.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.sucursal}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
+        {showRegionFiltroTienda && (
+          <div>
+            <label className="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+              Región *
+            </label>
+            <select
+              required
+              value={form.id_region ?? ''}
+              onChange={(e) =>
+                handleRegionFiltroChange(e.target.value ? Number(e.target.value) : null)
+              }
+              className={`${inputClass} appearance-none cursor-pointer`}
+            >
+              <option value="">Seleccionar región...</option>
+              {regiones.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.nombre_region}
+                </option>
+              ))}
+            </select>
+            <p className="text-[11px] text-gray-400 mt-1">
+              Selecciona la región para elegir la tienda.
+            </p>
+          </div>
+        )}
 
-            {showRegion && (
-              <div>
-                <label className="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-                  Región *
-                </label>
-                <select
-                  required
-                  value={form.id_region ?? ''}
-                  onChange={(e) =>
-                    setForm((p) => ({
-                      ...p,
-                      id_region: e.target.value ? Number(e.target.value) : null,
-                    }))
-                  }
-                  className={`${inputClass} appearance-none cursor-pointer`}
-                >
-                  <option value="">Seleccionar región...</option>
-                  {regiones.map((r) => (
-                    <option key={r.id} value={r.id}>
-                      {r.nombre_region}
-                    </option>
-                  ))}
-                </select>
-              </div>
+        {showTienda && (
+          <div>
+            <label className="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+              Tienda *
+            </label>
+            <select
+              required
+              disabled={!form.id_region}
+              value={form.id_tienda ?? ''}
+              onChange={(e) =>
+                setForm((p) => ({
+                  ...p,
+                  id_tienda: e.target.value ? Number(e.target.value) : null,
+                }))
+              }
+              className={`${inputClass} appearance-none cursor-pointer disabled:bg-gray-50 disabled:cursor-not-allowed`}
+            >
+              <option value="">
+                {!form.id_region
+                  ? 'Primero selecciona una región...'
+                  : tiendasEnRegion.length === 0
+                    ? 'No hay tiendas en esta región'
+                    : 'Seleccionar tienda...'}
+              </option>
+              {tiendasEnRegion.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.sucursal}
+                </option>
+              ))}
+            </select>
+            {form.id_region && tiendasEnRegion.length === 0 && (
+              <p className="text-[11px] text-amber-600 mt-1">No hay tiendas en esta región.</p>
             )}
-          </>
+          </div>
         )}
       </form>
     </Modal>

@@ -15,7 +15,7 @@ interface UseSolicitudesReturn {
   crearSolicitud: (payload: {
     id_tienda: number
     id_tipo_permiso: number
-    vigencia_propuesta: string
+    vigencia_propuesta: string | null
     archivo_adjunto_path: string | null
   }) => Promise<{ error: string | null }>
 }
@@ -322,11 +322,11 @@ export function useSolicitudes(idTienda?: number): UseSolicitudesReturn {
   const crearSolicitud = async (payload: {
     id_tienda: number
     id_tipo_permiso: number
-    vigencia_propuesta: string
+    vigencia_propuesta: string | null
     archivo_adjunto_path: string | null
   }) => {
     try {
-      if (isPastDate(payload.vigencia_propuesta)) {
+      if (payload.vigencia_propuesta && isPastDate(payload.vigencia_propuesta)) {
         throw new Error('La vigencia propuesta no puede ser anterior al día de hoy.')
       }
 

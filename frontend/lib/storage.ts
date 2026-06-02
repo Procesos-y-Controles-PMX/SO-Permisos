@@ -61,7 +61,47 @@ export async function promoteFile(
 }
 
 /**
- * Get a signed URL for downloading a file (valid for 1 hour).
+ * Extract file name from a storage path (last segment).
+ */
+export function getFileNameFromPath(filePath: string): string {
+  const segment = filePath.split('/').filter(Boolean).pop()
+  return segment || 'documento'
+}
+
+/**
+ * Download a file from storage and trigger a browser save dialog.
+ */
+export async function downloadStorageFile(
+  filePath: string,
+  downloadName?: string,
+): Promise<{ error: string | null }> {
+  const supabase = createClient()
+
+  const { data, error } = await supabase.storage.from(BUCKET).download(filePath)
+
+  if (error) {
+    return { error: error.message }
+  }
+
+  if (!data) {
+    return { error: 'No se pudo obtener el archivo.' }
+  }
+
+  const fileName = downloadName || getFileNameFromPath(filePath)
+  const url = URL.createObjectURL(data)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = fileName
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  URL.revokeObjectURL(url)
+
+  return { error: null }
+}
+
+/**
+ * Get a signed URL for viewing a file (valid for 1 hour).
  */
 export async function getFileUrl(
   filePath: string,

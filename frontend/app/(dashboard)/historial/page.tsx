@@ -9,7 +9,10 @@ import Modal from '@/components/ui/Modal'
 import Badge, { statusToBadgeVariant } from '@/components/ui/Badge'
 import { createClient } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
-import { getFileUrl, uploadFile } from '@/lib/storage'
+import { uploadFile } from '@/lib/storage'
+import PermisoArchivoActions from '@/components/permisos/PermisoArchivoActions'
+import VigenciaField from '@/components/permisos/VigenciaField'
+import { canSubmitVigencia, formatFechaVigencia, resolveVigenciaParaGuardar } from '@/lib/vigencia'
 import { useSolicitudes } from '@/hooks/useSolicitudes'
 import type { HistorialPermisoEstado } from '@/types'
 
@@ -38,6 +41,7 @@ export default function HistorialPage() {
   const [showUploadModal, setShowUploadModal] = useState(false)
   const [selectedItem, setSelectedItem] = useState<HistorialPermisoItem | null>(null)
   const [vigencia, setVigencia] = useState('')
+  const [sinVencimiento, setSinVencimiento] = useState(false)
   const [archivo, setArchivo] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
@@ -45,14 +49,7 @@ export default function HistorialPage() {
   const [isDraggingUpload, setIsDraggingUpload] = useState(false)
   const ACCEPTED_TYPES = 'application/pdf,image/jpeg,image/png,image/jpg,image/webp'
   const isImageFile = (file: File) => file.type.startsWith('image/')
-  const todayStr = useMemo(() => {
-    const now = new Date()
-    const y = now.getFullYear()
-    const m = String(now.getMonth() + 1).padStart(2, '0')
-    const d = String(now.getDate()).padStart(2, '0')
-    return `${y}-${m}-${d}`
-  }, [])
-  const isPastDate = useCallback((value: string) => value < todayStr, [todayStr])
+  const vigenciaValida = canSubmitVigencia(vigencia, sinVencimiento)
 
   const fetchHistorial = useCallback(async () => {
     if (!perfil || !perfil.id_tienda) {
@@ -199,15 +196,10 @@ export default function HistorialPage() {
     }
   }, [authLoading, isTienda, router])
 
-  const handleViewFile = async (path: string) => {
-    const { url, error } = await getFileUrl(path)
-    if (url) window.open(url, '_blank')
-    if (error) alert('Error al abrir archivo: ' + error)
-  }
-
   const handleOpenUpload = (item: HistorialPermisoItem) => {
     setSelectedItem(item)
     setVigencia('')
+    setSinVencimiento(false)
     setPreviewUrl(prev => {
       if (prev) URL.revokeObjectURL(prev)
       return null
@@ -257,13 +249,16 @@ export default function HistorialPage() {
   }, [validateAndSelectFile])
 
   const handleSubmitUpload = async () => {
-    if (!selectedItem || !vigencia || !archivo) return
+    if (!selectedItem || !archivo) return
     setSubmitting(true)
     setSubmitError(null)
     try {
-      if (isPastDate(vigencia)) {
-        throw new Error('La fecha de vigencia no puede ser anterior al día de hoy.')
-      }
+      const { value: vigenciaGuardar, error: vigenciaError } = resolveVigenciaParaGuardar(
+        vigencia,
+        sinVencimiento,
+      )
+      if (vigenciaError) throw new Error(vigenciaError)
+
       const { path, error: uploadErr } = await uploadFile(
         archivo,
         selectedItem.idTienda,
@@ -274,7 +269,7 @@ export default function HistorialPage() {
       const { error: createErr } = await crearSolicitud({
         id_tienda: selectedItem.idTienda,
         id_tipo_permiso: selectedItem.idTipoPermiso,
-        vigencia_propuesta: vigencia,
+        vigencia_propuesta: vigenciaGuardar,
         archivo_adjunto_path: path,
       })
       if (createErr) throw new Error(createErr)
@@ -444,9 +439,10 @@ export default function HistorialPage() {
                     </h4>
 
                     {/* Vigencia */}
-                    {item.vigencia && (
+                    {item.estado !== 'No Subido' && (
                       <p className="text-[11px] text-gray-400 mt-1">
-                        Vigencia: <span className="font-mono text-gray-500">{new Date(item.vigencia).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+                        Vigencia:{' '}
+                        <span className="font-mono text-gray-500">{formatFechaVigencia(item.vigencia)}</span>
                       </p>
                     )}
 
@@ -484,16 +480,12 @@ export default function HistorialPage() {
                       </Button>
                     )}
                     {item.archivoPath && (
-                      <button
-                        onClick={() => handleViewFile(item.archivoPath!)}
-                        className="p-2.5 rounded-xl text-blue-500 hover:bg-blue-50 hover:text-blue-700 border border-transparent hover:border-blue-200 transition-all"
-                        title="Ver documento"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                        </svg>
-                      </button>
+                      <PermisoArchivoActions
+                        filePath={item.archivoPath}
+                        className="flex-col sm:flex-row items-end sm:items-center"
+                        viewClassName="inline-flex items-center gap-1.5 px-2.5 py-2 rounded-xl text-blue-500 hover:bg-blue-50 hover:text-blue-700 border border-transparent hover:border-blue-200 text-[12px] font-medium transition-all"
+                        downloadClassName="inline-flex items-center gap-1.5 px-2.5 py-2 rounded-xl text-slate-600 hover:bg-gray-50 border border-transparent hover:border-gray-200 text-[12px] font-medium transition-all disabled:opacity-50"
+                      />
                     )}
                   </div>
                 </div>
@@ -511,13 +503,15 @@ export default function HistorialPage() {
             return null
           })
           setArchivo(null)
+          setVigencia('')
+          setSinVencimiento(false)
           setShowUploadModal(false)
         }}
         title={selectedItem?.estado === 'Rechazado' ? 'Reenvío de Documento' : 'Nueva Carga de Documento'}
         actions={
           <>
             <Button variant="secondary" onClick={() => { setArchivo(null); setShowUploadModal(false) }} disabled={submitting}>Cancelar</Button>
-            <Button variant="primary" onClick={handleSubmitUpload} disabled={submitting || !vigencia || !archivo}>
+            <Button variant="primary" onClick={handleSubmitUpload} disabled={submitting || !archivo || !vigenciaValida}>
               {submitting ? 'Enviando...' : 'Enviar a Revisión'}
             </Button>
           </>
@@ -536,19 +530,12 @@ export default function HistorialPage() {
               <h4 className="text-[15px] font-bold text-slate-800">{selectedItem.nombrePermiso}</h4>
             </div>
 
-            <div className="space-y-1.5">
-              <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-widest">
-                Fecha de Vigencia Propuesta
-              </label>
-              <input
-                type="date"
-                value={vigencia}
-                onChange={(e) => setVigencia(e.target.value)}
-                min={todayStr}
-                className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-[14px] text-slate-700
-                  focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all"
-              />
-            </div>
+            <VigenciaField
+              vigencia={vigencia}
+              sinVencimiento={sinVencimiento}
+              onVigenciaChange={setVigencia}
+              onSinVencimientoChange={setSinVencimiento}
+            />
 
             <div className="space-y-2">
               <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-widest">

@@ -155,7 +155,7 @@ export async function POST(req: Request) {
     const rows = rawRows.filter((row) => {
       if (!row.archivo_path || !row.tienda) return false
       if (!ACTIVE_STATUSES.has(row.estatus)) return false
-      if (!row.fecha_vencimiento) return false
+      if (!row.fecha_vencimiento) return true
       return row.fecha_vencimiento >= today
     })
 

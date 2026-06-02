@@ -243,18 +243,8 @@ export default function UsuariosPage() {
     async (values: PerfilFormValues) => {
       setSaving(true)
       try {
-        const payload =
-          editing
-            ? {
-                ...values,
-                id_rol: editing.id_rol,
-                id_tienda: editing.id_tienda,
-                id_region: editing.id_region,
-              }
-            : values
-
         const result = editing
-          ? await updateUsuario(editing.id, payload)
+          ? await updateUsuario(editing.id, values)
           : await createUsuario(values)
 
         if (result.error) return result

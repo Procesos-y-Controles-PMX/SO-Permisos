@@ -86,7 +86,13 @@ export function buildPerfilPayload(values: PerfilFormValues): {
   return payload
 }
 
-export function validatePerfilForm(values: PerfilFormValues, isEdit: boolean): string | null {
+export type TiendaFormOption = Pick<Tienda, 'id' | 'sucursal' | 'id_region'>
+
+export function validatePerfilForm(
+  values: PerfilFormValues,
+  isEdit: boolean,
+  tiendas?: TiendaFormOption[],
+): string | null {
   if (!values.email.trim()) return 'El correo es obligatorio.'
   if (!values.id_rol) return 'Selecciona un rol.'
 
@@ -94,9 +100,21 @@ export function validatePerfilForm(values: PerfilFormValues, isEdit: boolean): s
     return 'La contraseña es obligatoria al crear un usuario.'
   }
 
-  if (values.id_rol === ROL_IDS.Tienda && !values.id_tienda) {
-    return 'Selecciona una tienda para el rol Tienda.'
+  if (values.id_rol === ROL_IDS.Tienda) {
+    if (!values.id_region) {
+      return 'Selecciona una región para elegir la tienda.'
+    }
+    if (!values.id_tienda) {
+      return 'Selecciona una tienda para el rol Tienda.'
+    }
+    if (tiendas?.length) {
+      const tienda = tiendas.find((t) => t.id === values.id_tienda)
+      if (!tienda || tienda.id_region !== values.id_region) {
+        return 'La tienda seleccionada no pertenece a la región indicada.'
+      }
+    }
   }
+
   if (values.id_rol === ROL_IDS.Regional && !values.id_region) {
     return 'Selecciona una región para el rol Regional.'
   }
@@ -107,7 +125,7 @@ export function validatePerfilForm(values: PerfilFormValues, isEdit: boolean): s
 interface UseUsuariosReturn {
   usuarios: Perfil[]
   roles: Rol[]
-  tiendas: Pick<Tienda, 'id' | 'sucursal'>[]
+  tiendas: TiendaFormOption[]
   regiones: Pick<Region, 'id' | 'nombre_region'>[]
   loading: boolean
   error: string | null
@@ -123,7 +141,7 @@ export function useUsuarios(): UseUsuariosReturn {
 
   const [usuarios, setUsuarios] = useState<Perfil[]>([])
   const [roles, setRoles] = useState<Rol[]>([])
-  const [tiendas, setTiendas] = useState<Pick<Tienda, 'id' | 'sucursal'>[]>([])
+  const [tiendas, setTiendas] = useState<TiendaFormOption[]>([])
   const [regiones, setRegiones] = useState<Pick<Region, 'id' | 'nombre_region'>[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -142,7 +160,7 @@ export function useUsuarios(): UseUsuariosReturn {
       const [perfilesRes, rolesRes, tiendasRes, regionesRes] = await Promise.all([
         supabase.from('perfiles').select(PERFIL_SELECT),
         supabase.from('roles').select('id, nombre_rol').order('id'),
-        supabase.from('tiendas').select('id, sucursal').order('sucursal'),
+        supabase.from('tiendas').select('id, sucursal, id_region').order('sucursal'),
         supabase.from('regiones').select('id, nombre_region').order('nombre_region'),
       ])
 
@@ -153,7 +171,7 @@ export function useUsuarios(): UseUsuariosReturn {
 
       setUsuarios((perfilesRes.data || []).map((row) => mapPerfilRow(row as Record<string, unknown>)))
       setRoles((rolesRes.data || []) as Rol[])
-      setTiendas((tiendasRes.data || []) as Pick<Tienda, 'id' | 'sucursal'>[])
+      setTiendas((tiendasRes.data || []) as TiendaFormOption[])
       setRegiones((regionesRes.data || []) as Pick<Region, 'id' | 'nombre_region'>[])
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : 'Error al cargar usuarios'
@@ -169,7 +187,7 @@ export function useUsuarios(): UseUsuariosReturn {
 
   const createUsuario = useCallback(
     async (values: PerfilFormValues) => {
-      const validationError = validatePerfilForm(values, false)
+      const validationError = validatePerfilForm(values, false, tiendas)
       if (validationError) return { error: validationError }
 
       const payload = buildPerfilPayload(values)
@@ -194,7 +212,7 @@ export function useUsuarios(): UseUsuariosReturn {
       await fetchAll()
       return { error: null }
     },
-    [supabase, fetchAll],
+    [supabase, fetchAll, tiendas],
   )
 
   const updateUsuario = useCallback(
@@ -203,13 +221,14 @@ export function useUsuarios(): UseUsuariosReturn {
         return { error: 'No puedes modificar tu propia cuenta.' }
       }
 
-      const validationError = validatePerfilForm(values, true)
+      const validationError = validatePerfilForm(values, true, tiendas)
       if (validationError) return { error: validationError }
 
       const payload = buildPerfilPayload(values)
       const updateBody: Record<string, unknown> = {
         email: payload.email,
         nombre_completo: payload.nombre_completo,
+        id_rol: payload.id_rol,
         id_tienda: payload.id_tienda,
         id_region: payload.id_region,
       }
@@ -227,7 +246,7 @@ export function useUsuarios(): UseUsuariosReturn {
       await fetchAll()
       return { error: null }
     },
-    [supabase, fetchAll, perfil?.id],
+    [supabase, fetchAll, perfil?.id, tiendas],
   )
 
   const deleteUsuario = useCallback(

@@ -10,9 +10,12 @@ import Modal from '@/components/ui/Modal'
 import { useTiendaDetalle } from '@/hooks/useTiendaDetalle'
 import { useSolicitudes } from '@/hooks/useSolicitudes'
 import { useAuth } from '@/contexts/AuthContext'
-import { uploadFile, uploadActiveFile, getFileUrl, deleteFile } from '@/lib/storage'
+import { uploadFile, uploadActiveFile, deleteFile } from '@/lib/storage'
 import { createClient } from '@/lib/supabase'
 import TopSearchBar from '@/components/layout/TopSearchBar'
+import PermisoArchivoActions from '@/components/permisos/PermisoArchivoActions'
+import VigenciaField from '@/components/permisos/VigenciaField'
+import { canSubmitVigencia, formatFechaVigencia, resolveVigenciaParaGuardar } from '@/lib/vigencia'
 import type { ConfiguracionTiendaPermiso } from '@/types'
 
 // ── Icons ──────────────────────────────────────────────────
@@ -26,13 +29,6 @@ const BackIcon = () => (
 const TrashIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-  </svg>
-)
-
-const EyeIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-    <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
   </svg>
 )
 
@@ -90,6 +86,7 @@ export default function TiendaDetallePage() {
   const [showUploadModal, setShowUploadModal] = useState(false)
   const [selectedConfig, setSelectedConfig] = useState<ConfiguracionTiendaPermiso | null>(null)
   const [vigencia, setVigencia] = useState('')
+  const [sinVencimiento, setSinVencimiento] = useState(false)
   const [archivo, setArchivo] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
@@ -182,14 +179,7 @@ export default function TiendaDetallePage() {
   const [downloadingStoreZip, setDownloadingStoreZip] = useState(false)
   const [storeZipError, setStoreZipError] = useState<string | null>(null)
   const ACTIVE_STATUSES = new Set(['Activo', 'Aprobado'])
-  const todayStr = useMemo(() => {
-    const now = new Date()
-    const y = now.getFullYear()
-    const m = String(now.getMonth() + 1).padStart(2, '0')
-    const d = String(now.getDate()).padStart(2, '0')
-    return `${y}-${m}-${d}`
-  }, [])
-  const isPastDate = useCallback((value: string) => value < todayStr, [todayStr])
+  const vigenciaValida = canSubmitVigencia(vigencia, sinVencimiento)
 
   const getFileNameFromDisposition = useCallback((value: string | null): string | null => {
     if (!value) return null
@@ -274,6 +264,7 @@ export default function TiendaDetallePage() {
   const handleOpenUpload = (config: ConfiguracionTiendaPermiso) => {
     setSelectedConfig(config)
     setVigencia('')
+    setSinVencimiento(false)
     handleFileSelect(null)
     setSubmitError(null)
     setShowUploadModal(true)
@@ -282,20 +273,23 @@ export default function TiendaDetallePage() {
   const handleOpenDirectUpload = (config: ConfiguracionTiendaPermiso) => {
     setSelectedConfig(config)
     setVigencia('')
+    setSinVencimiento(false)
     handleFileSelect(null)
     setDirectSubmitError(null)
     setShowDirectUploadModal(true)
   }
 
   const handleSubmitUpload = async () => {
-    if (!selectedConfig || !vigencia) return
+    if (!selectedConfig || !archivo) return
     setSubmitting(true)
     setSubmitError(null)
 
     try {
-      if (isPastDate(vigencia)) {
-        throw new Error('La fecha de vigencia no puede ser anterior al día de hoy.')
-      }
+      const { value: vigenciaGuardar, error: vigenciaError } = resolveVigenciaParaGuardar(
+        vigencia,
+        sinVencimiento,
+      )
+      if (vigenciaError) throw new Error(vigenciaError)
 
       let archivoPath: string | null = null
       if (archivo && perfil) {
@@ -311,7 +305,7 @@ export default function TiendaDetallePage() {
       const { error: createErr } = await crearSolicitud({
         id_tienda: selectedConfig.id_tienda,
         id_tipo_permiso: selectedConfig.id_tipo_permiso,
-        vigencia_propuesta: vigencia,
+        vigencia_propuesta: vigenciaGuardar,
         archivo_adjunto_path: archivoPath,
       })
 
@@ -326,14 +320,16 @@ export default function TiendaDetallePage() {
   }
 
   const handleDirectUploadConfirm = async () => {
-    if (!selectedConfig || !vigencia || !archivo) return
+    if (!selectedConfig || !archivo) return
     setDirectSubmitting(true)
     setDirectSubmitError(null)
 
     try {
-      if (isPastDate(vigencia)) {
-        throw new Error('La fecha de vigencia no puede ser anterior al día de hoy.')
-      }
+      const { value: vigenciaGuardar, error: vigenciaError } = resolveVigenciaParaGuardar(
+        vigencia,
+        sinVencimiento,
+      )
+      if (vigenciaError) throw new Error(vigenciaError)
 
       // 1. Delete physical file if it exists
       if (selectedConfig.permiso_vigente?.archivo_path) {
@@ -362,7 +358,7 @@ export default function TiendaDetallePage() {
       const payload = {
         id_tienda: selectedConfig.id_tienda,
         id_tipo_permiso: selectedConfig.id_tipo_permiso,
-        fecha_vencimiento: vigencia,
+        fecha_vencimiento: vigenciaGuardar,
         archivo_path: path,
         estatus: 'Activo',
         ultima_actualizacion: new Date().toISOString()
@@ -420,12 +416,6 @@ export default function TiendaDetallePage() {
     } finally {
       setReviewing(false)
     }
-  }
-
-  const handleViewFile = async (path: string) => {
-    const { url, error } = await getFileUrl(path)
-    if (url) window.open(url, '_blank')
-    if (error) alert('Error al abrir archivo: ' + error)
   }
 
   const handleConfirmDelete = async () => {
@@ -604,7 +594,7 @@ export default function TiendaDetallePage() {
                   <Th>Permiso</Th>
                   <Th>Vencimiento</Th>
                   <Th>Estatus</Th>
-                  <Th align="right">Archivo</Th>
+                  <Th align="center">Documento</Th>
                   {isAdmin && <Th align="right">Acciones</Th>}
                 </tr>
               </thead>
@@ -617,22 +607,15 @@ export default function TiendaDetallePage() {
                     </Td>
                     <Td>
                       <span className="font-mono text-[12px] text-slate-600">
-                        {p.permiso_vigente?.fecha_vencimiento
-                          ? new Date(p.permiso_vigente.fecha_vencimiento).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })
-                          : '—'}
+                        {formatFechaVigencia(p.permiso_vigente?.fecha_vencimiento)}
                       </span>
                     </Td>
                     <Td>
                       <Badge variant={statusToBadgeVariant(p.permiso_vigente?.estatus || '')}>{p.permiso_vigente?.estatus}</Badge>
                     </Td>
-                    <Td align="right">
+                    <Td align="center">
                       {p.permiso_vigente?.archivo_path && (
-                        <button
-                          onClick={() => handleViewFile(p.permiso_vigente!.archivo_path!)}
-                          className="inline-flex items-center gap-1.5 text-blue-500 hover:text-blue-700 text-[11px] font-medium transition-colors"
-                        >
-                          <EyeIcon /> Ver
-                        </button>
+                        <PermisoArchivoActions filePath={p.permiso_vigente.archivo_path} className="justify-center" />
                       )}
                     </Td>
                     {isAdmin && (
@@ -774,7 +757,7 @@ export default function TiendaDetallePage() {
                   <Th>Vigencia Propuesta</Th>
                   <Th>Estatus</Th>
                   <Th>Comentarios Admin</Th>
-                  <Th>Archivo</Th>
+                  <Th align="center">Documento</Th>
                   {isAdmin && <Th align="right">Acciones</Th>}
                 </tr>
               </thead>
@@ -791,9 +774,7 @@ export default function TiendaDetallePage() {
                     </Td>
                     <Td>
                       <span className="font-mono text-[11px] text-gray-500">
-                        {s.vigencia_propuesta
-                          ? new Date(s.vigencia_propuesta).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })
-                          : '—'}
+                        {formatFechaVigencia(s.vigencia_propuesta)}
                       </span>
                     </Td>
                     <Td>
@@ -813,14 +794,13 @@ export default function TiendaDetallePage() {
                         <span className="text-gray-300 text-[11px]">—</span>
                       )}
                     </Td>
-                    <Td>
+                    <Td align="center">
                       {s.archivo_adjunto_path ? (
-                        <button
-                          onClick={() => handleViewFile(s.archivo_adjunto_path)}
-                          className="inline-flex items-center gap-1 text-red-500 hover:text-red-700 text-[11px] font-medium transition-colors"
-                        >
-                          <DownloadIcon /> Ver
-                        </button>
+                        <PermisoArchivoActions
+                          filePath={s.archivo_adjunto_path}
+                          className="justify-center"
+                          viewClassName="inline-flex items-center gap-1.5 text-blue-500 hover:text-blue-700 text-[11px] font-medium transition-colors"
+                        />
                       ) : (
                         <span className="text-gray-300 text-[11px]">—</span>
                       )}
@@ -854,12 +834,17 @@ export default function TiendaDetallePage() {
          ══════════════════════════════════════════════════════ */}
       <Modal
         open={showUploadModal}
-        onClose={() => { handleFileSelect(null); setShowUploadModal(false) }}
+        onClose={() => {
+          handleFileSelect(null)
+          setSinVencimiento(false)
+          setVigencia('')
+          setShowUploadModal(false)
+        }}
         title={selectedConfig?.permiso_vigente ? 'Renovación de Permiso' : 'Nueva Carga de Documento'}
         actions={
           <>
             <Button variant="secondary" onClick={() => { handleFileSelect(null); setShowUploadModal(false) }} disabled={submitting}>Cancelar</Button>
-            <Button variant="primary" onClick={handleSubmitUpload} disabled={submitting || !vigencia || !archivo}>
+            <Button variant="primary" onClick={handleSubmitUpload} disabled={submitting || !archivo || !vigenciaValida}>
               {submitting ? 'Enviando...' : 'Enviar a Revisión'}
             </Button>
           </>
@@ -888,19 +873,12 @@ export default function TiendaDetallePage() {
               <p className="text-[12px] text-slate-500 mt-1">Tienda: <span className="font-semibold text-slate-700">{tienda?.sucursal}</span></p>
             </div>
 
-            <div className="space-y-1.5">
-              <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-widest">
-                Fecha de Vigencia Propuesta
-              </label>
-              <input
-                type="date"
-                value={vigencia}
-                onChange={(e) => setVigencia(e.target.value)}
-                min={todayStr}
-                className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-[14px] text-slate-700
-                  focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all"
-              />
-            </div>
+            <VigenciaField
+              vigencia={vigencia}
+              sinVencimiento={sinVencimiento}
+              onVigenciaChange={setVigencia}
+              onSinVencimientoChange={setSinVencimiento}
+            />
 
             <div className="space-y-2">
               <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-widest">
@@ -972,12 +950,17 @@ export default function TiendaDetallePage() {
          ══════════════════════════════════════════════════════ */}
       <Modal
         open={showDirectUploadModal}
-        onClose={() => { handleFileSelect(null); setShowDirectUploadModal(false) }}
+        onClose={() => {
+          handleFileSelect(null)
+          setSinVencimiento(false)
+          setVigencia('')
+          setShowDirectUploadModal(false)
+        }}
         title="⚠️ Carga Directa (Administrador)"
         actions={
           <>
             <Button variant="secondary" onClick={() => { handleFileSelect(null); setShowDirectUploadModal(false) }} disabled={directSubmitting}>Cancelar</Button>
-            <Button variant="primary" onClick={handleDirectUploadConfirm} disabled={directSubmitting || !vigencia || !archivo}>
+            <Button variant="primary" onClick={handleDirectUploadConfirm} disabled={directSubmitting || !archivo || !vigenciaValida}>
               {directSubmitting ? 'Subiendo...' : 'Subir Archivo'}
             </Button>
           </>
@@ -1024,19 +1007,13 @@ export default function TiendaDetallePage() {
               </div>
             )}
 
-            <div className="space-y-1.5">
-              <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-widest">
-                Nueva Fecha de Vencimiento
-              </label>
-              <input
-                type="date"
-                value={vigencia}
-                onChange={(e) => setVigencia(e.target.value)}
-                min={todayStr}
-                className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-[14px] text-slate-700
-                  focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all"
-              />
-            </div>
+            <VigenciaField
+              vigencia={vigencia}
+              sinVencimiento={sinVencimiento}
+              onVigenciaChange={setVigencia}
+              onSinVencimientoChange={setSinVencimiento}
+              dateLabel="Nueva fecha de vencimiento"
+            />
 
             <div className="space-y-2">
               <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-widest">
@@ -1127,9 +1104,8 @@ export default function TiendaDetallePage() {
                 {selectedSolicitud.tipo_permiso?.nombre_permiso} — <span className="font-semibold">{tienda?.sucursal}</span>
               </p>
               <p className="text-[11px] text-gray-400 mt-1">
-                Solicitud #{selectedSolicitud.id} • Vigencia propuesta: {selectedSolicitud.vigencia_propuesta
-                  ? new Date(selectedSolicitud.vigencia_propuesta).toLocaleDateString('es-MX')
-                  : '—'}
+                Solicitud #{selectedSolicitud.id} • Vigencia propuesta:{' '}
+                {formatFechaVigencia(selectedSolicitud.vigencia_propuesta)}
               </p>
             </div>
 
@@ -1206,17 +1182,23 @@ export default function TiendaDetallePage() {
 
 // ── Reusable table primitives ──
 
-function Th({ children, align = 'left' }: { children: React.ReactNode; align?: 'left' | 'right' }) {
+const cellAlignClass = {
+  left: 'text-left',
+  center: 'text-center',
+  right: 'text-right',
+} as const
+
+function Th({ children, align = 'left' }: { children: React.ReactNode; align?: keyof typeof cellAlignClass }) {
   return (
-    <th className={`py-3 px-6 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-${align}`}>
+    <th className={`py-3 px-6 text-[10px] font-bold text-gray-400 uppercase tracking-wider ${cellAlignClass[align]}`}>
       {children}
     </th>
   )
 }
 
-function Td({ children, align = 'left' }: { children: React.ReactNode; align?: 'left' | 'right' }) {
+function Td({ children, align = 'left' }: { children: React.ReactNode; align?: keyof typeof cellAlignClass }) {
   return (
-    <td className={`py-3.5 px-6 text-[13px] text-${align}`}>
+    <td className={`py-3.5 px-6 text-[13px] ${cellAlignClass[align]}`}>
       {children}
     </td>
   )
