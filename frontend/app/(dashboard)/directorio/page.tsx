@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import PageHeader from '@/components/ui/PageHeader'
 import Card from '@/components/ui/Card'
@@ -17,6 +17,15 @@ const selectClass =
 const searchInputClass =
   'w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-[13px] text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500/30 focus:border-red-500 transition-all duration-200 shadow-[0_1px_2px_rgba(0,0,0,0.04)]'
 
+const DIRECTORIO_STORAGE = {
+  search: 'directorio_search_text',
+  region: 'directorio_filter_region',
+  page: 'directorio_page',
+} as const
+
+/** Clave anterior del filtro de región (compatibilidad) */
+const DIRECTORIO_REGION_LEGACY = 'directorio_region_filter'
+
 export default function DirectorioPage() {
   const router = useRouter()
   const { data: tiendas, loading, error } = useTiendas()
@@ -25,20 +34,65 @@ export default function DirectorioPage() {
   const [searchText, setSearchText] = useState('')
   const [filterRegion, setFilterRegion] = useState('')
   const [page, setPage] = useState(1)
+  const filtersRestored = useRef(false)
 
   useEffect(() => {
-    const saved = sessionStorage.getItem('directorio_region_filter')
-    if (saved) setFilterRegion(saved)
+    try {
+      const savedSearch = sessionStorage.getItem(DIRECTORIO_STORAGE.search)
+      const savedRegion =
+        sessionStorage.getItem(DIRECTORIO_STORAGE.region) ??
+        sessionStorage.getItem(DIRECTORIO_REGION_LEGACY)
+      const savedPage = sessionStorage.getItem(DIRECTORIO_STORAGE.page)
+
+      if (savedSearch !== null) setSearchText(savedSearch)
+      if (savedRegion !== null) setFilterRegion(savedRegion)
+      if (savedPage) {
+        const p = parseInt(savedPage, 10)
+        if (!Number.isNaN(p) && p >= 1) setPage(p)
+      }
+    } catch {
+      // sessionStorage no disponible
+    }
+    filtersRestored.current = true
   }, [])
 
-  useEffect(() => {
+  const resetPageToFirst = useCallback(() => {
     setPage(1)
-  }, [searchText, filterRegion])
+    try {
+      sessionStorage.setItem(DIRECTORIO_STORAGE.page, '1')
+    } catch {
+      // ignore
+    }
+  }, [])
 
-  const handleRegionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const val = e.target.value
-    setFilterRegion(val)
-    sessionStorage.setItem('directorio_region_filter', val)
+  const handleSearchChange = (value: string) => {
+    setSearchText(value)
+    try {
+      sessionStorage.setItem(DIRECTORIO_STORAGE.search, value)
+    } catch {
+      // ignore
+    }
+    if (filtersRestored.current) resetPageToFirst()
+  }
+
+  const handleFilterRegionChange = (value: string) => {
+    setFilterRegion(value)
+    try {
+      sessionStorage.setItem(DIRECTORIO_STORAGE.region, value)
+      sessionStorage.removeItem(DIRECTORIO_REGION_LEGACY)
+    } catch {
+      // ignore
+    }
+    if (filtersRestored.current) resetPageToFirst()
+  }
+
+  const handlePageChange = (nextPage: number) => {
+    setPage(nextPage)
+    try {
+      sessionStorage.setItem(DIRECTORIO_STORAGE.page, String(nextPage))
+    } catch {
+      // ignore
+    }
   }
 
   useEffect(() => {
@@ -119,7 +173,11 @@ export default function DirectorioPage() {
       <div className="flex flex-col sm:flex-row gap-3 mb-5">
         {!isRegional && (
           <div className="w-full sm:w-52">
-            <select value={filterRegion} onChange={handleRegionChange} className={selectClass}>
+            <select
+              value={filterRegion}
+              onChange={(e) => handleFilterRegionChange(e.target.value)}
+              className={selectClass}
+            >
               {regionOptions.map((opt) => (
                 <option key={opt.value} value={opt.value}>
                   {opt.label}
@@ -133,7 +191,7 @@ export default function DirectorioPage() {
             type="text"
             placeholder="Buscar sucursal..."
             value={searchText}
-            onChange={(e) => setSearchText(e.target.value)}
+            onChange={(e) => handleSearchChange(e.target.value)}
             className={searchInputClass}
           />
         </div>
@@ -233,8 +291,8 @@ export default function DirectorioPage() {
             <TablePagination
               totalItems={filtered.length}
               pageSize={PAGE_SIZE}
-              page={page}
-              onPageChange={setPage}
+              page={safePage}
+              onPageChange={handlePageChange}
             />
           </>
         )}

@@ -99,6 +99,7 @@ export interface ConfiguracionTiendaPermiso {
   id_tienda: number
   id_tipo_permiso: number
   obligatorio: boolean
+  comentarios?: string | null
   // Joined
   tienda?: Tienda
   tipo_permiso?: CatalogoPermiso

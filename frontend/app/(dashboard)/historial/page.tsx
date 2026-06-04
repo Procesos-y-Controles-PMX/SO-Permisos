@@ -11,12 +11,15 @@ import { createClient } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { uploadFile } from '@/lib/storage'
 import PermisoArchivoActions from '@/components/permisos/PermisoArchivoActions'
+import PermisoNotasPanel from '@/components/permisos/PermisoNotasPanel'
 import VigenciaField from '@/components/permisos/VigenciaField'
+import { usePermisoComentarios } from '@/hooks/usePermisoComentarios'
 import { canSubmitVigencia, formatFechaVigencia, resolveVigenciaParaGuardar } from '@/lib/vigencia'
 import { useSolicitudes } from '@/hooks/useSolicitudes'
 import type { HistorialPermisoEstado } from '@/types'
 
 interface HistorialPermisoItem {
+  configId: number
   idTienda: number
   idTipoPermiso: number
   nombrePermiso: string
@@ -26,13 +29,15 @@ interface HistorialPermisoItem {
   vigencia: string | null
   archivoPath: string | null
   comentariosAdmin: string | null
+  notasPermiso: string | null
 }
 
 export default function HistorialPage() {
   const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
-  const { perfil, isTienda, loading: authLoading } = useAuth()
+  const { perfil, isTienda, isAdmin, loading: authLoading } = useAuth()
   const { crearSolicitud } = useSolicitudes(perfil?.id_tienda ?? undefined)
+  const { updateComentarios } = usePermisoComentarios()
 
   const [items, setItems] = useState<HistorialPermisoItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -64,8 +69,10 @@ export default function HistorialPage() {
       const { data: configData, error: configErr } = await supabase
         .from('configuracion_tienda_permisos')
         .select(`
+          id,
           id_tipo_permiso,
           obligatorio,
+          comentarios,
           tipo_permiso:id_tipo_permiso(id, nombre_permiso)
         `)
         .eq('id_tienda', perfil.id_tienda)
@@ -122,8 +129,14 @@ export default function HistorialPage() {
           new Date(vigente.fecha_vencimiento).setHours(0, 0, 0, 0) < today.getTime()
         )
 
+        const notasBase = {
+          configId: cfg.id as number,
+          notasPermiso: cfg.comentarios || null,
+        }
+
         if (pendiente) {
           return {
+            ...notasBase,
             idTienda: tiendaId,
             idTipoPermiso,
             nombrePermiso,
@@ -138,6 +151,7 @@ export default function HistorialPage() {
 
         if (ultimaSolicitud?.estatus_solicitud === 'Rechazado') {
           return {
+            ...notasBase,
             idTienda: tiendaId,
             idTipoPermiso,
             nombrePermiso,
@@ -152,6 +166,7 @@ export default function HistorialPage() {
 
         if (vigente && activeStatuses.has(vigente.estatus) && !isExpired) {
           return {
+            ...notasBase,
             idTienda: tiendaId,
             idTipoPermiso,
             nombrePermiso,
@@ -165,6 +180,7 @@ export default function HistorialPage() {
         }
 
         return {
+          ...notasBase,
           idTienda: tiendaId,
           idTipoPermiso,
           nombrePermiso,
@@ -470,6 +486,25 @@ export default function HistorialPage() {
                         <p className="text-[12px] text-red-600 italic">Rechazado sin comentario registrado.</p>
                       </div>
                     )}
+
+                    <PermisoNotasPanel
+                      compact
+                      comentarios={item.notasPermiso}
+                      canEdit={isAdmin}
+                      onSave={async (texto) => {
+                        const result = await updateComentarios(item.configId, texto)
+                        if (!result.error) {
+                          setItems((prev) =>
+                            prev.map((row) =>
+                              row.configId === item.configId
+                                ? { ...row, notasPermiso: texto?.trim() || null }
+                                : row,
+                            ),
+                          )
+                        }
+                        return result
+                      }}
+                    />
                   </div>
 
                   {/* File button */}

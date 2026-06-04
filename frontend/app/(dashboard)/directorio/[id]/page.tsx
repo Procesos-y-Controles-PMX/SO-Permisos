@@ -14,7 +14,9 @@ import { uploadFile, uploadActiveFile, deleteFile } from '@/lib/storage'
 import { createClient } from '@/lib/supabase'
 import TopSearchBar from '@/components/layout/TopSearchBar'
 import PermisoArchivoActions from '@/components/permisos/PermisoArchivoActions'
+import PermisoNotasPanel, { PermisoNotasIndicator } from '@/components/permisos/PermisoNotasPanel'
 import VigenciaField from '@/components/permisos/VigenciaField'
+import { usePermisoComentarios } from '@/hooks/usePermisoComentarios'
 import { canSubmitVigencia, formatFechaVigencia, resolveVigenciaParaGuardar } from '@/lib/vigencia'
 import type { ConfiguracionTiendaPermiso } from '@/types'
 
@@ -81,6 +83,7 @@ export default function TiendaDetallePage() {
 
   const { tienda, permisos, solicitudes, loading, error, refetch } = useTiendaDetalle(idTienda)
   const { aprobar, rechazar, crearSolicitud } = useSolicitudes(idTienda)
+  const { updateComentarios } = usePermisoComentarios()
 
   // ── Upload Modal state ──
   const [showUploadModal, setShowUploadModal] = useState(false)
@@ -178,6 +181,7 @@ export default function TiendaDetallePage() {
   const [deleteError, setDeleteError] = useState<string | null>(null)
   const [downloadingStoreZip, setDownloadingStoreZip] = useState(false)
   const [storeZipError, setStoreZipError] = useState<string | null>(null)
+  const [notasModalConfig, setNotasModalConfig] = useState<ConfiguracionTiendaPermiso | null>(null)
   const ACTIVE_STATUSES = new Set(['Activo', 'Aprobado'])
   const vigenciaValida = canSubmitVigencia(vigencia, sinVencimiento)
 
@@ -196,6 +200,27 @@ export default function TiendaDetallePage() {
   const permisosVencidos = useMemo(() =>
     permisos.filter(p => !p.permiso_vigente?.estatus || !ACTIVE_STATUSES.has(p.permiso_vigente.estatus) || isExpiredPermiso(p)),
     [permisos, isExpiredPermiso]
+  )
+
+  const configByTipoPermiso = useMemo(() => {
+    const map = new Map<number, ConfiguracionTiendaPermiso>()
+    permisos.forEach((p) => map.set(p.id_tipo_permiso, p))
+    return map
+  }, [permisos])
+
+  const handleSaveNotas = useCallback(
+    async (comentarios: string | null) => {
+      if (!notasModalConfig) return { error: 'No hay permiso seleccionado.' }
+      const result = await updateComentarios(notasModalConfig.id, comentarios)
+      if (!result.error) {
+        await refetch()
+        setNotasModalConfig((prev) =>
+          prev ? { ...prev, comentarios: comentarios?.trim() || null } : null,
+        )
+      }
+      return result
+    },
+    [notasModalConfig, updateComentarios, refetch],
   )
 
   const solicitudesPendientes = useMemo(() =>
@@ -595,6 +620,7 @@ export default function TiendaDetallePage() {
                   <Th>Vencimiento</Th>
                   <Th>Estatus</Th>
                   <Th align="center">Documento</Th>
+                  <Th align="center">Notas</Th>
                   {isAdmin && <Th align="right">Acciones</Th>}
                 </tr>
               </thead>
@@ -617,6 +643,15 @@ export default function TiendaDetallePage() {
                       {p.permiso_vigente?.archivo_path && (
                         <PermisoArchivoActions filePath={p.permiso_vigente.archivo_path} className="justify-center" />
                       )}
+                    </Td>
+                    <Td align="center">
+                      <button
+                        type="button"
+                        onClick={() => setNotasModalConfig(p)}
+                        className="inline-flex hover:opacity-80 transition-opacity"
+                      >
+                        <PermisoNotasIndicator comentarios={p.comentarios} />
+                      </button>
                     </Td>
                     {isAdmin && (
                       <Td align="right">
@@ -658,6 +693,7 @@ export default function TiendaDetallePage() {
                 <tr className="border-b border-gray-100">
                   <Th>Permiso Requerido</Th>
                   <Th>Estatus</Th>
+                  <Th align="center">Notas</Th>
                   {isTienda && <Th align="right">Acción</Th>}
                   {isAdmin && <Th align="right">Carga Directa</Th>}
                 </tr>
@@ -683,6 +719,15 @@ export default function TiendaDetallePage() {
                             No Subido
                           </span>
                         )}
+                      </Td>
+                      <Td align="center">
+                        <button
+                          type="button"
+                          onClick={() => setNotasModalConfig(p)}
+                          className="inline-flex hover:opacity-80 transition-opacity"
+                        >
+                          <PermisoNotasIndicator comentarios={p.comentarios} />
+                        </button>
                       </Td>
                       {isTienda && (
                         <Td align="right">
@@ -757,12 +802,15 @@ export default function TiendaDetallePage() {
                   <Th>Vigencia Propuesta</Th>
                   <Th>Estatus</Th>
                   <Th>Comentarios Admin</Th>
+                  <Th align="center">Notas permiso</Th>
                   <Th align="center">Documento</Th>
                   {isAdmin && <Th align="right">Acciones</Th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {solicitudesVisibles.map((s) => (
+                {solicitudesVisibles.map((s) => {
+                  const configSolicitud = configByTipoPermiso.get(s.id_tipo_permiso)
+                  return (
                   <tr key={s.id} className="hover:bg-amber-50/20 transition-colors">
                     <Td>
                       <span className="font-medium text-slate-700">{s.tipo_permiso?.nombre_permiso ?? '—'}</span>
@@ -795,6 +843,19 @@ export default function TiendaDetallePage() {
                       )}
                     </Td>
                     <Td align="center">
+                      {configSolicitud ? (
+                        <button
+                          type="button"
+                          onClick={() => setNotasModalConfig(configSolicitud)}
+                          className="inline-flex hover:opacity-80 transition-opacity"
+                        >
+                          <PermisoNotasIndicator comentarios={configSolicitud.comentarios} />
+                        </button>
+                      ) : (
+                        <span className="text-gray-300 text-[11px]">—</span>
+                      )}
+                    </Td>
+                    <Td align="center">
                       {s.archivo_adjunto_path ? (
                         <PermisoArchivoActions
                           filePath={s.archivo_adjunto_path}
@@ -820,7 +881,7 @@ export default function TiendaDetallePage() {
                       </Td>
                     )}
                   </tr>
-                ))}
+                )})}
               </tbody>
             </table>
           </div>
@@ -1125,6 +1186,22 @@ export default function TiendaDetallePage() {
               />
             </div>
           </div>
+        )}
+      </Modal>
+
+      {/* ── Notas del permiso ── */}
+      <Modal
+        open={!!notasModalConfig}
+        onClose={() => setNotasModalConfig(null)}
+        title="Notas del permiso"
+      >
+        {notasModalConfig && (
+          <PermisoNotasPanel
+            comentarios={notasModalConfig.comentarios}
+            canEdit={isAdmin}
+            onSave={handleSaveNotas}
+            nombrePermiso={notasModalConfig.tipo_permiso?.nombre_permiso}
+          />
         )}
       </Modal>
 
