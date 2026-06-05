@@ -171,10 +171,11 @@ export default function SucursalFormModal({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-                Gerente de tienda
+                Gerente de tienda *
               </label>
               <input
                 type="text"
+                required
                 value={form.gerente_tienda}
                 onChange={(e) => setForm((p) => ({ ...p, gerente_tienda: e.target.value }))}
                 className={inputClass}
@@ -182,7 +183,7 @@ export default function SucursalFormModal({
             </div>
             <div>
               <label className="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-                Teléfono
+                Teléfono (opcional)
               </label>
               <input
                 type="text"
@@ -195,10 +196,11 @@ export default function SucursalFormModal({
 
           <div>
             <label className="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-              Correo
+              Correo *
             </label>
             <input
               type="email"
+              required
               value={form.correo}
               onChange={(e) => setForm((p) => ({ ...p, correo: e.target.value }))}
               className={inputClass}
