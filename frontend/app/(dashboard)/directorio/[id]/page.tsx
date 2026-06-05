@@ -202,12 +202,6 @@ export default function TiendaDetallePage() {
     [permisos, isExpiredPermiso]
   )
 
-  const configByTipoPermiso = useMemo(() => {
-    const map = new Map<number, ConfiguracionTiendaPermiso>()
-    permisos.forEach((p) => map.set(p.id_tipo_permiso, p))
-    return map
-  }, [permisos])
-
   const handleSaveNotas = useCallback(
     async (comentarios: string | null) => {
       if (!notasModalConfig) return { error: 'No hay permiso seleccionado.' }
@@ -425,13 +419,17 @@ export default function TiendaDetallePage() {
 
   const handleConfirmReview = async () => {
     if (!selectedSolicitud) return
+    if (accion === 'rechazar' && !comentarios.trim()) {
+      setReviewError('El comentario es obligatorio al rechazar.')
+      return
+    }
     setReviewing(true)
     setReviewError(null)
 
     try {
       const result = accion === 'aprobar'
-        ? await aprobar(selectedSolicitud.id, comentarios || undefined)
-        : await rechazar(selectedSolicitud.id, comentarios)
+        ? await aprobar(selectedSolicitud.id, comentarios.trim() || undefined)
+        : await rechazar(selectedSolicitud.id, comentarios.trim())
 
       if (result.error) throw new Error(result.error)
       setShowReviewModal(false)
@@ -801,16 +799,12 @@ export default function TiendaDetallePage() {
                   <Th>Fecha</Th>
                   <Th>Vigencia Propuesta</Th>
                   <Th>Estatus</Th>
-                  <Th>Comentarios Admin</Th>
-                  <Th align="center">Notas permiso</Th>
                   <Th align="center">Documento</Th>
                   {isAdmin && <Th align="right">Acciones</Th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {solicitudesVisibles.map((s) => {
-                  const configSolicitud = configByTipoPermiso.get(s.id_tipo_permiso)
-                  return (
+                {solicitudesVisibles.map((s) => (
                   <tr key={s.id} className="hover:bg-amber-50/20 transition-colors">
                     <Td>
                       <span className="font-medium text-slate-700">{s.tipo_permiso?.nombre_permiso ?? '—'}</span>
@@ -827,33 +821,6 @@ export default function TiendaDetallePage() {
                     </Td>
                     <Td>
                       <Badge variant={statusToBadgeVariant(s.estatus_solicitud)}>{s.estatus_solicitud}</Badge>
-                    </Td>
-                    <Td>
-                      {s.comentarios_admin ? (
-                        <div className="max-w-[220px]">
-                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">
-                            {s.estatus_solicitud === 'Rechazado' ? '⚠️ Motivo' : '💬 Nota'}
-                          </p>
-                          <p className="text-[11px] text-slate-800 leading-relaxed font-medium">
-                            {s.comentarios_admin}
-                          </p>
-                        </div>
-                      ) : (
-                        <span className="text-gray-300 text-[11px]">—</span>
-                      )}
-                    </Td>
-                    <Td align="center">
-                      {configSolicitud ? (
-                        <button
-                          type="button"
-                          onClick={() => setNotasModalConfig(configSolicitud)}
-                          className="inline-flex hover:opacity-80 transition-opacity"
-                        >
-                          <PermisoNotasIndicator comentarios={configSolicitud.comentarios} />
-                        </button>
-                      ) : (
-                        <span className="text-gray-300 text-[11px]">—</span>
-                      )}
                     </Td>
                     <Td align="center">
                       {s.archivo_adjunto_path ? (
@@ -881,7 +848,7 @@ export default function TiendaDetallePage() {
                       </Td>
                     )}
                   </tr>
-                )})}
+                ))}
               </tbody>
             </table>
           </div>
@@ -1177,7 +1144,11 @@ export default function TiendaDetallePage() {
               <textarea
                 value={comentarios}
                 onChange={(e) => setComentarios(e.target.value)}
-                placeholder={accion === 'rechazar' ? 'Motivo del rechazo (requerido)...' : 'Comentarios opcionales...'}
+                placeholder={
+                  accion === 'rechazar'
+                    ? 'Motivo del rechazo (requerido)...'
+                    : 'Comentarios opcionales...'
+                }
                 rows={3}
                 className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-[13px] text-slate-800
                   placeholder-gray-400
