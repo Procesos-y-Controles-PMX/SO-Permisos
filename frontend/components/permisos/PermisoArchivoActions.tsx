@@ -21,6 +21,7 @@ interface PermisoArchivoActionsProps {
   className?: string
   viewClassName?: string
   downloadClassName?: string
+  iconOnly?: boolean
 }
 
 export default function PermisoArchivoActions({
@@ -28,6 +29,7 @@ export default function PermisoArchivoActions({
   className = '',
   viewClassName = 'inline-flex items-center gap-1.5 text-blue-500 hover:text-blue-700 text-[11px] font-medium transition-colors',
   downloadClassName = 'inline-flex items-center gap-1.5 text-slate-600 hover:text-slate-800 text-[11px] font-medium transition-colors disabled:opacity-50',
+  iconOnly = false,
 }: PermisoArchivoActionsProps) {
   const [downloading, setDownloading] = useState(false)
 
@@ -48,18 +50,33 @@ export default function PermisoArchivoActions({
   }
 
   return (
-    <div className={`inline-flex items-center gap-2 ${className}`}>
-      <button type="button" onClick={handleView} className={viewClassName} title="Ver documento">
-        <EyeIcon /> Ver
+    <div className={`inline-flex items-center ${iconOnly ? 'gap-3' : 'gap-2'} ${className}`}>
+      <button
+        type="button"
+        onClick={handleView}
+        className={
+          iconOnly
+            ? 'inline-flex p-1 text-blue-500 hover:text-blue-700 rounded-md hover:bg-blue-50 transition-colors'
+            : viewClassName
+        }
+        title="Ver documento"
+      >
+        <EyeIcon />
+        {!iconOnly && ' Ver'}
       </button>
       <button
         type="button"
         onClick={handleDownload}
         disabled={downloading}
-        className={downloadClassName}
+        className={
+          iconOnly
+            ? 'inline-flex p-1 text-emerald-600 hover:text-emerald-800 rounded-md hover:bg-emerald-50 transition-colors disabled:opacity-50'
+            : downloadClassName
+        }
         title="Descargar documento"
       >
-        <DownloadIcon /> {downloading ? 'Descargando...' : 'Descargar'}
+        <DownloadIcon />
+        {!iconOnly && (downloading ? ' Descargando...' : ' Descargar')}
       </button>
     </div>
   )

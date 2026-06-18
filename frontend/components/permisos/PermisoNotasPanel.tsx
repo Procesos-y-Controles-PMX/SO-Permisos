@@ -160,7 +160,7 @@ export function PermisoNotasIndicator({ comentarios }: { comentarios?: string | 
   return (
     <span
       className={`inline-flex items-center gap-1 text-[11px] font-medium ${
-        hasNotas ? 'text-amber-700' : 'text-gray-400'
+        hasNotas ? 'text-amber-700' : 'text-amber-500'
       }`}
       title={hasNotas ? 'Tiene notas' : 'Sin notas'}
     >

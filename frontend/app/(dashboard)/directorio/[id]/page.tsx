@@ -17,7 +17,8 @@ import PermisoArchivoActions from '@/components/permisos/PermisoArchivoActions'
 import PermisoNotasPanel, { PermisoNotasIndicator } from '@/components/permisos/PermisoNotasPanel'
 import VigenciaField from '@/components/permisos/VigenciaField'
 import { usePermisoComentarios } from '@/hooks/usePermisoComentarios'
-import { canSubmitVigencia, formatFechaVigencia, resolveVigenciaParaGuardar } from '@/lib/vigencia'
+import { usePermisoVigencia } from '@/hooks/usePermisoVigencia'
+import { canSubmitVigencia, formatFechaVigencia, resolveVigenciaParaGuardar, vigenciaFromPermiso } from '@/lib/vigencia'
 import type { ConfiguracionTiendaPermiso } from '@/types'
 
 // ── Icons ──────────────────────────────────────────────────
@@ -31,6 +32,12 @@ const BackIcon = () => (
 const TrashIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+  </svg>
+)
+
+const PencilIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
   </svg>
 )
 
@@ -84,6 +91,7 @@ export default function TiendaDetallePage() {
   const { tienda, permisos, solicitudes, loading, error, refetch } = useTiendaDetalle(idTienda)
   const { aprobar, rechazar, crearSolicitud } = useSolicitudes(idTienda)
   const { updateComentarios } = usePermisoComentarios()
+  const { updateVigencia } = usePermisoVigencia()
 
   // ── Upload Modal state ──
   const [showUploadModal, setShowUploadModal] = useState(false)
@@ -182,8 +190,14 @@ export default function TiendaDetallePage() {
   const [downloadingStoreZip, setDownloadingStoreZip] = useState(false)
   const [storeZipError, setStoreZipError] = useState<string | null>(null)
   const [notasModalConfig, setNotasModalConfig] = useState<ConfiguracionTiendaPermiso | null>(null)
+  const [vigenciaEditConfig, setVigenciaEditConfig] = useState<ConfiguracionTiendaPermiso | null>(null)
+  const [vigenciaEdit, setVigenciaEdit] = useState('')
+  const [sinVencimientoEdit, setSinVencimientoEdit] = useState(false)
+  const [vigenciaEditSubmitting, setVigenciaEditSubmitting] = useState(false)
+  const [vigenciaEditError, setVigenciaEditError] = useState<string | null>(null)
   const ACTIVE_STATUSES = new Set(['Activo', 'Aprobado'])
   const vigenciaValida = canSubmitVigencia(vigencia, sinVencimiento)
+  const vigenciaEditValida = canSubmitVigencia(vigenciaEdit, sinVencimientoEdit)
 
   const getFileNameFromDisposition = useCallback((value: string | null): string | null => {
     if (!value) return null
@@ -201,6 +215,43 @@ export default function TiendaDetallePage() {
     permisos.filter(p => !p.permiso_vigente?.estatus || !ACTIVE_STATUSES.has(p.permiso_vigente.estatus) || isExpiredPermiso(p)),
     [permisos, isExpiredPermiso]
   )
+
+  const handleOpenVigenciaEdit = useCallback((config: ConfiguracionTiendaPermiso) => {
+    const { vigencia: initialVigencia, sinVencimiento: initialSinVencimiento } = vigenciaFromPermiso(
+      config.permiso_vigente?.fecha_vencimiento,
+    )
+    setVigenciaEditConfig(config)
+    setVigenciaEdit(initialVigencia)
+    setSinVencimientoEdit(initialSinVencimiento)
+    setVigenciaEditError(null)
+  }, [])
+
+  const handleCloseVigenciaEdit = useCallback(() => {
+    if (vigenciaEditSubmitting) return
+    setVigenciaEditConfig(null)
+    setVigenciaEdit('')
+    setSinVencimientoEdit(false)
+    setVigenciaEditError(null)
+  }, [vigenciaEditSubmitting])
+
+  const handleSaveVigenciaEdit = useCallback(async () => {
+    if (!vigenciaEditConfig) return
+    setVigenciaEditSubmitting(true)
+    setVigenciaEditError(null)
+
+    const result = await updateVigencia(vigenciaEditConfig, vigenciaEdit, sinVencimientoEdit)
+    if (result.error) {
+      setVigenciaEditError(result.error)
+      setVigenciaEditSubmitting(false)
+      return
+    }
+
+    setVigenciaEditConfig(null)
+    setVigenciaEdit('')
+    setSinVencimientoEdit(false)
+    setVigenciaEditSubmitting(false)
+    await refetch()
+  }, [vigenciaEditConfig, vigenciaEdit, sinVencimientoEdit, updateVigencia, refetch])
 
   const handleSaveNotas = useCallback(
     async (comentarios: string | null) => {
@@ -611,38 +662,63 @@ export default function TiendaDetallePage() {
           <EmptyState message="No hay permisos vigentes registrados." />
         ) : (
           <div className="overflow-x-auto -mx-5 sm:-mx-6">
-            <table className="w-full text-left">
+            <table className="w-full text-left table-fixed">
+              <colgroup>
+                <col className="w-[38%]" />
+                <col className="w-[14%]" />
+                <col className="w-[12%]" />
+                <col className="w-[12%]" />
+                <col className="w-[10%]" />
+                {isAdmin && <col className="w-[10%]" />}
+              </colgroup>
               <thead>
                 <tr className="border-b border-gray-100">
-                  <Th>Permiso</Th>
-                  <Th>Vencimiento</Th>
-                  <Th>Estatus</Th>
-                  <Th align="center">Documento</Th>
-                  <Th align="center">Notas</Th>
-                  {isAdmin && <Th align="right">Acciones</Th>}
+                  <Th className="py-4">Permiso</Th>
+                  <Th align="center" className="py-4">Vencimiento</Th>
+                  <Th align="center" className="py-4">Estatus</Th>
+                  <Th align="center" className="py-4">Documento</Th>
+                  <Th align="center" className="py-4">Notas</Th>
+                  {isAdmin && <Th align="center" className="py-4">Acciones</Th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {permisosVigentes.map((p) => (
                   <tr key={p.id} className="hover:bg-green-50/30 transition-colors">
-                    <Td>
-                      <span className="font-medium text-slate-700">{p.tipo_permiso?.nombre_permiso ?? '—'}</span>
+                    <Td className="py-5 pr-4">
+                      <span className="font-medium text-slate-700 leading-relaxed">{p.tipo_permiso?.nombre_permiso ?? '—'}</span>
                       {p.obligatorio && <span className="ml-2 text-[9px] font-bold text-red-500 uppercase">Obligatorio</span>}
                     </Td>
-                    <Td>
-                      <span className="font-mono text-[12px] text-slate-600">
-                        {formatFechaVigencia(p.permiso_vigente?.fecha_vencimiento)}
-                      </span>
+                    <Td align="center" className="py-5">
+                      <div className="flex items-center justify-center gap-3 whitespace-nowrap">
+                        <span className="font-mono text-[12px] text-slate-600">
+                          {formatFechaVigencia(p.permiso_vigente?.fecha_vencimiento)}
+                        </span>
+                        {isAdmin && (
+                          <button
+                            type="button"
+                            onClick={() => handleOpenVigenciaEdit(p)}
+                            className="inline-flex p-1 rounded-md text-blue-500 hover:text-blue-700 hover:bg-blue-50 transition-colors"
+                            title="Editar vigencia"
+                          >
+                            <PencilIcon />
+                          </button>
+                        )}
+                      </div>
                     </Td>
-                    <Td>
-                      <Badge variant={statusToBadgeVariant(p.permiso_vigente?.estatus || '')}>{p.permiso_vigente?.estatus}</Badge>
+                    <Td align="center" className="py-5 whitespace-nowrap">
+                      <div className="flex justify-center">
+                        <Badge variant={statusToBadgeVariant(p.permiso_vigente?.estatus || '')}>{p.permiso_vigente?.estatus}</Badge>
+                      </div>
                     </Td>
-                    <Td align="center">
+                    <Td align="center" className="py-5 whitespace-nowrap">
                       {p.permiso_vigente?.archivo_path && (
-                        <PermisoArchivoActions filePath={p.permiso_vigente.archivo_path} className="justify-center" />
+                        <PermisoArchivoActions
+                          filePath={p.permiso_vigente.archivo_path}
+                          className="justify-center"
+                        />
                       )}
                     </Td>
-                    <Td align="center">
+                    <Td align="center" className="py-5 whitespace-nowrap">
                       <button
                         type="button"
                         onClick={() => setNotasModalConfig(p)}
@@ -652,13 +728,14 @@ export default function TiendaDetallePage() {
                       </button>
                     </Td>
                     {isAdmin && (
-                      <Td align="right">
+                      <Td align="center" className="py-5 whitespace-nowrap">
                         <button
+                          type="button"
                           onClick={() => setPermisoToDelete(p)}
-                          className="inline-flex items-center gap-1.5 text-red-500 hover:text-red-700 text-[11px] font-medium transition-colors ml-2"
-                          title="Borrar Permiso"
+                          className="inline-flex p-1 rounded-md text-red-500 hover:text-red-700 hover:bg-red-50 transition-colors"
+                          title="Borrar permiso"
                         >
-                          <TrashIcon /> Borrar
+                          <TrashIcon />
                         </button>
                       </Td>
                     )}
@@ -1160,6 +1237,61 @@ export default function TiendaDetallePage() {
         )}
       </Modal>
 
+      {/* ── Editar vigencia ── */}
+      <Modal
+        open={!!vigenciaEditConfig}
+        onClose={handleCloseVigenciaEdit}
+        title="Editar vigencia"
+        actions={
+          <>
+            <Button variant="secondary" onClick={handleCloseVigenciaEdit} disabled={vigenciaEditSubmitting}>
+              Cancelar
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleSaveVigenciaEdit}
+              disabled={vigenciaEditSubmitting || !vigenciaEditValida}
+            >
+              {vigenciaEditSubmitting ? 'Guardando...' : 'Guardar'}
+            </Button>
+          </>
+        }
+      >
+        {vigenciaEditConfig && (
+          <div className="space-y-5">
+            {vigenciaEditError && (
+              <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-600 text-[13px]">
+                {vigenciaEditError}
+              </div>
+            )}
+
+            <div className="bg-blue-50/60 border border-blue-200 rounded-xl p-4">
+              <p className="text-[10px] font-bold text-blue-500 uppercase tracking-widest mb-1">Permiso</p>
+              <h4 className="text-[15px] font-bold text-slate-800">
+                {vigenciaEditConfig.tipo_permiso?.nombre_permiso}
+              </h4>
+              <p className="text-[12px] text-slate-500 mt-1">
+                Sucursal: <span className="font-semibold text-slate-700">{tienda?.sucursal}</span>
+              </p>
+              <p className="text-[12px] text-slate-500 mt-1">
+                Vigencia actual:{' '}
+                <span className="font-mono font-semibold text-slate-700">
+                  {formatFechaVigencia(vigenciaEditConfig.permiso_vigente?.fecha_vencimiento)}
+                </span>
+              </p>
+            </div>
+
+            <VigenciaField
+              vigencia={vigenciaEdit}
+              sinVencimiento={sinVencimientoEdit}
+              onVigenciaChange={setVigenciaEdit}
+              onSinVencimientoChange={setSinVencimientoEdit}
+              dateLabel="Fecha de vencimiento"
+            />
+          </div>
+        )}
+      </Modal>
+
       {/* ── Notas del permiso ── */}
       <Modal
         open={!!notasModalConfig}
@@ -1236,17 +1368,33 @@ const cellAlignClass = {
   right: 'text-right',
 } as const
 
-function Th({ children, align = 'left' }: { children: React.ReactNode; align?: keyof typeof cellAlignClass }) {
+function Th({
+  children,
+  align = 'left',
+  className = '',
+}: {
+  children: React.ReactNode
+  align?: keyof typeof cellAlignClass
+  className?: string
+}) {
   return (
-    <th className={`py-3 px-6 text-[10px] font-bold text-gray-400 uppercase tracking-wider ${cellAlignClass[align]}`}>
+    <th className={`py-3 px-6 text-[10px] font-bold text-gray-400 uppercase tracking-wider ${cellAlignClass[align]} ${className}`}>
       {children}
     </th>
   )
 }
 
-function Td({ children, align = 'left' }: { children: React.ReactNode; align?: keyof typeof cellAlignClass }) {
+function Td({
+  children,
+  align = 'left',
+  className = '',
+}: {
+  children: React.ReactNode
+  align?: keyof typeof cellAlignClass
+  className?: string
+}) {
   return (
-    <td className={`py-3.5 px-6 text-[13px] ${cellAlignClass[align]}`}>
+    <td className={`py-3.5 px-6 text-[13px] ${cellAlignClass[align]} ${className}`}>
       {children}
     </td>
   )

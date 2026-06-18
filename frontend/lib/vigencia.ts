@@ -53,3 +53,16 @@ export function resolveVigenciaParaGuardar(
 export function resetVigenciaFormState(): { vigencia: string; sinVencimiento: boolean } {
   return { vigencia: '', sinVencimiento: false }
 }
+
+export function fechaVigenciaToInputValue(date: string | null | undefined): string {
+  if (!date) return ''
+  return date.slice(0, 10)
+}
+
+export function vigenciaFromPermiso(fecha: string | null | undefined): {
+  vigencia: string
+  sinVencimiento: boolean
+} {
+  if (!fecha) return { vigencia: '', sinVencimiento: true }
+  return { vigencia: fechaVigenciaToInputValue(fecha), sinVencimiento: false }
+}
