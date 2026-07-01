@@ -85,34 +85,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setRol(rolData?.nombre_rol ?? null)
   }, [supabase])
 
-  // ─ Sign In (custom: SELECT from perfiles by email+password) ─
+  // ─ Sign In via server API (service role + TLS-safe) ─
   const signIn = async (email: string, password: string) => {
-    const { data, error } = await supabase
-      .from('perfiles')
-      .select('id, email, nombre_completo, id_rol, id_tienda, id_region, created_at, roles:id_rol(id, nombre_rol)')
-      .eq('email', email)
-      .eq('password', password)
-      .single()
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      })
 
-    if (error || !data) {
-      return { error: 'Credenciales incorrectas. Verifica tu correo y contraseña.' }
+      const payload = (await response.json()) as {
+        ok?: boolean
+        perfil?: Perfil
+        rol?: RolUsuario | null
+        message?: string
+      }
+
+      if (!response.ok || !payload.ok || !payload.perfil) {
+        return {
+          error:
+            payload.message ??
+            'Credenciales incorrectas. Verifica tu correo y contraseña.',
+        }
+      }
+
+      setPerfil(payload.perfil)
+      setRol(payload.rol ?? null)
+      return { error: null }
+    } catch {
+      return { error: 'Error al iniciar sesión. Intenta de nuevo.' }
     }
-
-    const rolData = (data.roles as unknown) as { id: number; nombre_rol: RolUsuario } | null
-    const perfilData: Perfil = {
-      id: data.id,
-      email: data.email,
-      nombre_completo: data.nombre_completo,
-      id_rol: data.id_rol,
-      id_tienda: data.id_tienda,
-      id_region: data.id_region,
-      created_at: data.created_at,
-    }
-
-    setPerfil(perfilData)
-    setRol(rolData?.nombre_rol ?? null)
-
-    return { error: null }
   }
 
   // ─ Sign Out (clear state + localStorage) ─
