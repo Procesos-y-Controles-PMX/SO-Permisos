@@ -23,17 +23,17 @@ export default function Tabs({ tabs, defaultTab, onChange }: TabsProps) {
   }
 
   return (
-    <div className="inline-flex bg-white border border-gray-100 rounded-xl p-1 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+    <div className="inline-flex rounded-sm border border-slate-200 bg-white p-1 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
       {tabs.map((tab) => (
         <button
           key={tab.key}
           onClick={() => handleClick(tab.key)}
           className={`
-            flex items-center gap-1.5 px-4 py-2 text-[13px] font-medium rounded-lg
+            flex items-center gap-1.5 rounded-sm px-4 py-2 text-[13px] font-medium
             transition-all duration-200
             ${active === tab.key
-              ? 'bg-white text-red-600 shadow-sm border border-gray-100'
-              : 'text-gray-400 hover:text-gray-600'
+              ? 'border border-slate-200 bg-white text-brand shadow-sm'
+              : 'text-slate-400 hover:text-slate-600'
             }
           `}
         >

@@ -507,7 +507,7 @@ export default function HistorialPage() {
                         filePath={item.archivoPath}
                         className="flex-col sm:flex-row items-end sm:items-center"
                         viewClassName="inline-flex items-center gap-1.5 px-2.5 py-2 rounded-xl text-blue-500 hover:bg-blue-50 hover:text-blue-700 border border-transparent hover:border-blue-200 text-[12px] font-medium transition-all"
-                        downloadClassName="inline-flex items-center gap-1.5 px-2.5 py-2 rounded-xl text-slate-600 hover:bg-gray-50 border border-transparent hover:border-gray-200 text-[12px] font-medium transition-all disabled:opacity-50"
+                        downloadClassName="inline-flex items-center gap-1.5 rounded-sm border border-transparent px-2.5 py-2 text-[12px] font-medium text-slate-600 transition-all hover:border-slate-200 hover:bg-slate-50 disabled:opacity-50"
                       />
                     )}
                   </div>
@@ -568,7 +568,7 @@ export default function HistorialPage() {
                 className={`
                   border-2 border-dashed rounded-2xl p-6 transition-all duration-200 text-center
                   ${isDraggingUpload ? 'border-blue-400 bg-blue-50/40' : ''}
-                  ${archivo ? 'border-green-200 bg-green-50/30' : 'border-gray-200 bg-gray-50/50 hover:bg-gray-50 hover:border-blue-200'}
+                  ${archivo ? 'border-green-200 bg-green-50/30' : 'border-slate-200 bg-slate-50/50 hover:border-brand/30 hover:bg-slate-50'}
                 `}
                 onDragOver={(e) => { e.preventDefault(); setIsDraggingUpload(true) }}
                 onDragLeave={(e) => { e.preventDefault(); setIsDraggingUpload(false) }}

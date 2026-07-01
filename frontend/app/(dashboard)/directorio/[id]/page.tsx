@@ -20,6 +20,18 @@ import { usePermisoComentarios } from '@/hooks/usePermisoComentarios'
 import { usePermisoVigencia } from '@/hooks/usePermisoVigencia'
 import { canSubmitVigencia, formatFechaVigencia, resolveVigenciaParaGuardar, vigenciaFromPermiso } from '@/lib/vigencia'
 import type { ConfiguracionTiendaPermiso } from '@/types'
+import {
+  ALERT_ERROR,
+  ALERT_INFO,
+  ALERT_WARNING,
+  BTN_GHOST,
+  EMPTY_STATE,
+  FIELD_INPUT,
+  PANEL_CARD,
+  PANEL_INSET,
+  TABLE_BODY_ROW,
+  TABLE_HEAD_CELL,
+} from '@/components/ui/contentStyles'
 
 // ── Icons ──────────────────────────────────────────────────
 
@@ -74,7 +86,7 @@ function SectionHeader({ icon, title, count, color }: { icon: React.ReactNode; t
       </div>
       <div>
         <h3 className="text-[15px] font-bold text-slate-800">{title}</h3>
-        <p className="text-[11px] text-gray-400">{count} registro{count !== 1 ? 's' : ''}</p>
+        <p className="text-[11px] text-slate-400">{count} registro{count !== 1 ? 's' : ''}</p>
       </div>
     </div>
   )
@@ -573,7 +585,7 @@ export default function TiendaDetallePage() {
       <div className="space-y-4">
         <PageHeader title="Detalle de Sucursal" subtitle="Cargando..." />
         {[1, 2, 3].map(i => (
-          <Card key={i} className="animate-pulse"><div className="h-32 bg-gray-100 rounded-lg" /></Card>
+          <Card key={i} className="animate-pulse"><div className="h-32 rounded-sm bg-slate-100" /></Card>
         ))}
       </div>
     )
@@ -600,7 +612,7 @@ export default function TiendaDetallePage() {
           {(!isTienda) && (
             <button
               onClick={() => router.push('/directorio')}
-              className="p-2 rounded-xl text-gray-400 hover:text-slate-700 hover:bg-white hover:shadow-sm border border-transparent hover:border-gray-200 transition-all shrink-0"
+              className={`${BTN_GHOST} shrink-0 border border-transparent p-2 hover:border-slate-200 hover:bg-white hover:shadow-sm`}
               title="Volver al Directorio"
             >
               <BackIcon />
@@ -608,7 +620,7 @@ export default function TiendaDetallePage() {
           )}
           <div>
             <h1 className="text-xl font-bold text-slate-800 line-clamp-1">{tienda.sucursal}</h1>
-            <p className="text-[12px] text-gray-400 line-clamp-1">{tienda.region?.nombre_region ?? 'Sin región asignada'}</p>
+            <p className="text-[12px] text-slate-400 line-clamp-1">{tienda.region?.nombre_region ?? 'Sin región asignada'}</p>
           </div>
         </div>
         <div className="min-w-0 flex items-center gap-2">
@@ -627,7 +639,7 @@ export default function TiendaDetallePage() {
         </div>
       </div>
       {storeZipError && (
-        <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-[13px] text-red-600">
+        <div className={`mb-4 ${ALERT_ERROR}`}>
           {storeZipError}
         </div>
       )}
@@ -672,7 +684,7 @@ export default function TiendaDetallePage() {
                 {isAdmin && <col className="w-[10%]" />}
               </colgroup>
               <thead>
-                <tr className="border-b border-gray-100">
+                <tr className="border-b border-slate-200">
                   <Th className="py-4">Permiso</Th>
                   <Th align="center" className="py-4">Vencimiento</Th>
                   <Th align="center" className="py-4">Estatus</Th>
@@ -681,9 +693,9 @@ export default function TiendaDetallePage() {
                   {isAdmin && <Th align="center" className="py-4">Acciones</Th>}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody className="divide-y divide-slate-100">
                 {permisosVigentes.map((p) => (
-                  <tr key={p.id} className="hover:bg-green-50/30 transition-colors">
+                  <tr key={p.id} className={`${TABLE_BODY_ROW} hover:bg-green-50/30`}>
                     <Td className="py-5 pr-4">
                       <span className="font-medium text-slate-700 leading-relaxed">{p.tipo_permiso?.nombre_permiso ?? '—'}</span>
                       {p.obligatorio && <span className="ml-2 text-[9px] font-bold text-red-500 uppercase">Obligatorio</span>}
@@ -697,7 +709,7 @@ export default function TiendaDetallePage() {
                           <button
                             type="button"
                             onClick={() => handleOpenVigenciaEdit(p)}
-                            className="inline-flex p-1 rounded-md text-blue-500 hover:text-blue-700 hover:bg-blue-50 transition-colors"
+                            className="inline-flex rounded-sm p-1 text-steel transition-colors hover:bg-slate-100 hover:text-brand"
                             title="Editar vigencia"
                           >
                             <PencilIcon />
@@ -765,7 +777,7 @@ export default function TiendaDetallePage() {
           <div className="overflow-x-auto -mx-5 sm:-mx-6">
             <table className="w-full text-left">
               <thead>
-                <tr className="border-b border-gray-100">
+                <tr className="border-b border-slate-200">
                   <Th>Permiso Requerido</Th>
                   <Th>Estatus</Th>
                   <Th align="center">Notas</Th>
@@ -773,7 +785,7 @@ export default function TiendaDetallePage() {
                   {isAdmin && <Th align="right">Carga Directa</Th>}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody className="divide-y divide-slate-100">
                 {permisosVencidos.map((p) => {
                   const upload = isUploadBlocked(p)
                   const shouldBeExpiredByDate = isExpiredPermiso(p)
@@ -781,7 +793,7 @@ export default function TiendaDetallePage() {
                     ? (shouldBeExpiredByDate ? 'Vencido' : p.permiso_vigente.estatus)
                     : 'No Subido'
                   return (
-                    <tr key={p.id} className="hover:bg-red-50/20 transition-colors">
+                    <tr key={p.id} className={`${TABLE_BODY_ROW} hover:bg-red-50/20`}>
                       <Td>
                         <span className="font-medium text-slate-700">{p.tipo_permiso?.nombre_permiso ?? '—'}</span>
                         {p.obligatorio && <span className="ml-2 text-[9px] font-bold text-red-500 uppercase">Obligatorio</span>}
@@ -790,7 +802,7 @@ export default function TiendaDetallePage() {
                         {p.permiso_vigente ? (
                           <Badge variant="danger">{visibleStatus}</Badge>
                         ) : (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-gray-100 text-gray-500 border border-gray-200">
+                          <span className="inline-flex items-center rounded-sm border border-slate-200 bg-slate-100 px-2.5 py-0.5 text-[11px] font-medium text-slate-500">
                             No Subido
                           </span>
                         )}
@@ -871,7 +883,7 @@ export default function TiendaDetallePage() {
           <div className="overflow-x-auto -mx-5 sm:-mx-6">
             <table className="w-full text-left">
               <thead>
-                <tr className="border-b border-gray-100">
+                <tr className="border-b border-slate-200">
                   <Th>Permiso</Th>
                   <Th>Fecha</Th>
                   <Th>Vigencia Propuesta</Th>
@@ -880,19 +892,19 @@ export default function TiendaDetallePage() {
                   {isAdmin && <Th align="right">Acciones</Th>}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody className="divide-y divide-slate-100">
                 {solicitudesVisibles.map((s) => (
-                  <tr key={s.id} className="hover:bg-amber-50/20 transition-colors">
+                  <tr key={s.id} className={`${TABLE_BODY_ROW} hover:bg-amber-50/20`}>
                     <Td>
                       <span className="font-medium text-slate-700">{s.tipo_permiso?.nombre_permiso ?? '—'}</span>
                     </Td>
                     <Td>
-                      <span className="font-mono text-[11px] text-gray-500">
+                      <span className="font-mono text-[11px] text-slate-500">
                         {new Date(s.fecha_solicitud).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })}
                       </span>
                     </Td>
                     <Td>
-                      <span className="font-mono text-[11px] text-gray-500">
+                      <span className="font-mono text-[11px] text-slate-500">
                         {formatFechaVigencia(s.vigencia_propuesta)}
                       </span>
                     </Td>
@@ -904,10 +916,10 @@ export default function TiendaDetallePage() {
                         <PermisoArchivoActions
                           filePath={s.archivo_adjunto_path}
                           className="justify-center"
-                          viewClassName="inline-flex items-center gap-1.5 text-blue-500 hover:text-blue-700 text-[11px] font-medium transition-colors"
+                          viewClassName="inline-flex items-center gap-1.5 text-[11px] font-medium text-brand transition-colors hover:text-brand-hover"
                         />
                       ) : (
-                        <span className="text-gray-300 text-[11px]">—</span>
+                        <span className="text-[11px] text-slate-300">—</span>
                       )}
                     </Td>
                     {isAdmin && (
@@ -958,7 +970,7 @@ export default function TiendaDetallePage() {
         {selectedConfig && (
           <div className="space-y-5">
             {submitError && (
-              <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-600 text-[13px] flex items-start gap-3">
+              <div className={`${ALERT_ERROR} flex items-start gap-3`}>
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
@@ -967,8 +979,8 @@ export default function TiendaDetallePage() {
             )}
 
             {/* ── Security badge: nombre del permiso ── */}
-            <div className="bg-blue-50/60 border border-blue-200 rounded-xl p-4">
-              <p className="text-[10px] font-bold text-blue-500 uppercase tracking-widest mb-1">📄 Subiendo</p>
+            <div className={`${PANEL_INSET} p-4`}>
+              <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-steel">📄 Subiendo</p>
               <div className="flex justify-between items-start">
                 <h4 className="text-[15px] font-bold text-slate-800">{selectedConfig.tipo_permiso?.nombre_permiso}</h4>
                 <Badge variant={selectedConfig.obligatorio ? 'danger' : 'neutral'}>
@@ -986,14 +998,14 @@ export default function TiendaDetallePage() {
             />
 
             <div className="space-y-2">
-              <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-widest">
+              <label className="block text-[11px] font-bold uppercase tracking-widest text-slate-500">
                 Documento Probatorio (PDF o Imagen)
               </label>
               <div
                 className={`
-                  border-2 border-dashed rounded-2xl p-6 transition-all duration-200 text-center
-                  ${isDraggingUpload ? 'border-blue-400 bg-blue-50/40' : ''}
-                  ${archivo ? 'border-green-200 bg-green-50/30' : 'border-gray-200 bg-gray-50/50 hover:bg-gray-50 hover:border-blue-200'}
+                  rounded-sm border-2 border-dashed p-6 text-center transition-all duration-200
+                  ${isDraggingUpload ? 'border-brand bg-brand/5' : ''}
+                  ${archivo ? 'border-emerald-200 bg-emerald-50/30' : 'border-slate-200 bg-slate-50/50 hover:border-brand/30 hover:bg-slate-50'}
                 `}
                 onDragOver={(e) => { e.preventDefault(); setIsDraggingUpload(true) }}
                 onDragLeave={(e) => { e.preventDefault(); setIsDraggingUpload(false) }}
@@ -1009,25 +1021,25 @@ export default function TiendaDetallePage() {
                 <label htmlFor="file-upload-detail" className="cursor-pointer">
                   {!archivo ? (
                     <div className="flex flex-col items-center">
-                      <div className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center text-blue-500 mb-3">
+                      <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-sm bg-white text-brand shadow-sm">
                         <UploadIcon />
                       </div>
                       <p className="text-[13px] font-semibold text-slate-700">Click para seleccionar o arrastra aquí</p>
-                      <p className="text-[11px] text-gray-400 mt-1">Máximo 10MB • PDF, JPG, PNG, WEBP</p>
+                      <p className="mt-1 text-[11px] text-slate-400">Máximo 10MB • PDF, JPG, PNG, WEBP</p>
                     </div>
                   ) : previewUrl ? (
                     <div className="flex flex-col items-center gap-2">
                       <img
                         src={previewUrl}
                         alt="Vista previa"
-                        className="w-24 h-24 object-cover rounded-xl shadow-sm border border-green-200"
+                        className="h-24 w-24 rounded-sm border border-emerald-200 object-cover shadow-sm"
                       />
                       <p className="text-[13px] font-semibold text-green-700 truncate max-w-[200px]">{archivo.name}</p>
                       <p className="text-[11px] text-green-600/70">{(archivo.size / 1024 / 1024).toFixed(2)} MB • Imagen lista</p>
                     </div>
                   ) : (
                     <div className="flex flex-col items-center">
-                      <div className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center text-green-500 mb-3">
+                      <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-sm bg-white text-emerald-600 shadow-sm">
                         <CheckCircleIcon />
                       </div>
                       <p className="text-[13px] font-semibold text-green-700 truncate w-64 px-4">{archivo.name}</p>
@@ -1038,11 +1050,11 @@ export default function TiendaDetallePage() {
               </div>
             </div>
 
-            <div className="flex items-start gap-3 p-4 bg-orange-50/50 rounded-xl border border-orange-100">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-orange-400 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className={`${ALERT_INFO} flex items-start gap-3`}>
+              <svg xmlns="http://www.w3.org/2000/svg" className="mt-0.5 h-5 w-5 shrink-0 text-brand" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <p className="text-[11px] text-orange-800/80 leading-relaxed">
+              <p className="text-[11px] leading-relaxed">
                 Al enviar este documento, entrará en proceso de validación por Mesa de Control. Serás notificado una vez que el estatus cambie.
               </p>
             </div>
@@ -1075,7 +1087,7 @@ export default function TiendaDetallePage() {
           <div className="space-y-5">
 
             {/* ── Admin security context: Sucursal + Documento ── */}
-            <div className="bg-slate-800 rounded-xl p-4 flex flex-col gap-2">
+            <div className={`${PANEL_CARD} flex flex-col gap-2 bg-slate-800 p-4 text-white`}>
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Contexto de carga</p>
               <div className="flex flex-wrap gap-x-6 gap-y-1">
                 <div className="flex items-center gap-2">
@@ -1096,7 +1108,7 @@ export default function TiendaDetallePage() {
               </div>
             </div>
 
-            <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-800 text-[13px] flex items-start gap-3">
+            <div className={`${ALERT_ERROR} flex items-start gap-3 text-red-800`}>
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 shrink-0 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
@@ -1107,9 +1119,7 @@ export default function TiendaDetallePage() {
             </div>
 
             {directSubmitError && (
-              <div className="bg-orange-50 border border-orange-200 rounded-xl p-3 text-orange-600 text-[13px]">
-                {directSubmitError}
-              </div>
+              <div className={ALERT_WARNING}>{directSubmitError}</div>
             )}
 
             <VigenciaField
@@ -1121,14 +1131,14 @@ export default function TiendaDetallePage() {
             />
 
             <div className="space-y-2">
-              <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-widest">
+              <label className="block text-[11px] font-bold uppercase tracking-widest text-slate-500">
                 Documento Probatorio (PDF o Imagen)
               </label>
               <div
                 className={`
-                  border-2 border-dashed rounded-2xl p-6 transition-all duration-200 text-center
-                  ${isDraggingDirectUpload ? 'border-blue-400 bg-blue-50/40' : ''}
-                  ${archivo ? 'border-green-200 bg-green-50/30' : 'border-gray-200 bg-gray-50/50 hover:bg-gray-50 hover:border-blue-200'}
+                  rounded-sm border-2 border-dashed p-6 text-center transition-all duration-200
+                  ${isDraggingDirectUpload ? 'border-brand bg-brand/5' : ''}
+                  ${archivo ? 'border-emerald-200 bg-emerald-50/30' : 'border-slate-200 bg-slate-50/50 hover:border-brand/30 hover:bg-slate-50'}
                 `}
                 onDragOver={(e) => { e.preventDefault(); setIsDraggingDirectUpload(true) }}
                 onDragLeave={(e) => { e.preventDefault(); setIsDraggingDirectUpload(false) }}
@@ -1144,25 +1154,25 @@ export default function TiendaDetallePage() {
                 <label htmlFor="file-upload-direct" className="cursor-pointer">
                   {!archivo ? (
                     <div className="flex flex-col items-center">
-                      <div className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center text-blue-500 mb-3">
+                      <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-sm bg-white text-brand shadow-sm">
                         <UploadIcon />
                       </div>
                       <p className="text-[13px] font-semibold text-slate-700">Click para seleccionar o arrastra aquí</p>
-                      <p className="text-[11px] text-gray-400 mt-1">Máximo 10MB • PDF, JPG, PNG, WEBP</p>
+                      <p className="mt-1 text-[11px] text-slate-400">Máximo 10MB • PDF, JPG, PNG, WEBP</p>
                     </div>
                   ) : previewUrl ? (
                     <div className="flex flex-col items-center gap-2">
                       <img
                         src={previewUrl}
                         alt="Vista previa"
-                        className="w-24 h-24 object-cover rounded-xl shadow-sm border border-green-200"
+                        className="h-24 w-24 rounded-sm border border-emerald-200 object-cover shadow-sm"
                       />
                       <p className="text-[13px] font-semibold text-green-700 truncate max-w-[200px]">{archivo.name}</p>
                       <p className="text-[11px] text-green-600/70">{(archivo.size / 1024 / 1024).toFixed(2)} MB • Imagen lista</p>
                     </div>
                   ) : (
                     <div className="flex flex-col items-center">
-                      <div className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center text-green-500 mb-3">
+                      <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-sm bg-white text-emerald-600 shadow-sm">
                         <CheckCircleIcon />
                       </div>
                       <p className="text-[13px] font-semibold text-green-700 truncate w-64 px-4">{archivo.name}</p>
@@ -1199,23 +1209,21 @@ export default function TiendaDetallePage() {
         {selectedSolicitud && (
           <div className="space-y-4">
             {reviewError && (
-              <div className="bg-red-50 border border-red-100 rounded-lg p-3 text-red-600 text-[12px]">
-                ❌ {reviewError}
-              </div>
+              <div className={ALERT_ERROR}>{reviewError}</div>
             )}
 
-            <div className={`${accion === 'aprobar' ? 'bg-green-50 border-green-100' : 'bg-red-50 border-red-100'} border rounded-xl p-4`}>
+            <div className={`rounded-sm border p-4 ${accion === 'aprobar' ? 'border-emerald-100 bg-emerald-50' : 'border-red-100 bg-red-50'}`}>
               <p className="text-[13px] font-medium text-slate-700">
                 {selectedSolicitud.tipo_permiso?.nombre_permiso} — <span className="font-semibold">{tienda?.sucursal}</span>
               </p>
-              <p className="text-[11px] text-gray-400 mt-1">
+              <p className="mt-1 text-[11px] text-slate-400">
                 Solicitud #{selectedSolicitud.id} • Vigencia propuesta:{' '}
                 {formatFechaVigencia(selectedSolicitud.vigencia_propuesta)}
               </p>
             </div>
 
             <div className="space-y-1.5">
-              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">
                 Comentarios {accion === 'rechazar' && <span className="text-red-500">* (obligatorio)</span>}
               </label>
               <textarea
@@ -1227,10 +1235,7 @@ export default function TiendaDetallePage() {
                     : 'Comentarios opcionales...'
                 }
                 rows={3}
-                className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-[13px] text-slate-800
-                  placeholder-gray-400
-                  focus:outline-none focus:ring-2 focus:ring-red-500/30 focus:border-red-500
-                  transition-all duration-200 resize-none"
+                className={`${FIELD_INPUT} resize-none focus:border-red-500 focus:ring-red-500/15`}
               />
             </div>
           </div>
@@ -1260,13 +1265,11 @@ export default function TiendaDetallePage() {
         {vigenciaEditConfig && (
           <div className="space-y-5">
             {vigenciaEditError && (
-              <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-600 text-[13px]">
-                {vigenciaEditError}
-              </div>
+              <div className={ALERT_ERROR}>{vigenciaEditError}</div>
             )}
 
-            <div className="bg-blue-50/60 border border-blue-200 rounded-xl p-4">
-              <p className="text-[10px] font-bold text-blue-500 uppercase tracking-widest mb-1">Permiso</p>
+            <div className={`${PANEL_INSET} p-4`}>
+              <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-steel">Permiso</p>
               <h4 className="text-[15px] font-bold text-slate-800">
                 {vigenciaEditConfig.tipo_permiso?.nombre_permiso}
               </h4>
@@ -1320,22 +1323,20 @@ export default function TiendaDetallePage() {
         title="Borrar Permiso"
       >
         <div className="space-y-4">
-          <p className="text-[13px] text-gray-600">
+          <p className="text-[13px] text-slate-600">
             ¿Estás seguro de que deseas borrar el permiso <span className="font-semibold text-slate-800">{permisoToDelete?.tipo_permiso?.nombre_permiso}</span>?
           </p>
-          <div className="bg-red-50/50 border border-red-100 rounded-lg p-3">
-            <p className="text-[12px] text-red-600 font-medium whitespace-pre-wrap">
+          <div className={`${ALERT_ERROR} bg-red-50/50`}>
+            <p className="text-[12px] font-medium whitespace-pre-wrap text-red-600">
               Esta acción eliminará el archivo físico y marcará el permiso como pendiente de carga.
             </p>
           </div>
           
           {deleteError && (
-            <div className="p-3 bg-red-100 text-red-700 text-sm rounded-lg">
-              {deleteError}
-            </div>
+            <div className={ALERT_ERROR}>{deleteError}</div>
           )}
 
-          <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+          <div className="flex justify-end gap-3 border-t border-slate-200 pt-4">
             <Button
               variant="secondary"
               onClick={() => {
@@ -1378,7 +1379,7 @@ function Th({
   className?: string
 }) {
   return (
-    <th className={`py-3 px-6 text-[10px] font-bold text-gray-400 uppercase tracking-wider ${cellAlignClass[align]} ${className}`}>
+    <th className={`${TABLE_HEAD_CELL} px-6 py-3 ${cellAlignClass[align]} ${className}`}>
       {children}
     </th>
   )
@@ -1403,7 +1404,7 @@ function Td({
 function InfoItem({ label, value }: { label: string; value: string | null | undefined }) {
   return (
     <div>
-      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">{label}</p>
+      <p className="mb-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">{label}</p>
       <p className="text-[13px] text-slate-700 font-medium">{value || '—'}</p>
     </div>
   )
@@ -1411,7 +1412,7 @@ function InfoItem({ label, value }: { label: string; value: string | null | unde
 
 function EmptyState({ message }: { message: string }) {
   return (
-    <div className="text-center py-10 text-gray-400">
+    <div className={`${EMPTY_STATE} py-10`}>
       <p className="text-[13px]">{message}</p>
     </div>
   )

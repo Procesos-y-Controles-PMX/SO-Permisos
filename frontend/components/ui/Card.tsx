@@ -24,7 +24,7 @@ interface StatCardProps {
 }
 
 const accentMap = {
-  blue:   { iconBg: 'bg-blue-100', iconText: 'text-blue-500', underline: 'bg-blue-400' },
+  blue:   { iconBg: 'bg-slate-100', iconText: 'text-steel', underline: 'bg-steel' },
   green:  { iconBg: 'bg-emerald-100', iconText: 'text-emerald-600', underline: 'bg-emerald-400' },
   red:    { iconBg: 'bg-red-100', iconText: 'text-red-500', underline: 'bg-red-400' },
   orange: { iconBg: 'bg-amber-100', iconText: 'text-amber-600', underline: 'bg-amber-400' },

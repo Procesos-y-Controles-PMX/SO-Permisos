@@ -15,7 +15,7 @@ import {
 } from '@/hooks/usePermisosAdmin'
 import TablePagination, { TABLE_PAGE_SIZE } from '@/components/ui/TablePagination'
 import Button from '@/components/ui/Button'
-import { FIELD_INPUT } from '@/components/ui/contentStyles'
+import { FIELD_INPUT, PANEL_INSET, BTN_SECONDARY, BTN_DANGER, ALERT_ERROR, ALERT_WARNING } from '@/components/ui/contentStyles'
 
 const PAGE_SIZE = TABLE_PAGE_SIZE
 
@@ -215,7 +215,7 @@ export default function PermisosPage() {
       <>
         <PageHeader title="Permisos" subtitle="Cargando..." />
         <Card className="animate-pulse">
-          <div className="h-64 bg-gray-100 rounded-lg" />
+          <div className="h-64 animate-pulse rounded-sm bg-slate-100" />
         </Card>
       </>
     )
@@ -226,7 +226,7 @@ export default function PermisosPage() {
       <>
         <PageHeader title="Permisos" subtitle="Cargando..." />
         <Card className="animate-pulse">
-          <div className="h-64 bg-gray-100 rounded-lg" />
+          <div className="h-64 animate-pulse rounded-sm bg-slate-100" />
         </Card>
       </>
     )
@@ -310,42 +310,40 @@ export default function PermisosPage() {
       >
         {deleteTarget && (
           <div className="space-y-4">
-            <p className="text-[13px] text-gray-600">
+            <p className="text-[13px] text-slate-600">
               ¿Eliminar el permiso{' '}
               <span className="font-semibold text-slate-800">{deleteTarget.nombre_permiso}</span>?
             </p>
-            <div className="bg-gray-50 border border-gray-100 rounded-lg p-3 space-y-1">
-              <p className="text-[12px] text-gray-600">
+            <div className={`${PANEL_INSET} space-y-1 p-3`}>
+              <p className="text-[12px] text-slate-600">
                 Sucursales con este permiso:{' '}
                 <span className="font-semibold tabular-nums">{deleteTarget.tiendaCount}</span>
               </p>
-              <p className="text-[12px] text-gray-600">
+              <p className="text-[12px] text-slate-600">
                 Registros vigentes:{' '}
                 <span className="font-semibold tabular-nums">{deleteTarget.vigenteCount}</span>
               </p>
-              <p className="text-[12px] text-gray-600">
+              <p className="text-[12px] text-slate-600">
                 Solicitudes:{' '}
                 <span className="font-semibold tabular-nums">{deleteTarget.solicitudCount}</span>
               </p>
             </div>
-            <div className="bg-amber-50/80 border border-amber-100 rounded-lg p-3">
-              <p className="text-[12px] text-amber-900 leading-relaxed">
+            <div className={ALERT_WARNING}>
+              <p className="text-[12px] leading-relaxed">
                 Se eliminarán en cascada las configuraciones por sucursal, permisos vigentes y
                 solicitudes asociadas a este permiso. Los archivos PDF en almacenamiento no se
                 borran automáticamente.
               </p>
             </div>
             {actionError && deleteTarget && (
-              <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
-                {actionError}
-              </p>
+              <p className={ALERT_ERROR}>{actionError}</p>
             )}
-            <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+            <div className="flex flex-col-reverse gap-2 border-t border-slate-200 pt-4 sm:flex-row sm:justify-end sm:gap-3">
               <button
                 type="button"
                 onClick={() => setDeleteTarget(null)}
                 disabled={deleting}
-                className="px-4 py-2 text-[13px] font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
+                className={BTN_SECONDARY}
               >
                 Cancelar
               </button>
@@ -353,7 +351,7 @@ export default function PermisosPage() {
                 type="button"
                 onClick={handleConfirmDelete}
                 disabled={deleting}
-                className="px-4 py-2 text-[13px] font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors disabled:opacity-50"
+                className={BTN_DANGER}
               >
                 {deleting ? 'Eliminando...' : 'Eliminar'}
               </button>

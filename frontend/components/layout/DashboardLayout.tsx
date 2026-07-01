@@ -42,7 +42,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           sidebarCollapsed ? 'lg:ml-[72px]' : 'lg:ml-[250px]',
         )}
       >
-        <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-slate-200/80 bg-white/90 px-4 py-3 backdrop-blur-sm lg:hidden">
+        <header className="app-safe-x sticky top-0 z-30 flex items-center gap-3 border-b border-slate-200/80 bg-white/90 py-3 backdrop-blur-sm lg:hidden">
           <div className="min-w-0 flex-1">
             <h1 className="truncate font-display text-lg font-semibold tracking-tight text-slate-900">
               SO Permisos
@@ -61,7 +61,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           </button>
         </header>
 
-        <main className="app-main-pad mx-auto max-w-[1400px] overflow-x-hidden px-4 py-5 md:px-8 md:py-7">
+        <main className="app-safe-x app-safe-bottom app-main-pad mx-auto max-w-[1400px] overflow-x-hidden py-5 md:py-7">
           {children}
         </main>
       </div>

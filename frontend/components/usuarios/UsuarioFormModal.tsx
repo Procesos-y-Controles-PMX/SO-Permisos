@@ -2,12 +2,18 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import Modal from '@/components/ui/Modal'
+import {
+  ALERT_ERROR,
+  BTN_PRIMARY,
+  BTN_SECONDARY,
+  CHEVRON_SELECT,
+  FIELD_INPUT,
+  FIELD_LABEL,
+  FIELD_SELECT,
+} from '@/components/ui/contentStyles'
 import type { Perfil, PerfilFormValues, Rol, Region } from '@/types'
 import { ROL_IDS } from '@/types'
 import type { TiendaFormOption } from '@/hooks/useUsuarios'
-
-const inputClass =
-  'w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-[13px] text-gray-700 focus:outline-none focus:ring-2 focus:ring-red-500/30 focus:border-red-500 transition-all'
 
 interface UsuarioFormModalProps {
   open: boolean
@@ -95,7 +101,6 @@ export default function UsuarioFormModal({
               : null,
         }
       }
-      // Tienda
       const regionFiltro =
         prev.id_rol === ROL_IDS.Regional || prev.id_rol === ROL_IDS.Tienda
           ? prev.id_region
@@ -132,6 +137,8 @@ export default function UsuarioFormModal({
     onClose()
   }
 
+  const selectClass = `${FIELD_SELECT} ${CHEVRON_SELECT} cursor-pointer`
+
   return (
     <Modal
       open={open}
@@ -139,86 +146,66 @@ export default function UsuarioFormModal({
       title={isEdit ? 'Editar usuario' : 'Nuevo usuario'}
       actions={
         <>
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={saving}
-            className="px-4 py-2 text-[13px] font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
-          >
+          <button type="button" onClick={onClose} disabled={saving} className={BTN_SECONDARY}>
             Cancelar
           </button>
-          <button
-            type="submit"
-            form="usuario-form"
-            disabled={saving}
-            className="px-4 py-2 text-[13px] font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors disabled:opacity-50"
-          >
+          <button type="submit" form="usuario-form" disabled={saving} className={BTN_PRIMARY}>
             {saving ? 'Guardando...' : isEdit ? 'Guardar cambios' : 'Crear usuario'}
           </button>
         </>
       }
     >
       <form id="usuario-form" onSubmit={handleSubmit} className="space-y-4">
-        {formError && (
-          <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
-            {formError}
-          </p>
-        )}
+        {formError && <p className={ALERT_ERROR}>{formError}</p>}
 
-        <div>
-          <label className="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-            Nombre completo
-          </label>
+        <label className={`space-y-1.5 ${FIELD_LABEL}`}>
+          Nombre completo
           <input
             type="text"
             value={form.nombre_completo}
             onChange={(e) => setForm((p) => ({ ...p, nombre_completo: e.target.value }))}
-            className={inputClass}
+            className={`${FIELD_INPUT} normal-case`}
             placeholder="Ej. Juan Pérez"
           />
-        </div>
+        </label>
 
-        <div>
-          <label className="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-            Correo electrónico *
-          </label>
+        <label className={`space-y-1.5 ${FIELD_LABEL}`}>
+          Correo electrónico *
           <input
             type="email"
             required
             value={form.email}
             onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
-            className={inputClass}
+            className={`${FIELD_INPUT} normal-case`}
             placeholder="usuario@empresa.com"
           />
-        </div>
+        </label>
 
-        <div>
-          <label className="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-            Contraseña {isEdit ? '' : '*'}
-          </label>
+        <label className={`space-y-1.5 ${FIELD_LABEL}`}>
+          Contraseña {isEdit ? '' : '*'}
           <input
             type="password"
             required={!isEdit}
             value={form.password ?? ''}
             onChange={(e) => setForm((p) => ({ ...p, password: e.target.value }))}
-            className={inputClass}
+            className={`${FIELD_INPUT} normal-case`}
             placeholder={isEdit ? 'Dejar vacío para no cambiar' : 'Contraseña de acceso'}
             autoComplete={isEdit ? 'new-password' : 'new-password'}
           />
           {isEdit && (
-            <p className="text-[11px] text-gray-400 mt-1">Dejar vacío para mantener la contraseña actual.</p>
+            <span className="block text-[11px] font-normal normal-case text-slate-400">
+              Dejar vacío para mantener la contraseña actual.
+            </span>
           )}
-        </div>
+        </label>
 
-        <div>
-          <label className="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-            Rol *
-          </label>
+        <label className={`space-y-1.5 ${FIELD_LABEL}`}>
+          Rol *
           <select
             required
             value={form.id_rol}
             onChange={(e) => handleRolChange(Number(e.target.value))}
-            className={`${inputClass} appearance-none cursor-pointer`}
+            className={selectClass}
           >
             {roles.map((r) => (
               <option key={r.id} value={r.id}>
@@ -226,13 +213,11 @@ export default function UsuarioFormModal({
               </option>
             ))}
           </select>
-        </div>
+        </label>
 
         {showRegionRegional && (
-          <div>
-            <label className="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-              Región *
-            </label>
+          <label className={`space-y-1.5 ${FIELD_LABEL}`}>
+            Región *
             <select
               required
               value={form.id_region ?? ''}
@@ -242,7 +227,7 @@ export default function UsuarioFormModal({
                   id_region: e.target.value ? Number(e.target.value) : null,
                 }))
               }
-              className={`${inputClass} appearance-none cursor-pointer`}
+              className={selectClass}
             >
               <option value="">Seleccionar región...</option>
               {regiones.map((r) => (
@@ -251,21 +236,19 @@ export default function UsuarioFormModal({
                 </option>
               ))}
             </select>
-          </div>
+          </label>
         )}
 
         {showRegionFiltroTienda && (
-          <div>
-            <label className="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-              Región *
-            </label>
+          <label className={`space-y-1.5 ${FIELD_LABEL}`}>
+            Región *
             <select
               required
               value={form.id_region ?? ''}
               onChange={(e) =>
                 handleRegionFiltroChange(e.target.value ? Number(e.target.value) : null)
               }
-              className={`${inputClass} appearance-none cursor-pointer`}
+              className={selectClass}
             >
               <option value="">Seleccionar región...</option>
               {regiones.map((r) => (
@@ -274,17 +257,15 @@ export default function UsuarioFormModal({
                 </option>
               ))}
             </select>
-            <p className="text-[11px] text-gray-400 mt-1">
+            <span className="block text-[11px] font-normal normal-case text-slate-400">
               Selecciona la región para elegir la tienda.
-            </p>
-          </div>
+            </span>
+          </label>
         )}
 
         {showTienda && (
-          <div>
-            <label className="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-              Tienda *
-            </label>
+          <label className={`space-y-1.5 ${FIELD_LABEL}`}>
+            Tienda *
             <select
               required
               disabled={!form.id_region}
@@ -295,7 +276,7 @@ export default function UsuarioFormModal({
                   id_tienda: e.target.value ? Number(e.target.value) : null,
                 }))
               }
-              className={`${inputClass} appearance-none cursor-pointer disabled:bg-gray-50 disabled:cursor-not-allowed`}
+              className={`${selectClass} disabled:cursor-not-allowed disabled:bg-slate-100`}
             >
               <option value="">
                 {!form.id_region
@@ -311,9 +292,11 @@ export default function UsuarioFormModal({
               ))}
             </select>
             {form.id_region && tiendasEnRegion.length === 0 && (
-              <p className="text-[11px] text-amber-600 mt-1">No hay tiendas en esta región.</p>
+              <span className="block text-[11px] font-normal normal-case text-amber-600">
+                No hay tiendas en esta región.
+              </span>
             )}
-          </div>
+          </label>
         )}
       </form>
     </Modal>

@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist_Mono, IBM_Plex_Sans, Saira_Condensed } from "next/font/google";
+import { Toaster } from "sonner";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { UIProvider } from "@/contexts/UIContext";
 import "./globals.css";
@@ -49,6 +50,7 @@ export default function RootLayout({
             {children}
           </UIProvider>
         </AuthProvider>
+        <Toaster richColors position="top-right" />
       </body>
     </html>
   );

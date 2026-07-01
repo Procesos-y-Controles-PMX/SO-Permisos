@@ -2,6 +2,12 @@
 
 import { useEffect, useState } from 'react'
 import Button from '@/components/ui/Button'
+import {
+  ALERT_ERROR,
+  ALERT_SUCCESS,
+  FIELD_INPUT,
+  PANEL_INSET,
+} from '@/components/ui/contentStyles'
 import { MAX_PERMISO_COMENTARIOS_LENGTH } from '@/hooks/usePermisoComentarios'
 
 interface PermisoNotasPanelProps {
@@ -62,21 +68,17 @@ export default function PermisoNotasPanel({
   }
 
   const readOnlyBlock = (
-    <div
-      className={`rounded-lg border ${
-        hasNotas ? 'bg-slate-50 border-slate-200' : 'bg-gray-50/50 border-gray-100'
-      } ${compact ? 'p-2.5' : 'p-3'}`}
-    >
+    <div className={`${PANEL_INSET} ${compact ? 'p-2.5' : 'p-3'} ${!hasNotas ? 'bg-slate-50/50' : ''}`}>
       {hasNotas ? (
         <p
-          className={`text-slate-700 leading-relaxed whitespace-pre-wrap ${
+          className={`whitespace-pre-wrap leading-relaxed text-slate-700 ${
             compact ? 'text-[12px]' : 'text-[13px]'
           }`}
         >
           {comentarios}
         </p>
       ) : (
-        <p className={`text-gray-400 italic ${compact ? 'text-[11px]' : 'text-[12px]'}`}>
+        <p className={`italic text-slate-400 ${compact ? 'text-[11px]' : 'text-[12px]'}`}>
           Sin notas registradas
         </p>
       )}
@@ -86,7 +88,7 @@ export default function PermisoNotasPanel({
   if (!canEdit) {
     return (
       <div className={compact ? 'mt-3' : 'space-y-2'}>
-        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
           Notas del permiso
         </p>
         {readOnlyBlock}
@@ -97,13 +99,13 @@ export default function PermisoNotasPanel({
   return (
     <div className="space-y-3">
       {nombrePermiso && (
-        <p className="text-[12px] text-gray-500">
+        <p className="text-[12px] text-slate-500">
           Permiso: <span className="font-medium text-slate-700">{nombrePermiso}</span>
         </p>
       )}
 
       <div>
-        <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">
+        <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
           Notas del permiso
         </label>
         <textarea
@@ -112,25 +114,16 @@ export default function PermisoNotasPanel({
           maxLength={MAX_PERMISO_COMENTARIOS_LENGTH}
           rows={compact ? 3 : 5}
           placeholder="Recordatorios o notas importantes para este permiso..."
-          className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-[13px] text-slate-700
-            focus:outline-none focus:ring-2 focus:ring-red-500/30 focus:border-red-500 transition-all resize-y min-h-[80px]"
+          className={`${FIELD_INPUT} min-h-[80px] resize-y`}
         />
-        <p className="text-[10px] text-gray-400 mt-1 text-right">
+        <p className="mt-1 text-right text-[10px] text-slate-400">
           {draft.length}/{MAX_PERMISO_COMENTARIOS_LENGTH}
         </p>
       </div>
 
-      {error && (
-        <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
-          {error}
-        </p>
-      )}
+      {error && <div className={ALERT_ERROR}>{error}</div>}
 
-      {saved && (
-        <p className="text-sm text-green-700 bg-green-50 border border-green-100 rounded-lg px-3 py-2">
-          Notas guardadas correctamente.
-        </p>
-      )}
+      {saved && <div className={ALERT_SUCCESS}>Notas guardadas correctamente.</div>}
 
       <div className="flex flex-wrap gap-2">
         <Button size="sm" variant="primary" onClick={handleSave} disabled={saving}>
@@ -145,7 +138,7 @@ export default function PermisoNotasPanel({
 
       {!compact && hasNotas && (
         <div>
-          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">
+          <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
             Vista previa (lectura)
           </p>
           {readOnlyBlock}

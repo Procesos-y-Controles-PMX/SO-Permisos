@@ -2,10 +2,14 @@
 
 import { useEffect, useState } from 'react'
 import Modal from '@/components/ui/Modal'
+import {
+  ALERT_ERROR,
+  BTN_PRIMARY,
+  BTN_SECONDARY,
+  FIELD_INPUT,
+  FIELD_LABEL,
+} from '@/components/ui/contentStyles'
 import type { PermisoAdminRow, PermisoFormValues } from '@/hooks/usePermisosAdmin'
-
-const inputClass =
-  'w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-[13px] text-gray-700 focus:outline-none focus:ring-2 focus:ring-red-500/30 focus:border-red-500 transition-all'
 
 interface PermisoFormModalProps {
   open: boolean
@@ -64,50 +68,32 @@ export default function PermisoFormModal({
       title={isEdit ? 'Editar permiso' : 'Nuevo permiso'}
       actions={
         <>
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={saving}
-            className="px-4 py-2 text-[13px] font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
-          >
+          <button type="button" onClick={onClose} disabled={saving} className={BTN_SECONDARY}>
             Cancelar
           </button>
-          <button
-            type="submit"
-            form="permiso-form"
-            disabled={saving}
-            className="px-4 py-2 text-[13px] font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors disabled:opacity-50"
-          >
+          <button type="submit" form="permiso-form" disabled={saving} className={BTN_PRIMARY}>
             {saving ? 'Guardando...' : isEdit ? 'Guardar cambios' : 'Crear permiso'}
           </button>
         </>
       }
     >
       <form id="permiso-form" onSubmit={handleSubmit} className="space-y-4">
-        {formError && (
-          <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
-            {formError}
-          </p>
-        )}
+        {formError && <p className={ALERT_ERROR}>{formError}</p>}
 
-        <div>
-          <label className="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-            Nombre del permiso *
-          </label>
+        <label className={`space-y-1.5 ${FIELD_LABEL}`}>
+          Nombre del permiso *
           <input
             type="text"
             required
             value={form.nombre_permiso}
             onChange={(e) => setForm((p) => ({ ...p, nombre_permiso: e.target.value }))}
-            className={inputClass}
+            className={`${FIELD_INPUT} normal-case`}
             placeholder="Ej. Licencia de funcionamiento..."
           />
-        </div>
+        </label>
 
-        <div>
-          <label className="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-            Ponderación *
-          </label>
+        <label className={`space-y-1.5 ${FIELD_LABEL}`}>
+          Ponderación *
           <input
             type="number"
             required
@@ -120,12 +106,12 @@ export default function PermisoFormModal({
                 ponderacion: e.target.value === '' ? 0 : Number(e.target.value),
               }))
             }
-            className={inputClass}
+            className={`${FIELD_INPUT} normal-case`}
           />
-          <p className="mt-1.5 text-[11px] text-gray-400">
+          <span className="block text-[11px] font-normal normal-case text-slate-400">
             Peso del permiso en métricas de cumplimiento (entero ≥ 1).
-          </p>
-        </div>
+          </span>
+        </label>
       </form>
     </Modal>
   )

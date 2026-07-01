@@ -17,6 +17,15 @@ export const FIELD_SELECT =
 export const BTN_SECONDARY =
   'inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-sm border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition-colors hover:bg-slate-50 active:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto md:min-h-0'
 
+export const BTN_PRIMARY =
+  'inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-sm bg-brand px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-brand/20 transition-colors hover:bg-brand-hover active:bg-brand-active disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto md:min-h-0'
+
+export const BTN_DANGER =
+  'inline-flex min-h-11 items-center justify-center gap-2 rounded-sm bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50 md:min-h-0'
+
+export const FIELD_LABEL =
+  'block text-xs font-semibold uppercase tracking-wider text-slate-500'
+
 export const BTN_GHOST =
   'inline-flex min-h-10 items-center justify-center rounded-sm px-3 py-2 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900'
 

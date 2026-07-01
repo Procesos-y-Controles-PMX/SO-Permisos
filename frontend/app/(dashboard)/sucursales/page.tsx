@@ -22,6 +22,12 @@ import {
   CHEVRON_SELECT,
   FIELD_INPUT,
   FIELD_SELECT,
+  MOBILE_LIST_CARD,
+  PANEL_INSET,
+  BTN_SECONDARY,
+  BTN_DANGER,
+  ALERT_ERROR,
+  ALERT_WARNING,
 } from '@/components/ui/contentStyles'
 
 const PAGE_SIZE = TABLE_PAGE_SIZE
@@ -403,7 +409,7 @@ export default function SucursalesPage() {
       <>
         <PageHeader title="Sucursales" subtitle="Cargando..." />
         <Card className="animate-pulse">
-          <div className="h-64 bg-gray-100 rounded-lg" />
+          <div className="h-64 rounded-sm bg-slate-100" />
         </Card>
       </>
     )
@@ -414,7 +420,7 @@ export default function SucursalesPage() {
       <>
         <PageHeader title="Sucursales" subtitle="Cargando..." />
         <Card className="animate-pulse">
-          <div className="h-64 bg-gray-100 rounded-lg" />
+          <div className="h-64 rounded-sm bg-slate-100" />
         </Card>
       </>
     )
@@ -465,18 +471,83 @@ export default function SucursalesPage() {
         <div className="flex items-center justify-between gap-3 mb-4">
           <div>
             <h2 className="text-[15px] font-bold text-slate-800">Regiones</h2>
-            <p className="text-[11px] text-gray-400">
+            <p className="text-[11px] text-slate-400">
               {regiones.length} región{regiones.length !== 1 ? 'es' : ''} registrada
               {regiones.length !== 1 ? 's' : ''}
             </p>
           </div>
         </div>
+
+        {/* Mobile — region cards */}
+        <div className="space-y-3 md:hidden">
+          {regiones.length === 0 ? (
+            <p className="text-center text-sm text-slate-500">
+              No hay regiones. Crea una para asignarla a las sucursales.
+            </p>
+          ) : (
+            regiones.map((r) => (
+              <article key={r.id} className={MOBILE_LIST_CARD}>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="font-semibold text-slate-900">{r.nombre_region}</p>
+                    <p className="mt-0.5 text-sm text-slate-500">{r.gerente_regional ?? '—'}</p>
+                  </div>
+                  {r.tiendaCount > 0 ? (
+                    <button
+                      type="button"
+                      onClick={() => handleFilterByRegion(r.nombre_region)}
+                      className="shrink-0 text-sm font-semibold tabular-nums text-brand hover:underline"
+                    >
+                      {r.tiendaCount} sucursal{r.tiendaCount !== 1 ? 'es' : ''}
+                    </button>
+                  ) : (
+                    <span className="shrink-0 text-sm tabular-nums text-slate-400">0</span>
+                  )}
+                </div>
+                <dl className="mt-3 space-y-2 text-sm">
+                  <div>
+                    <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">Contacto</dt>
+                    <dd className="text-slate-700">
+                      {[r.celular, r.correo].filter(Boolean).join(' · ') || '—'}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">Usuarios Regional</dt>
+                    <dd className="text-slate-700">{r.usuarioCount}</dd>
+                  </div>
+                </dl>
+                <div className="mt-3 flex gap-2 border-t border-slate-100 pt-3">
+                  <button
+                    type="button"
+                    onClick={() => handleOpenEditRegion(r)}
+                    className="flex-1 rounded-sm border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold text-slate-700"
+                  >
+                    Editar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActionError(null)
+                      setDeleteRegionTarget(r)
+                    }}
+                    className="flex-1 rounded-sm border border-red-200 bg-red-50 px-3 py-2.5 text-sm font-semibold text-red-700"
+                  >
+                    Eliminar
+                  </button>
+                </div>
+              </article>
+            ))
+          )}
+        </div>
+
+        <div className="hidden md:block">
         <Table
           columns={regionColumns}
           data={regiones}
           keyExtractor={(r) => r.id}
           emptyMessage="No hay regiones. Crea una para asignarla a las sucursales."
         />
+        </div>
       </Card>
 
       <div id="sucursales-list" className="flex flex-col sm:flex-row gap-3 mb-5">
@@ -505,7 +576,74 @@ export default function SucursalesPage() {
         </div>
       </div>
 
-      <Card>
+      {/* Mobile — sucursal cards */}
+      <div className="space-y-3 md:hidden">
+        {paginated.length === 0 ? (
+          <p className="text-center text-sm text-slate-500">
+            No hay sucursales que coincidan con los filtros.
+          </p>
+        ) : (
+          paginated.map((t) => (
+            <article key={t.id} className={MOBILE_LIST_CARD}>
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="font-semibold text-slate-900">{t.sucursal}</p>
+                  <p className="mt-0.5 text-sm text-slate-500">{t.region?.nombre_region ?? '—'}</p>
+                </div>
+                <span className="shrink-0 text-sm tabular-nums text-slate-600">{t.permisoCount} permisos</span>
+              </div>
+              <dl className="mt-3 space-y-2 text-sm">
+                <div>
+                  <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">Gerente</dt>
+                  <dd className="text-slate-700">{t.gerente_tienda ?? '—'}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">Contacto</dt>
+                  <dd className="text-slate-700">
+                    {[t.celular, t.correo].filter(Boolean).join(' · ') || '—'}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">Centro / CC</dt>
+                  <dd className="font-mono text-slate-700">
+                    {[t.centro, t.cc].filter(Boolean).join(' / ') || '—'}
+                  </dd>
+                </div>
+              </dl>
+              <div className="mt-3 flex gap-2 border-t border-slate-100 pt-3">
+                <button
+                  type="button"
+                  onClick={() => handleOpenEdit(t)}
+                  className="flex-1 rounded-sm border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold text-slate-700"
+                >
+                  Editar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActionError(null)
+                    setDeleteTarget(t)
+                  }}
+                  className="flex-1 rounded-sm border border-red-200 bg-red-50 px-3 py-2.5 text-sm font-semibold text-red-700"
+                >
+                  Eliminar
+                </button>
+              </div>
+            </article>
+          ))
+        )}
+      </div>
+
+      <div className="md:hidden">
+        <TablePagination
+          totalItems={filtered.length}
+          pageSize={PAGE_SIZE}
+          page={safePage}
+          onPageChange={handlePageChange}
+        />
+      </div>
+
+      <Card className="hidden md:block">
         <Table
           columns={columns}
           data={paginated}
@@ -548,7 +686,7 @@ export default function SucursalesPage() {
 
       {formOpen && loadingPermisos && (
         <Card className="fixed inset-0 z-50 m-auto max-w-sm h-fit text-center py-8 shadow-xl">
-          <p className="text-sm text-gray-500">Cargando permisos...</p>
+          <p className="text-sm text-slate-500">Cargando permisos...</p>
         </Card>
       )}
 
@@ -561,46 +699,42 @@ export default function SucursalesPage() {
       >
         {deleteRegionTarget && (
           <div className="space-y-4">
-            <p className="text-[13px] text-gray-600">
+            <p className="text-[13px] text-slate-600">
               ¿Eliminar la región{' '}
               <span className="font-semibold text-slate-800">{deleteRegionTarget.nombre_region}</span>?
             </p>
-            <div className="bg-gray-50 border border-gray-100 rounded-lg p-3 space-y-1">
-              <p className="text-[12px] text-gray-600">
+            <div className={`${PANEL_INSET} space-y-1 p-3`}>
+              <p className="text-[12px] text-slate-600">
                 Sucursales vinculadas:{' '}
                 <span className="font-semibold tabular-nums">{deleteRegionTarget.tiendaCount}</span>
               </p>
-              <p className="text-[12px] text-gray-600">
+              <p className="text-[12px] text-slate-600">
                 Usuarios Regional vinculados:{' '}
                 <span className="font-semibold tabular-nums">{deleteRegionTarget.usuarioCount}</span>
               </p>
             </div>
             {(deleteRegionTarget.tiendaCount > 0 || deleteRegionTarget.usuarioCount > 0) && (
-              <div className="bg-amber-50/80 border border-amber-100 rounded-lg p-3">
-                <p className="text-[12px] text-amber-900 leading-relaxed">
+              <div className={ALERT_WARNING}>
+                <p className="text-[12px] leading-relaxed">
                   No se puede eliminar hasta reasignar o quitar todas las sucursales y usuarios
                   Regional vinculados a esta región.
                 </p>
               </div>
             )}
             {deleteRegionTarget.tiendaCount === 0 && deleteRegionTarget.usuarioCount === 0 && (
-              <div className="bg-amber-50/80 border border-amber-100 rounded-lg p-3">
-                <p className="text-[12px] text-amber-900 leading-relaxed">
-                  Esta acción no se puede deshacer.
-                </p>
+              <div className={ALERT_WARNING}>
+                <p className="text-[12px] leading-relaxed">Esta acción no se puede deshacer.</p>
               </div>
             )}
             {actionError && deleteRegionTarget && (
-              <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
-                {actionError}
-              </p>
+              <p className={ALERT_ERROR}>{actionError}</p>
             )}
-            <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+            <div className="flex flex-col-reverse gap-2 border-t border-slate-200 pt-4 sm:flex-row sm:justify-end sm:gap-3">
               <button
                 type="button"
                 onClick={() => setDeleteRegionTarget(null)}
                 disabled={deletingRegion}
-                className="px-4 py-2 text-[13px] font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
+                className={BTN_SECONDARY}
               >
                 Cancelar
               </button>
@@ -612,7 +746,7 @@ export default function SucursalesPage() {
                   deleteRegionTarget.tiendaCount > 0 ||
                   deleteRegionTarget.usuarioCount > 0
                 }
-                className="px-4 py-2 text-[13px] font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors disabled:opacity-50"
+                className={BTN_DANGER}
               >
                 {deletingRegion ? 'Eliminando...' : 'Eliminar'}
               </button>
@@ -630,28 +764,26 @@ export default function SucursalesPage() {
       >
         {deleteTarget && (
           <div className="space-y-4">
-            <p className="text-[13px] text-gray-600">
+            <p className="text-[13px] text-slate-600">
               ¿Eliminar la sucursal{' '}
               <span className="font-semibold text-slate-800">{deleteTarget.sucursal}</span>?
             </p>
-            <div className="bg-amber-50/80 border border-amber-100 rounded-lg p-3">
-              <p className="text-[12px] text-amber-900 leading-relaxed">
+            <div className={ALERT_WARNING}>
+              <p className="text-[12px] leading-relaxed">
                 Se eliminarán en cascada la configuración de permisos ({deleteTarget.permisoCount}{' '}
                 asignados), permisos vigentes y solicitudes de esta sucursal. Los archivos en
                 almacenamiento no se borran automáticamente.
               </p>
             </div>
             {actionError && deleteTarget && (
-              <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
-                {actionError}
-              </p>
+              <p className={ALERT_ERROR}>{actionError}</p>
             )}
-            <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+            <div className="flex flex-col-reverse gap-2 border-t border-slate-200 pt-4 sm:flex-row sm:justify-end sm:gap-3">
               <button
                 type="button"
                 onClick={() => setDeleteTarget(null)}
                 disabled={deleting}
-                className="px-4 py-2 text-[13px] font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
+                className={BTN_SECONDARY}
               >
                 Cancelar
               </button>
@@ -659,7 +791,7 @@ export default function SucursalesPage() {
                 type="button"
                 onClick={handleConfirmDelete}
                 disabled={deleting}
-                className="px-4 py-2 text-[13px] font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors disabled:opacity-50"
+                className={BTN_DANGER}
               >
                 {deleting ? 'Eliminando...' : 'Eliminar'}
               </button>

@@ -2,11 +2,18 @@
 
 import { useEffect, useState } from 'react'
 import Modal from '@/components/ui/Modal'
+import {
+  ALERT_ERROR,
+  BTN_PRIMARY,
+  BTN_SECONDARY,
+  CHEVRON_SELECT,
+  FIELD_INPUT,
+  FIELD_LABEL,
+  FIELD_SELECT,
+  PAGE_EYEBROW,
+} from '@/components/ui/contentStyles'
 import type { CatalogoPermiso, Region, Tienda } from '@/types'
 import type { TiendaFormValues } from '@/hooks/useSucursalesAdmin'
-
-const inputClass =
-  'w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-[13px] text-gray-700 focus:outline-none focus:ring-2 focus:ring-red-500/30 focus:border-red-500 transition-all'
 
 interface SucursalFormModalProps {
   open: boolean
@@ -94,6 +101,8 @@ export default function SucursalFormModal({
     onClose()
   }
 
+  const selectClass = `${FIELD_SELECT} ${CHEVRON_SELECT} cursor-pointer`
+
   return (
     <Modal
       open={open}
@@ -101,53 +110,35 @@ export default function SucursalFormModal({
       title={isEdit ? 'Editar sucursal' : 'Nueva sucursal'}
       actions={
         <>
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={saving}
-            className="px-4 py-2 text-[13px] font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
-          >
+          <button type="button" onClick={onClose} disabled={saving} className={BTN_SECONDARY}>
             Cancelar
           </button>
-          <button
-            type="submit"
-            form="sucursal-form"
-            disabled={saving}
-            className="px-4 py-2 text-[13px] font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors disabled:opacity-50"
-          >
+          <button type="submit" form="sucursal-form" disabled={saving} className={BTN_PRIMARY}>
             {saving ? 'Guardando...' : isEdit ? 'Guardar cambios' : 'Crear sucursal'}
           </button>
         </>
       }
     >
-      <form id="sucursal-form" onSubmit={handleSubmit} className="space-y-5 max-h-[70vh] overflow-y-auto pr-1">
-        {formError && (
-          <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
-            {formError}
-          </p>
-        )}
+      <form id="sucursal-form" onSubmit={handleSubmit} className="max-h-[70vh] space-y-5 overflow-y-auto pr-1">
+        {formError && <p className={ALERT_ERROR}>{formError}</p>}
 
         <div className="space-y-4">
-          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Datos de la sucursal</p>
+          <p className={PAGE_EYEBROW}>Datos de la sucursal</p>
 
-          <div>
-            <label className="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-              Sucursal *
-            </label>
+          <label className={`space-y-1.5 ${FIELD_LABEL}`}>
+            Sucursal *
             <input
               type="text"
               required
               value={form.sucursal}
               onChange={(e) => setForm((p) => ({ ...p, sucursal: e.target.value }))}
-              className={inputClass}
+              className={`${FIELD_INPUT} normal-case`}
               placeholder="Nombre de la sucursal"
             />
-          </div>
+          </label>
 
-          <div>
-            <label className="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-              Región *
-            </label>
+          <label className={`space-y-1.5 ${FIELD_LABEL}`}>
+            Región *
             <select
               required
               value={form.id_region ?? ''}
@@ -157,7 +148,7 @@ export default function SucursalFormModal({
                   id_region: e.target.value ? Number(e.target.value) : null,
                 }))
               }
-              className={`${inputClass} appearance-none cursor-pointer`}
+              className={selectClass}
             >
               <option value="">Seleccionar región...</option>
               {regiones.map((r) => (
@@ -166,111 +157,97 @@ export default function SucursalFormModal({
                 </option>
               ))}
             </select>
-          </div>
+          </label>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-                Gerente de tienda *
-              </label>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <label className={`space-y-1.5 ${FIELD_LABEL}`}>
+              Gerente de tienda *
               <input
                 type="text"
                 required
                 value={form.gerente_tienda}
                 onChange={(e) => setForm((p) => ({ ...p, gerente_tienda: e.target.value }))}
-                className={inputClass}
+                className={`${FIELD_INPUT} normal-case`}
               />
-            </div>
-            <div>
-              <label className="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-                Teléfono (opcional)
-              </label>
+            </label>
+            <label className={`space-y-1.5 ${FIELD_LABEL}`}>
+              Teléfono (opcional)
               <input
                 type="text"
                 value={form.celular}
                 onChange={(e) => setForm((p) => ({ ...p, celular: e.target.value }))}
-                className={inputClass}
+                className={`${FIELD_INPUT} normal-case`}
               />
-            </div>
+            </label>
           </div>
 
-          <div>
-            <label className="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-              Correo *
-            </label>
+          <label className={`space-y-1.5 ${FIELD_LABEL}`}>
+            Correo *
             <input
               type="email"
               required
               value={form.correo}
               onChange={(e) => setForm((p) => ({ ...p, correo: e.target.value }))}
-              className={inputClass}
+              className={`${FIELD_INPUT} normal-case`}
             />
-          </div>
+          </label>
 
-          <div>
-            <label className="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-              Dirección
-            </label>
+          <label className={`space-y-1.5 ${FIELD_LABEL}`}>
+            Dirección
             <input
               type="text"
               value={form.direccion_sucursal}
               onChange={(e) => setForm((p) => ({ ...p, direccion_sucursal: e.target.value }))}
-              className={inputClass}
+              className={`${FIELD_INPUT} normal-case`}
             />
-          </div>
+          </label>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-                Centro
-              </label>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <label className={`space-y-1.5 ${FIELD_LABEL}`}>
+              Centro
               <input
                 type="text"
                 value={form.centro}
                 onChange={(e) => setForm((p) => ({ ...p, centro: e.target.value }))}
-                className={inputClass}
+                className={`${FIELD_INPUT} normal-case`}
               />
-            </div>
-            <div>
-              <label className="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-                CC
-              </label>
+            </label>
+            <label className={`space-y-1.5 ${FIELD_LABEL}`}>
+              CC
               <input
                 type="text"
                 value={form.cc}
                 onChange={(e) => setForm((p) => ({ ...p, cc: e.target.value }))}
-                className={inputClass}
+                className={`${FIELD_INPUT} normal-case`}
               />
-            </div>
+            </label>
           </div>
         </div>
 
-        <div className="space-y-2 pt-2 border-t border-gray-100">
-          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-            Permisos de la sucursal *
-          </p>
-          <p className="text-[11px] text-gray-500 leading-relaxed">
+        <div className="space-y-2 border-t border-slate-100 pt-2">
+          <p className={PAGE_EYEBROW}>Permisos de la sucursal *</p>
+          <p className="text-[11px] leading-relaxed text-slate-500">
             Selecciona los permisos que aplican a esta sucursal. Al desmarcar uno en edición, se
             eliminan su configuración y los expedientes o solicitudes asociados a ese permiso en
             esta tienda.
           </p>
 
           {catalogo.length === 0 ? (
-            <p className="text-[12px] text-amber-600 italic">No hay permisos en el catálogo.</p>
+            <p className="text-[12px] italic text-amber-600">No hay permisos en el catálogo.</p>
           ) : (
-            <div className="max-h-48 overflow-y-auto rounded-lg border border-gray-100 divide-y divide-gray-50">
+            <div className="max-h-48 divide-y divide-slate-50 overflow-y-auto rounded-sm border border-slate-200">
               {catalogo.map((perm) => {
                 const checked = form.permisosSeleccionados.includes(perm.id)
                 return (
                   <label
                     key={perm.id}
-                    className="flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50/80 cursor-pointer"
+                    className="flex cursor-pointer items-center gap-3 px-3 py-2.5 hover:bg-slate-50/80"
                   >
                     <input
                       type="checkbox"
                       checked={checked}
                       onChange={() => togglePermiso(perm.id)}
-                      className="rounded border-gray-300 text-red-600 focus:ring-red-500/30"
+                      className="rounded-sm border-slate-300 text-brand focus:ring-brand/15"
                     />
                     <span className="text-[13px] text-slate-700">{perm.nombre_permiso}</span>
                   </label>
@@ -279,7 +256,7 @@ export default function SucursalFormModal({
             </div>
           )}
 
-          <p className="text-[11px] text-gray-400">
+          <p className="text-[11px] text-slate-400">
             {form.permisosSeleccionados.length} permiso
             {form.permisosSeleccionados.length !== 1 ? 's' : ''} seleccionado
             {form.permisosSeleccionados.length !== 1 ? 's' : ''}
