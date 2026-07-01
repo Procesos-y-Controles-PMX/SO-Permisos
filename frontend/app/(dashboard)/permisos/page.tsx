@@ -14,11 +14,10 @@ import {
   type PermisoFormValues,
 } from '@/hooks/usePermisosAdmin'
 import TablePagination, { TABLE_PAGE_SIZE } from '@/components/ui/TablePagination'
+import Button from '@/components/ui/Button'
+import { FIELD_INPUT } from '@/components/ui/contentStyles'
 
 const PAGE_SIZE = TABLE_PAGE_SIZE
-
-const searchInputClass =
-  'w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-[13px] text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500/30 focus:border-red-500 transition-all duration-200 shadow-[0_1px_2px_rgba(0,0,0,0.04)]'
 
 const PERMISOS_STORAGE = {
   search: 'permisos_search_text',
@@ -247,27 +246,24 @@ export default function PermisosPage() {
   return (
     <>
       <PageHeader
+        eyebrow="Permisos"
         title="Permisos"
         subtitle={subtitle}
         actions={
-          <button
-            type="button"
-            onClick={handleOpenCreate}
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white text-[13px] font-medium rounded-lg transition-colors shadow-sm"
-          >
+          <Button type="button" onClick={handleOpenCreate}>
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
             </svg>
             Nuevo permiso
-          </button>
+          </Button>
         }
       />
 
-      {actionError && !deleteTarget && (
-        <p className="mb-4 text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
+      {actionError && !deleteTarget ? (
+        <p className="mb-4 rounded-sm border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-600">
           {actionError}
         </p>
-      )}
+      ) : null}
 
       <div className="mb-5">
         <input
@@ -275,7 +271,7 @@ export default function PermisosPage() {
           placeholder="Buscar por nombre de permiso..."
           value={searchText}
           onChange={(e) => handleSearchChange(e.target.value)}
-          className={searchInputClass}
+          className={FIELD_INPUT}
         />
       </div>
 

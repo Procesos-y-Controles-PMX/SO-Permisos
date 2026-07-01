@@ -5,6 +5,13 @@ import { useRouter } from 'next/navigation'
 import PageHeader from '@/components/ui/PageHeader'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
+import {
+  ALERT_ERROR,
+  ALERT_SUCCESS,
+  CHEVRON_SELECT,
+  FIELD_SELECT,
+  PANEL_INSET,
+} from '@/components/ui/contentStyles'
 import { useAuth } from '@/contexts/AuthContext'
 import { createClient } from '@/lib/supabase'
 
@@ -167,14 +174,15 @@ export default function AdminDescargasPage() {
   return (
     <>
       <PageHeader
+        eyebrow="Permisos"
         title="Descarga Masiva de Permisos"
         subtitle="Genera ZIPs de permisos activos por alcance: global, región o tienda."
       />
 
       <Card className="space-y-5">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
           <div>
-            <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-2">
+            <label className="mb-2 block text-[11px] font-bold uppercase tracking-widest text-slate-500">
               Alcance
             </label>
             <select
@@ -185,7 +193,7 @@ export default function AdminDescargasPage() {
                 setTiendaId('')
                 if (nextScope === 'all') setRegionId('')
               }}
-              className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-slate-700"
+              className={`${FIELD_SELECT} ${CHEVRON_SELECT}`}
             >
               <option value="all">Todas las regiones</option>
               <option value="region">Una región</option>
@@ -195,7 +203,7 @@ export default function AdminDescargasPage() {
 
           {(scope === 'region' || scope === 'store') && (
             <div>
-              <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-2">
+              <label className="mb-2 block text-[11px] font-bold uppercase tracking-widest text-slate-500">
                 Región
               </label>
               <select
@@ -204,7 +212,7 @@ export default function AdminDescargasPage() {
                   setRegionId(e.target.value)
                   setTiendaId('')
                 }}
-                className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-slate-700"
+                className={`${FIELD_SELECT} ${CHEVRON_SELECT}`}
               >
                 <option value="">Selecciona una región</option>
                 {regions.map((region) => (
@@ -218,13 +226,13 @@ export default function AdminDescargasPage() {
 
           {scope === 'store' && (
             <div>
-              <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-2">
+              <label className="mb-2 block text-[11px] font-bold uppercase tracking-widest text-slate-500">
                 Tienda
               </label>
               <select
                 value={tiendaId}
                 onChange={(e) => setTiendaId(e.target.value)}
-                className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-slate-700"
+                className={`${FIELD_SELECT} ${CHEVRON_SELECT}`}
                 disabled={!regionId}
               >
                 <option value="">Selecciona una tienda</option>
@@ -238,23 +246,15 @@ export default function AdminDescargasPage() {
           )}
         </div>
 
-        <div className="rounded-xl border border-gray-100 bg-gray-50 p-4 text-xs text-gray-600">
-          <p className="font-semibold text-slate-700 mb-1">Estructura del ZIP</p>
+        <div className={`${PANEL_INSET} p-4 text-xs text-slate-600`}>
+          <p className="mb-1 font-semibold text-slate-700">Estructura del ZIP</p>
           {scope === 'all' && <p>TodasLasRegiones / Región / Tienda / Archivo</p>}
           {scope === 'region' && <p>{selectedRegionName || 'Región'} / Tienda / Archivo</p>}
           {scope === 'store' && <p>{selectedStoreName || 'Tienda'} / Archivo</p>}
         </div>
 
-        {error && (
-          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
-            {error}
-          </div>
-        )}
-        {success && (
-          <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
-            {success}
-          </div>
-        )}
+        {error ? <div className={ALERT_ERROR}>{error}</div> : null}
+        {success ? <div className={ALERT_SUCCESS}>{success}</div> : null}
 
         <div className="flex justify-end">
           <Button variant="primary" onClick={handleDownload} disabled={!canSubmit}>

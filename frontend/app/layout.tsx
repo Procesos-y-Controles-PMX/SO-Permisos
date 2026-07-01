@@ -1,12 +1,14 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono, Saira_Condensed } from "next/font/google";
+import type { Metadata, Viewport } from "next";
+import { Geist_Mono, IBM_Plex_Sans, Saira_Condensed } from "next/font/google";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { UIProvider } from "@/contexts/UIContext";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const plexSans = IBM_Plex_Sans({
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-plex-sans",
+  display: "swap",
 });
 
 const geistMono = Geist_Mono({
@@ -26,6 +28,12 @@ export const metadata: Metadata = {
   description: "Plataforma de gestión de permisos y licencias - Promexma / CEMEX",
 };
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -34,7 +42,7 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${sairaCondensed.variable} antialiased`}
+        className={`${plexSans.variable} ${geistMono.variable} ${sairaCondensed.variable} antialiased`}
       >
         <AuthProvider>
           <UIProvider>

@@ -17,14 +17,14 @@ import {
   type TiendaFormValues,
 } from '@/hooks/useSucursalesAdmin'
 import TablePagination, { TABLE_PAGE_SIZE } from '@/components/ui/TablePagination'
+import Button from '@/components/ui/Button'
+import {
+  CHEVRON_SELECT,
+  FIELD_INPUT,
+  FIELD_SELECT,
+} from '@/components/ui/contentStyles'
 
 const PAGE_SIZE = TABLE_PAGE_SIZE
-
-const selectClass =
-  'w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-[13px] text-gray-700 focus:outline-none focus:ring-2 focus:ring-red-500/30 focus:border-red-500 transition-all duration-200 shadow-[0_1px_2px_rgba(0,0,0,0.04)] appearance-none cursor-pointer'
-
-const searchInputClass =
-  'w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-[13px] text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500/30 focus:border-red-500 transition-all duration-200 shadow-[0_1px_2px_rgba(0,0,0,0.04)]'
 
 const SUCURSALES_STORAGE = {
   search: 'sucursales_search_text',
@@ -434,39 +434,32 @@ export default function SucursalesPage() {
   return (
     <>
       <PageHeader
+        eyebrow="Permisos"
         title="Sucursales"
         subtitle={subtitle}
         actions={
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={handleOpenCreateRegion}
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 hover:bg-gray-50 text-slate-700 text-[13px] font-medium rounded-lg transition-colors shadow-sm"
-            >
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap">
+            <Button type="button" variant="secondary" onClick={handleOpenCreateRegion}>
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
               </svg>
               Nueva región
-            </button>
-            <button
-              type="button"
-              onClick={handleOpenCreate}
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white text-[13px] font-medium rounded-lg transition-colors shadow-sm"
-            >
+            </Button>
+            <Button type="button" onClick={handleOpenCreate}>
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
               </svg>
               Nueva sucursal
-            </button>
+            </Button>
           </div>
         }
       />
 
-      {actionError && !deleteTarget && !deleteRegionTarget && (
-        <p className="mb-4 text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
+      {actionError && !deleteTarget && !deleteRegionTarget ? (
+        <p className="mb-4 rounded-sm border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-600">
           {actionError}
         </p>
-      )}
+      ) : null}
 
       <Card className="mb-5">
         <div className="flex items-center justify-between gap-3 mb-4">
@@ -491,7 +484,7 @@ export default function SucursalesPage() {
           <select
             value={filterRegion}
             onChange={(e) => handleFilterRegionChange(e.target.value)}
-            className={selectClass}
+            className={`${FIELD_SELECT} ${CHEVRON_SELECT}`}
           >
             <option value="">Todas las regiones</option>
             {regiones.map((r) => (
@@ -507,7 +500,7 @@ export default function SucursalesPage() {
             placeholder="Buscar por sucursal o gerente..."
             value={searchText}
             onChange={(e) => handleSearchChange(e.target.value)}
-            className={searchInputClass}
+            className={FIELD_INPUT}
           />
         </div>
       </div>

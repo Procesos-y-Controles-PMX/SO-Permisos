@@ -69,7 +69,7 @@ function SectionHeader({ icon, title, count, color }: { icon: React.ReactNode; t
   }
   return (
     <div className="flex items-center gap-3 mb-4">
-      <div className={`w-9 h-9 rounded-xl ${colorMap[color]} flex items-center justify-center`}>
+      <div className={`w-9 h-9 rounded-sm ${colorMap[color]} flex items-center justify-center`}>
         {icon}
       </div>
       <div>

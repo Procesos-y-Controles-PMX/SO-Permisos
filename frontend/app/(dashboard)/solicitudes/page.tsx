@@ -84,10 +84,10 @@ export default function SolicitudesPendientesPage() {
   if (authLoading || loading) {
     return (
       <>
-        <PageHeader title="Solicitudes Pendientes" subtitle="Cargando..." />
+        <PageHeader eyebrow="Permisos" title="Solicitudes Pendientes" subtitle="Cargando..." />
         <div className="space-y-3">
           {[1, 2, 3].map(i => (
-            <Card key={i} className="animate-pulse"><div className="h-20 bg-gray-100 rounded-lg" /></Card>
+            <Card key={i} className="animate-pulse"><div className="h-20 rounded-lg bg-slate-100" /></Card>
           ))}
         </div>
       </>
@@ -106,42 +106,43 @@ export default function SolicitudesPendientesPage() {
   return (
     <>
       <PageHeader
+        eyebrow="Permisos"
         title="Solicitudes Pendientes"
         subtitle={`${tiendas.length} sucursal${tiendas.length !== 1 ? 'es' : ''} con documentos por revisar`}
       />
 
       {tiendas.length === 0 ? (
-        <Card className="text-center py-20">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 text-green-600 mb-4">
+        <Card className="py-20 text-center">
+          <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
-          <p className="text-gray-500 font-medium text-[15px]">¡Todo al día!</p>
-          <p className="text-gray-400 text-[13px] mt-1">No hay solicitudes pendientes de revisión.</p>
+          <p className="text-[15px] font-semibold text-slate-700">¡Todo al día!</p>
+          <p className="mt-1 text-[13px] text-slate-500">No hay solicitudes pendientes de revisión.</p>
         </Card>
       ) : (
         <div className="space-y-3">
           {tiendas.map((item) => (
             <Card
               key={item.id}
-              className="cursor-pointer hover:shadow-md hover:border-red-200 transition-all duration-200 group"
+              className="group cursor-pointer transition-all duration-200 hover:border-brand/30 hover:shadow-md"
               onClick={() => router.push(`/directorio/${item.id}`)}
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   {/* Store icon */}
-                  <div className="w-11 h-11 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center shrink-0">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                     </svg>
                   </div>
 
                   <div>
-                    <h3 className="text-[14px] font-bold text-slate-800 group-hover:text-red-600 transition-colors">
+                    <h3 className="text-[14px] font-bold text-slate-800 transition-colors group-hover:text-brand">
                       {item.tienda?.sucursal ?? 'Tienda desconocida'}
                     </h3>
-                    <p className="text-[11px] text-gray-400 mt-0.5">
+                    <p className="mt-0.5 text-[11px] text-slate-500">
                       {item.tienda?.region?.nombre_region ?? 'Sin región'} • Gte: {item.tienda?.gerente_tienda ?? '—'}
                     </p>
                     {/* List of pending permit types */}
@@ -152,7 +153,7 @@ export default function SolicitudesPendientesPage() {
                         </span>
                       ))}
                       {item.solicitudes.length > 4 && (
-                        <span className="text-[10px] text-gray-400 px-1">+{item.solicitudes.length - 4} más</span>
+                        <span className="px-1 text-[10px] text-slate-400">+{item.solicitudes.length - 4} más</span>
                       )}
                     </div>
                   </div>
@@ -160,7 +161,7 @@ export default function SolicitudesPendientesPage() {
 
                 <div className="flex items-center gap-3">
                   <Badge variant="warning">{item.pendientes} pendiente{item.pendientes !== 1 ? 's' : ''}</Badge>
-                  <span className="text-gray-300 group-hover:text-red-500 transition-colors">
+                  <span className="text-slate-300 transition-colors group-hover:text-brand">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                     </svg>

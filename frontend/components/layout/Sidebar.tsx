@@ -1,135 +1,36 @@
 'use client'
 
-import { useState, useMemo } from 'react'
-import { useUI } from '@/contexts/UIContext'
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
+import { useUI } from '@/contexts/UIContext'
+import { cn } from '@/lib/utils'
+import {
+  SIDEBAR_NAV_ACTIVE,
+  SIDEBAR_NAV_IDLE,
+  SIDEBAR_SECTION_LABEL,
+  SIDEBAR_SHELL,
+  SIDEBAR_USER_CARD,
+} from '@/components/layout/shellStyles'
+import { filterNavByRole, isPermisosNavActive } from '@/components/layout/navConfig'
 
-// ── Navigation Definition ──────────────────────────────────
-
-interface NavItemDef {
-  label: string
-  href: string
-  icon: React.ReactNode
-  roles?: string[] // If undefined, visible to all roles
-}
-
-interface NavGroup {
-  title: string
-  items: NavItemDef[]
-}
-
-const navGroups: NavGroup[] = [
-  {
-    title: 'General',
-    items: [
-      {
-        label: 'Dashboard',
-        href: '/',
-        roles: ['Admin', 'Regional'],
-        icon: (
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
-          </svg>
-        ),
-      },
-      {
-        label: 'Directorio',
-        href: '/directorio',
-        icon: (
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-          </svg>
-        ),
-      },
-      {
-        label: 'Solicitudes Pendientes',
-        href: '/solicitudes',
-        roles: ['Admin'],
-        icon: (
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-          </svg>
-        ),
-      },
-      {
-        label: 'Descargas',
-        href: '/descargas',
-        roles: ['Admin'],
-        icon: (
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v11m0 0l-4-4m4 4l4-4m3 8v2a1 1 0 01-1 1H6a1 1 0 01-1-1v-2" />
-          </svg>
-        ),
-      },
-      {
-        label: 'Usuarios',
-        href: '/usuarios',
-        roles: ['Admin'],
-        icon: (
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-          </svg>
-        ),
-      },
-      {
-        label: 'Sucursales',
-        href: '/sucursales',
-        roles: ['Admin'],
-        icon: (
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-          </svg>
-        ),
-      },
-      {
-        label: 'Permisos',
-        href: '/permisos',
-        roles: ['Admin'],
-        icon: (
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
-        ),
-      },
-      {
-        label: 'Historial',
-        href: '/historial',
-        roles: ['Tienda'],
-        icon: (
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-        ),
-      },
-    ],
-  },
-]
-
-// ── Component ──────────────────────────────────────────────
-
-export default function Sidebar() {
+function SidebarPanel({
+  collapsed,
+  onNavigate,
+  onToggleCollapse,
+  showCollapse,
+}: {
+  collapsed: boolean
+  onNavigate?: () => void
+  onToggleCollapse?: () => void
+  showCollapse?: boolean
+}) {
   const pathname = usePathname()
   const { perfil, rol, signOut } = useAuth()
-  const { sidebarCollapsed, toggleSidebar } = useUI()
 
-  const isActive = (href: string) => {
-    if (href === '/') return pathname === '/'
-    return pathname.startsWith(href)
-  }
+  const filteredGroups = filterNavByRole(rol)
 
-  // Filter nav items by role
-  const filteredGroups = navGroups.map((group) => ({
-    ...group,
-    items: group.items.filter((item) => {
-      if (!item.roles) return true
-      return rol ? item.roles.includes(rol) : false
-    }),
-  })).filter((group) => group.items.length > 0)
-
-  // User initials
   const initials = perfil?.nombre_completo
     ? perfil.nombre_completo
         .split(' ')
@@ -139,85 +40,65 @@ export default function Sidebar() {
         .toUpperCase()
     : '?'
 
-  const displayName = perfil?.nombre_completo || 'Cargando...'
-  const displayRole = rol || '...'
-
   return (
-    <aside
-      className={`
-        fixed top-0 left-0 z-40 h-screen bg-white border-r border-gray-100
-        flex flex-col transition-all duration-300 ease-in-out shadow-sm
-        ${sidebarCollapsed ? 'w-[72px]' : 'w-[250px]'}
-      `}
-    >
-      {/* ── Header: Logo + Collapse ── */}
-      <div className="flex items-center justify-between px-5 h-16 border-b border-gray-100 shrink-0">
-        <Link href="/directorio" className="flex items-center gap-2.5 overflow-hidden">
-          <Image
-            src="/circulo-promexma.png"
-            alt="Promexma"
-            width={30}
-            height={30}
-            className="shrink-0"
-          />
-          {!sidebarCollapsed && (
+    <>
+      <div className="relative flex h-16 shrink-0 items-center justify-between border-b border-white/10 px-5">
+        <Link href="/directorio" className="flex items-center gap-2.5 overflow-hidden" onClick={onNavigate}>
+          <Image src="/circulo-promexma.png" alt="Promexma" width={30} height={30} className="shrink-0 rounded-full" />
+          {!collapsed && (
             <div className="min-w-0">
-              <p className="text-sm font-bold text-slate-800 leading-none">Promexma</p>
-              <p className="text-[10px] text-blue-500 font-medium mt-0.5">SO Permisos</p>
+              <p className="text-sm font-bold leading-none text-white">Promexma</p>
+              <p className="mt-0.5 text-[10px] font-medium text-slate-500">SO Permisos</p>
             </div>
           )}
         </Link>
-
-        <button
-          onClick={toggleSidebar}
-          className="w-7 h-7 rounded-lg border border-gray-200 flex items-center justify-center
-            text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-all shrink-0"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className={`h-3.5 w-3.5 transition-transform duration-300 ${sidebarCollapsed ? 'rotate-180' : ''}`}
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2.5}
+        {showCollapse && onToggleCollapse ? (
+          <button
+            type="button"
+            onClick={onToggleCollapse}
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-slate-600 bg-slate-900 text-slate-400 transition-all hover:border-slate-500 hover:bg-slate-800 hover:text-slate-200"
+            aria-label={collapsed ? 'Expandir menú' : 'Colapsar menú'}
           >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-          </svg>
-        </button>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className={cn('h-3.5 w-3.5 transition-transform duration-300', collapsed && 'rotate-180')}
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2.5}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+        ) : null}
       </div>
 
-      {/* ── Navigation ── */}
-      <nav className="flex-1 overflow-y-auto overflow-x-hidden py-4 px-3">
+      <nav className="sidebar-scroll flex-1 overflow-y-auto overflow-x-hidden px-3 py-4">
         {filteredGroups.map((group) => (
           <div key={group.title} className="mb-5">
-            {!sidebarCollapsed && (
-              <p className="px-3 mb-2 text-[10px] font-bold text-gray-400 uppercase tracking-[0.15em]">
-                {group.title}
-              </p>
+            {!collapsed && (
+              <div className="mb-2 flex items-center gap-2 px-3">
+                <span className="h-3.5 w-0.5 shrink-0 rounded-full bg-brand" aria-hidden />
+                <p className={SIDEBAR_SECTION_LABEL}>{group.title}</p>
+              </div>
             )}
-
             <div className="space-y-0.5">
               {group.items.map((item) => {
-                const active = isActive(item.href)
+                const active = isPermisosNavActive(pathname, item.href)
                 return (
                   <Link
                     key={item.href}
                     href={item.href}
                     title={item.label}
-                    className={`
-                      flex items-center gap-3 rounded-xl text-[13px] font-medium
-                      transition-all duration-200 relative
-                      ${sidebarCollapsed ? 'px-3 py-2.5 justify-center' : 'px-3 py-2.5'}
-                      ${active
-                        ? 'bg-red-50 text-red-600'
-                        : 'text-slate-500 hover:bg-gray-50 hover:text-slate-700'
-                      }
-                    `}
+                    onClick={onNavigate}
+                    className={cn(
+                      'relative flex items-center gap-3 rounded-sm text-[13px] font-medium transition-all duration-200',
+                      collapsed ? 'justify-center px-3 py-2.5' : 'px-3 py-2.5',
+                      active ? SIDEBAR_NAV_ACTIVE : SIDEBAR_NAV_IDLE,
+                    )}
                   >
                     <span className="shrink-0">{item.icon}</span>
-                    {!sidebarCollapsed && (
-                      <span className="truncate">{item.label}</span>
-                    )}
+                    {!collapsed && <span className="truncate">{item.label}</span>}
                   </Link>
                 )
               })}
@@ -226,32 +107,89 @@ export default function Sidebar() {
         ))}
       </nav>
 
-      {/* ── User Footer ── */}
-      <div className="border-t border-gray-100 px-3 py-3 shrink-0">
-        <div className={`flex items-center gap-3 ${sidebarCollapsed ? 'justify-center' : ''}`}>
-          <div className="w-9 h-9 rounded-full bg-linear-to-br from-blue-500 to-blue-600 text-white flex items-center justify-center text-xs font-bold shrink-0 shadow-sm">
+      <div className={cn('mx-3 mb-3 shrink-0 border-t border-white/10 pt-3', SIDEBAR_USER_CARD)}>
+        <div className={cn('flex items-center gap-3', collapsed && 'justify-center')}>
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand text-xs font-bold text-white shadow-sm">
             {initials}
           </div>
-          {!sidebarCollapsed && (
-            <div className="flex-1 min-w-0">
-              <p className="text-[10px] text-gray-400 uppercase tracking-wider font-medium">Usuario</p>
-              <p className="text-xs font-semibold text-slate-800 truncate">{displayName}</p>
-              <p className="text-[10px] text-gray-400">{displayRole}</p>
-            </div>
-          )}
-          {!sidebarCollapsed && (
-            <button
-              onClick={signOut}
-              className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
-              title="Cerrar sesión"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-              </svg>
-            </button>
+          {!collapsed && (
+            <>
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] font-medium uppercase tracking-wider text-slate-500">Usuario</p>
+                <p className="truncate text-xs font-semibold text-slate-200">{perfil?.nombre_completo || 'Cargando...'}</p>
+                <p className="text-[10px] text-slate-500">{rol || '...'}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  onNavigate?.()
+                  signOut()
+                }}
+                className="rounded-sm p-1.5 text-slate-500 transition-colors hover:bg-white/10 hover:text-slate-200"
+                title="Cerrar sesión"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+              </button>
+            </>
           )}
         </div>
       </div>
-    </aside>
+    </>
+  )
+}
+
+export default function Sidebar() {
+  const { sidebarCollapsed, toggleSidebar, mobileNavOpen, setMobileNavOpen } = useUI()
+
+  return (
+    <>
+      {mobileNavOpen ? (
+        <button
+          type="button"
+          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+          aria-label="Cerrar menú"
+          onClick={() => setMobileNavOpen(false)}
+        />
+      ) : null}
+
+      <aside
+        className={cn(
+          'fixed left-0 top-0 z-50 flex w-[min(280px,88vw)] flex-col shadow-xl transition-transform duration-300 ease-in-out lg:hidden',
+          SIDEBAR_SHELL,
+          mobileNavOpen ? 'translate-x-0' : '-translate-x-full pointer-events-none',
+        )}
+        aria-hidden={!mobileNavOpen}
+      >
+        <div className="flex items-center justify-end border-b border-white/10 px-3 py-2">
+          <button
+            type="button"
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 hover:bg-white/10 hover:text-slate-200"
+            aria-label="Cerrar menú"
+            onClick={() => setMobileNavOpen(false)}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <SidebarPanel collapsed={false} onNavigate={() => setMobileNavOpen(false)} />
+      </aside>
+
+      <aside
+        className={cn(
+          'fixed left-0 top-0 z-40 hidden shadow-lg transition-all duration-300 ease-in-out lg:flex lg:flex-col',
+          SIDEBAR_SHELL,
+          sidebarCollapsed ? 'w-[72px]' : 'w-[250px]',
+        )}
+      >
+        <SidebarPanel
+          collapsed={sidebarCollapsed}
+          onToggleCollapse={toggleSidebar}
+          showCollapse
+        />
+      </aside>
+    </>
   )
 }

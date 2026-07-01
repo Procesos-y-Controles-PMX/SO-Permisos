@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { AlertCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import LoginShell from "@/components/login/LoginShell";
+import { loginButtonClass, loginInputClass, loginTitleClass } from "@/components/login/loginStyles";
 
 export default function LoginPage() {
   const { signIn } = useAuth();
@@ -40,10 +41,8 @@ export default function LoginPage() {
       heroLine2="de Permisos"
       heroDescription="Plataforma integral para la administración, control y seguimiento de permisos y licencias de las sucursales CEMEX."
     >
-      <div className="mb-8">
-        <h2 className="font-display text-3xl sm:text-4xl font-semibold text-slate-900 tracking-tight">
-          Iniciar sesión
-        </h2>
+      <div className="mb-6 sm:mb-8">
+        <h2 className={loginTitleClass}>Iniciar sesión</h2>
         <p className="mt-2 text-sm sm:text-base text-slate-500">
           Ingresa tus credenciales para acceder al sistema.
         </p>
@@ -56,7 +55,7 @@ export default function LoginPage() {
           </label>
           <input
             type="email"
-            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:bg-white focus:border-brand focus:ring-2 focus:ring-brand/15 transition-all"
+            className={loginInputClass}
             placeholder="usuario@promexma.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -71,7 +70,7 @@ export default function LoginPage() {
           </label>
           <input
             type="password"
-            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:bg-white focus:border-brand focus:ring-2 focus:ring-brand/15 transition-all"
+            className={loginInputClass}
             placeholder="••••••••"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
@@ -90,7 +89,7 @@ export default function LoginPage() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-3 bg-brand text-white text-sm font-semibold rounded-lg hover:bg-brand-hover active:bg-brand-active disabled:bg-slate-300 disabled:cursor-not-allowed transition-colors"
+          className={loginButtonClass}
         >
           {loading ? "Verificando..." : "Acceder"}
         </button>

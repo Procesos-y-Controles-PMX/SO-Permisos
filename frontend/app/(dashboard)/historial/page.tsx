@@ -7,6 +7,7 @@ import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import Modal from '@/components/ui/Modal'
 import Badge, { statusToBadgeVariant } from '@/components/ui/Badge'
+import { STAT_TILE, STAT_TILE_ACTIVE } from '@/components/ui/contentStyles'
 import { createClient } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { uploadFile } from '@/lib/storage'
@@ -330,7 +331,7 @@ export default function HistorialPage() {
         <PageHeader title="Historial de Solicitudes" subtitle="Cargando..." />
         <div className="space-y-3">
           {[1, 2, 3].map(i => (
-            <Card key={i} className="animate-pulse"><div className="h-24 bg-gray-100 rounded-lg" /></Card>
+            <Card key={i} className="animate-pulse"><div className="h-24 rounded-lg bg-slate-100" /></Card>
           ))}
         </div>
       </>
@@ -354,67 +355,54 @@ export default function HistorialPage() {
 
   return (
     <>
-      <PageHeader title="Historial de Permisos" subtitle="Estado actual por permiso configurado" />
+      <PageHeader eyebrow="Permisos" title="Historial de Permisos" subtitle="Estado actual por permiso configurado" />
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+      <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <button
+          type="button"
           onClick={() => setFilterEstatus(filterEstatus === 'No Subido' ? '' : 'No Subido')}
-          className={`rounded-xl p-4 text-center transition-all border ${
-            filterEstatus === 'No Subido'
-              ? 'bg-gray-50 border-gray-300 shadow-sm'
-              : 'bg-white border-gray-100 hover:border-gray-200'
-          }`}
+          className={filterEstatus === 'No Subido' ? STAT_TILE_ACTIVE : STAT_TILE}
         >
-          <p className="text-2xl font-bold text-gray-600">{countNoSubido}</p>
-          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mt-1">No Subido</p>
+          <p className="text-2xl font-bold text-slate-600">{countNoSubido}</p>
+          <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">No Subido</p>
         </button>
         <button
+          type="button"
           onClick={() => setFilterEstatus(filterEstatus === 'En Revisión' ? '' : 'En Revisión')}
-          className={`rounded-xl p-4 text-center transition-all border ${
-            filterEstatus === 'En Revisión'
-              ? 'bg-amber-50 border-amber-300 shadow-sm'
-              : 'bg-white border-gray-100 hover:border-amber-200'
-          }`}
+          className={filterEstatus === 'En Revisión' ? `${STAT_TILE_ACTIVE} border-amber-300 bg-amber-50` : `${STAT_TILE} hover:border-amber-200`}
         >
           <p className="text-2xl font-bold text-amber-600">{countEnRevision}</p>
-          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mt-1">En Revisión</p>
+          <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">En Revisión</p>
         </button>
         <button
+          type="button"
           onClick={() => setFilterEstatus(filterEstatus === 'Aceptado' ? '' : 'Aceptado')}
-          className={`rounded-xl p-4 text-center transition-all border ${
-            filterEstatus === 'Aceptado'
-              ? 'bg-green-50 border-green-300 shadow-sm'
-              : 'bg-white border-gray-100 hover:border-green-200'
-          }`}
+          className={filterEstatus === 'Aceptado' ? `${STAT_TILE_ACTIVE} border-emerald-300 bg-emerald-50` : `${STAT_TILE} hover:border-emerald-200`}
         >
-          <p className="text-2xl font-bold text-green-600">{countAceptado}</p>
-          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mt-1">Aprobados</p>
+          <p className="text-2xl font-bold text-emerald-600">{countAceptado}</p>
+          <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">Aprobados</p>
         </button>
         <button
+          type="button"
           onClick={() => setFilterEstatus(filterEstatus === 'Rechazado' ? '' : 'Rechazado')}
-          className={`rounded-xl p-4 text-center transition-all border ${
-            filterEstatus === 'Rechazado'
-              ? 'bg-red-50 border-red-300 shadow-sm'
-              : 'bg-white border-gray-100 hover:border-red-200'
-          }`}
+          className={filterEstatus === 'Rechazado' ? `${STAT_TILE_ACTIVE} border-red-300 bg-red-50` : `${STAT_TILE} hover:border-red-200`}
         >
           <p className="text-2xl font-bold text-red-600">{countRechazado}</p>
-          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mt-1">Rechazados</p>
+          <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">Rechazados</p>
         </button>
       </div>
 
       {/* Cards */}
       {filtered.length === 0 ? (
         <Card className="text-center py-16">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-gray-100 text-gray-400 mb-4">
+          <div className="mb-4 inline-flex h-14 w-14 items-center justify-center rounded-full bg-slate-100 text-slate-400">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
-          <p className="text-gray-400 text-[13px]">No hay registros con este filtro.</p>
+          <p className="text-[13px] text-slate-500">No hay registros con este filtro.</p>
           {filterEstatus && (
-            <button onClick={() => setFilterEstatus('')} className="text-red-500 text-[12px] font-medium mt-2 hover:underline">
+            <button type="button" onClick={() => setFilterEstatus('')} className="mt-2 text-[12px] font-semibold text-brand hover:underline">
               Ver todos
             </button>
           )}
@@ -430,7 +418,7 @@ export default function HistorialPage() {
               <Card
                 key={item.idTipoPermiso}
                 className={`transition-all duration-200 ${
-                  isNoSubido ? 'border-gray-200 bg-gray-50/20' :
+                  isNoSubido ? 'border-slate-200 bg-slate-50/40' :
                   isRechazado ? 'border-red-200 bg-red-50/20' :
                   isEnRevision ? 'border-amber-200 bg-amber-50/10' :
                   'border-green-200 bg-green-50/10'
@@ -442,7 +430,7 @@ export default function HistorialPage() {
                     <div className="flex items-center gap-2 mb-2">
                       <Badge variant={statusToBadgeVariant(item.estado)}>{item.estado}</Badge>
                       {item.fechaActualizacion && (
-                        <span className="text-[11px] text-gray-400 font-mono">
+                        <span className="text-[11px] font-mono text-slate-400">
                           {new Date(item.fechaActualizacion).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })}
                         </span>
                       )}
@@ -451,14 +439,14 @@ export default function HistorialPage() {
                     {/* Permit name */}
                     <h4 className="text-[14px] font-semibold text-slate-800">
                       {item.nombrePermiso}
-                      {item.obligatorio && <span className="ml-2 text-[9px] font-bold text-red-500 uppercase">Obligatorio</span>}
+                      {item.obligatorio && <span className="ml-2 text-[9px] font-bold uppercase text-brand">Obligatorio</span>}
                     </h4>
 
                     {/* Vigencia */}
                     {item.estado !== 'No Subido' && (
-                      <p className="text-[11px] text-gray-400 mt-1">
+                      <p className="mt-1 text-[11px] text-slate-500">
                         Vigencia:{' '}
-                        <span className="font-mono text-gray-500">{formatFechaVigencia(item.vigencia)}</span>
+                        <span className="font-mono text-slate-600">{formatFechaVigencia(item.vigencia)}</span>
                       </p>
                     )}
 

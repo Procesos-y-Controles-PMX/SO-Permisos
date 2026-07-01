@@ -11,7 +11,7 @@ export default function Input({ label, error, className = '', id, ...props }: In
       {label && (
         <label
           htmlFor={id}
-          className="block text-xs font-semibold text-gray-600 uppercase tracking-wider"
+          className="block text-xs font-semibold uppercase tracking-wider text-slate-500"
         >
           {label}
         </label>
@@ -19,11 +19,12 @@ export default function Input({ label, error, className = '', id, ...props }: In
       <input
         id={id}
         className={`
-          w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900
-          placeholder-gray-400
-          focus:outline-none focus:ring-2 focus:ring-red-500/30 focus:border-red-500
+          w-full min-h-12 rounded-sm border border-slate-200 bg-slate-50 px-4 py-2.5 text-base text-slate-900
+          placeholder:text-slate-400
           transition-all duration-200
-          ${error ? 'border-red-400 focus:ring-red-400/30' : ''}
+          focus:border-brand focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand/15
+          md:min-h-0 md:py-2.5 md:text-sm
+          ${error ? 'border-red-400 focus:border-red-400 focus:ring-red-400/20' : ''}
           ${className}
         `}
         {...props}

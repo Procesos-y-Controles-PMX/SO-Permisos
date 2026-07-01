@@ -11,15 +11,16 @@ import UsuarioFormModal from '@/components/usuarios/UsuarioFormModal'
 import { useAuth } from '@/contexts/AuthContext'
 import { useUsuarios } from '@/hooks/useUsuarios'
 import TablePagination, { TABLE_PAGE_SIZE } from '@/components/ui/TablePagination'
+import Button from '@/components/ui/Button'
+import {
+  CHEVRON_SELECT,
+  FIELD_INPUT,
+  FIELD_SELECT,
+  MOBILE_LIST_CARD,
+} from '@/components/ui/contentStyles'
 import type { Perfil, PerfilFormValues, RolUsuario } from '@/types'
 
 const PAGE_SIZE = TABLE_PAGE_SIZE
-
-const selectClass =
-  'w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-[13px] text-gray-700 focus:outline-none focus:ring-2 focus:ring-red-500/30 focus:border-red-500 transition-all duration-200 shadow-[0_1px_2px_rgba(0,0,0,0.04)] appearance-none cursor-pointer'
-
-const searchInputClass =
-  'w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-[13px] text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500/30 focus:border-red-500 transition-all duration-200 shadow-[0_1px_2px_rgba(0,0,0,0.04)]'
 
 const ROL_SORT_ORDER: Record<RolUsuario, number> = {
   Admin: 0,
@@ -298,7 +299,7 @@ export default function UsuariosPage() {
     {
       key: 'email',
       header: 'Correo',
-      render: (u) => <span className="text-gray-600">{u.email}</span>,
+      render: (u) => <span className="text-slate-600">{u.email}</span>,
     },
     {
       key: 'rol',
@@ -311,20 +312,20 @@ export default function UsuariosPage() {
       key: 'tienda',
       header: 'Tienda',
       render: (u) => (
-        <span className="text-gray-600">{u.tienda?.sucursal ?? '—'}</span>
+        <span className="text-slate-600">{u.tienda?.sucursal ?? '—'}</span>
       ),
     },
     {
       key: 'region',
       header: 'Región',
       render: (u) => (
-        <span className="text-gray-600">{getUsuarioRegionNombre(u) ?? '—'}</span>
+        <span className="text-slate-600">{getUsuarioRegionNombre(u) ?? '—'}</span>
       ),
     },
     {
       key: 'created_at',
       header: 'Alta',
-      render: (u) => <span className="text-gray-500 text-[12px]">{formatDate(u.created_at)}</span>,
+      render: (u) => <span className="text-[12px] text-slate-500">{formatDate(u.created_at)}</span>,
     },
     {
       key: 'acciones',
@@ -339,7 +340,7 @@ export default function UsuariosPage() {
               disabled={isSelf}
               title={isSelf ? 'No puedes editar tu propia cuenta' : undefined}
               onClick={() => handleOpenEdit(u)}
-              className="text-[12px] font-medium text-red-600 hover:text-red-700 px-2 py-1 rounded-md hover:bg-red-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-red-600"
+              className="text-[12px] font-semibold text-brand hover:text-brand-hover px-2 py-1 rounded-lg hover:bg-slate-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Editar
             </button>
@@ -351,7 +352,7 @@ export default function UsuariosPage() {
                 setActionError(null)
                 setDeleteTarget(u)
               }}
-              className="text-[12px] font-medium text-gray-500 hover:text-red-600 px-2 py-1 rounded-md hover:bg-red-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              className="text-[12px] font-semibold text-slate-500 hover:text-red-600 px-2 py-1 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Eliminar
             </button>
@@ -366,7 +367,7 @@ export default function UsuariosPage() {
       <>
         <PageHeader title="Usuarios" subtitle="Cargando..." />
         <Card className="animate-pulse">
-          <div className="h-64 bg-gray-100 rounded-lg" />
+          <div className="h-64 rounded-lg bg-slate-100" />
         </Card>
       </>
     )
@@ -377,7 +378,7 @@ export default function UsuariosPage() {
       <>
         <PageHeader title="Usuarios" subtitle="Cargando..." />
         <Card className="animate-pulse">
-          <div className="h-64 bg-gray-100 rounded-lg" />
+          <div className="h-64 rounded-lg bg-slate-100" />
         </Card>
       </>
     )
@@ -397,19 +398,16 @@ export default function UsuariosPage() {
   return (
     <>
       <PageHeader
+        eyebrow="Permisos"
         title="Usuarios"
         subtitle={subtitle}
         actions={
-          <button
-            type="button"
-            onClick={handleOpenCreate}
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white text-[13px] font-medium rounded-lg transition-colors shadow-sm"
-          >
+          <Button type="button" onClick={handleOpenCreate}>
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
             </svg>
             Nuevo usuario
-          </button>
+          </Button>
         }
       />
 
@@ -424,7 +422,7 @@ export default function UsuariosPage() {
           <select
             value={filterRol}
             onChange={(e) => handleFilterRolChange(e.target.value)}
-            className={selectClass}
+            className={`${FIELD_SELECT} ${CHEVRON_SELECT}`}
           >
             <option value="">Todos los roles</option>
             {roles.map((r) => (
@@ -438,7 +436,7 @@ export default function UsuariosPage() {
           <select
             value={filterRegion}
             onChange={(e) => handleFilterRegionChange(e.target.value)}
-            className={selectClass}
+            className={`${FIELD_SELECT} ${CHEVRON_SELECT}`}
           >
             <option value="">Todas las regiones</option>
             {regiones.map((r) => (
@@ -454,12 +452,73 @@ export default function UsuariosPage() {
             placeholder="Buscar por nombre, correo, rol, tienda o región..."
             value={searchText}
             onChange={(e) => handleSearchChange(e.target.value)}
-            className={searchInputClass}
+            className={FIELD_INPUT}
           />
         </div>
       </div>
 
-      <Card>
+      <div className="space-y-3 md:hidden">
+        {paginatedUsuarios.length === 0 ? (
+          <p className="text-center text-sm text-slate-500">{emptyMessage}</p>
+        ) : (
+          paginatedUsuarios.map((u) => {
+            const isSelf = perfil?.id === u.id
+            return (
+              <article key={u.id} className={MOBILE_LIST_CARD}>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="font-semibold text-slate-900">{u.nombre_completo || '—'}</p>
+                    <p className="mt-0.5 truncate text-sm text-slate-600">{u.email}</p>
+                  </div>
+                  <Badge variant={rolBadgeVariant(u.rol?.nombre_rol)}>{u.rol?.nombre_rol ?? '—'}</Badge>
+                </div>
+                <dl className="mt-3 space-y-2 text-sm">
+                  <div>
+                    <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">Tienda</dt>
+                    <dd className="text-slate-700">{u.tienda?.sucursal ?? '—'}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">Región</dt>
+                    <dd className="text-slate-700">{getUsuarioRegionNombre(u) ?? '—'}</dd>
+                  </div>
+                </dl>
+                <div className="mt-3 flex gap-2 border-t border-slate-100 pt-3">
+                  <button
+                    type="button"
+                    disabled={isSelf}
+                    onClick={() => handleOpenEdit(u)}
+                    className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold text-slate-700"
+                  >
+                    Editar
+                  </button>
+                  <button
+                    type="button"
+                    disabled={isSelf}
+                    onClick={() => {
+                      setActionError(null)
+                      setDeleteTarget(u)
+                    }}
+                    className="flex-1 rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-sm font-semibold text-red-700"
+                  >
+                    Eliminar
+                  </button>
+                </div>
+              </article>
+            )
+          })
+        )}
+      </div>
+
+      <div className="md:hidden">
+        <TablePagination
+          totalItems={filteredUsuarios.length}
+          pageSize={PAGE_SIZE}
+          page={page}
+          onPageChange={handlePageChange}
+        />
+      </div>
+
+      <Card className="hidden md:block">
         <Table
           columns={columns}
           data={paginatedUsuarios}
@@ -492,28 +551,18 @@ export default function UsuariosPage() {
         title="Eliminar usuario"
         actions={
           <>
-            <button
-              type="button"
-              onClick={() => setDeleteTarget(null)}
-              disabled={deleting}
-              className="px-4 py-2 text-[13px] font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
-            >
+            <Button variant="secondary" type="button" onClick={() => setDeleteTarget(null)} disabled={deleting}>
               Cancelar
-            </button>
-            <button
-              type="button"
-              onClick={handleConfirmDelete}
-              disabled={deleting}
-              className="px-4 py-2 text-[13px] font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors disabled:opacity-50"
-            >
+            </Button>
+            <Button variant="primary" type="button" onClick={handleConfirmDelete} disabled={deleting}>
               {deleting ? 'Eliminando...' : 'Eliminar'}
-            </button>
+            </Button>
           </>
         }
       >
         {deleteTarget && (
           <div className="space-y-3">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-slate-600">
               ¿Eliminar a{' '}
               <strong>{deleteTarget.nombre_completo || deleteTarget.email}</strong>? Las
               notificaciones asociadas se eliminarán. Las solicitudes que haya revisado

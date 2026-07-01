@@ -5,17 +5,28 @@ import { useRouter } from 'next/navigation'
 import PageHeader from '@/components/ui/PageHeader'
 import Card from '@/components/ui/Card'
 import TablePagination, { TABLE_PAGE_SIZE } from '@/components/ui/TablePagination'
+import {
+  EMPTY_STATE,
+  FIELD_INPUT,
+  FIELD_SELECT,
+  MOBILE_LIST_CARD,
+  TABLE_BODY_ROW,
+  TABLE_HEAD_CELL,
+} from '@/components/ui/contentStyles'
 import { useTiendas } from '@/hooks/useTiendas'
 import { useStoreCompliance } from '@/hooks/useStoreCompliance'
 import { useAuth } from '@/contexts/AuthContext'
 
 const PAGE_SIZE = TABLE_PAGE_SIZE
 
-const selectClass =
-  'w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-[13px] text-gray-700 focus:outline-none focus:ring-2 focus:ring-red-500/30 focus:border-red-500 transition-all duration-200 shadow-[0_1px_2px_rgba(0,0,0,0.04)] appearance-none cursor-pointer'
+const CHEVRON =
+  "bg-[url('data:image/svg+xml;charset=UTF-8,%3csvg%20xmlns%3d%22http%3a%2f%2fwww.w3.org%2f2000%2fsvg%22%20width%3d%2212%22%20height%3d%2212%22%20viewBox%3d%220%200%2024%2024%22%20fill%3d%22none%22%20stroke%3d%22%2364748b%22%20stroke-width%3d%222%22%3e%3cpolyline%20points%3d%226%209%2012%2015%2018%209%22%3e%3c%2fpolyline%3e%3c%2fsvg%3e')]"
 
-const searchInputClass =
-  'w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-[13px] text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500/30 focus:border-red-500 transition-all duration-200 shadow-[0_1px_2px_rgba(0,0,0,0.04)]'
+function complianceBadgeClass(value: number) {
+  if (value < 50) return 'border-red-100 text-red-600 bg-red-50'
+  if (value < 85) return 'border-amber-100 text-amber-600 bg-amber-50'
+  return 'border-emerald-100 text-emerald-600 bg-emerald-50'
+}
 
 const DIRECTORIO_STORAGE = {
   search: 'directorio_search_text',
@@ -133,7 +144,7 @@ export default function DirectorioPage() {
       <>
         <PageHeader title="Directorio" subtitle="Redirigiendo a tu sucursal..." />
         <Card className="animate-pulse">
-          <div className="h-64 bg-gray-100 rounded-lg" />
+          <div className="h-64 rounded-lg bg-slate-100" />
         </Card>
       </>
     )
@@ -144,7 +155,7 @@ export default function DirectorioPage() {
       <>
         <PageHeader title="Directorio" subtitle="Cargando sucursales..." />
         <Card className="animate-pulse">
-          <div className="h-64 bg-gray-100 rounded-lg" />
+          <div className="h-64 rounded-lg bg-slate-100" />
         </Card>
       </>
     )
@@ -168,15 +179,15 @@ export default function DirectorioPage() {
 
   return (
     <>
-      <PageHeader title="Directorio" subtitle={subtitle} />
+      <PageHeader eyebrow="Permisos" title="Directorio" subtitle={subtitle} />
 
-      <div className="flex flex-col sm:flex-row gap-3 mb-5">
+      <div className="mb-5 flex flex-col gap-3 sm:flex-row">
         {!isRegional && (
           <div className="w-full sm:w-52">
             <select
               value={filterRegion}
               onChange={(e) => handleFilterRegionChange(e.target.value)}
-              className={selectClass}
+              className={`${FIELD_SELECT} ${CHEVRON}`}
             >
               {regionOptions.map((opt) => (
                 <option key={opt.value} value={opt.value}>
@@ -192,62 +203,93 @@ export default function DirectorioPage() {
             placeholder="Buscar sucursal..."
             value={searchText}
             onChange={(e) => handleSearchChange(e.target.value)}
-            className={searchInputClass}
+            className={FIELD_INPUT}
           />
         </div>
       </div>
 
-      <Card className="p-0 overflow-hidden">
-        {filtered.length === 0 ? (
-          <div className="text-center py-16 text-gray-400">
-            <p className="text-[13px]">No se encontraron sucursales con los filtros aplicados.</p>
+      {filtered.length === 0 ? (
+        <div className={EMPTY_STATE}>
+          <p>No se encontraron sucursales con los filtros aplicados.</p>
+        </div>
+      ) : (
+        <>
+          {/* Mobile — cards */}
+          <div className="space-y-3 md:hidden">
+            {paginatedTiendas.map((t) => {
+              const compliance = storeComplianceMap[t.id] ?? 0
+              return (
+                <article
+                  key={t.id}
+                  className={`${MOBILE_LIST_CARD} cursor-pointer active:bg-slate-50`}
+                  onClick={() => router.push(`/directorio/${t.id}`)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      router.push(`/directorio/${t.id}`)
+                    }
+                  }}
+                  role="button"
+                  tabIndex={0}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="font-semibold text-slate-900">{t.sucursal}</p>
+                      <p className="mt-0.5 text-sm text-slate-500">{t.region?.nombre_region ?? '—'}</p>
+                    </div>
+                    {loadingCompliance ? (
+                      <div className="h-9 w-9 shrink-0 animate-pulse rounded-full bg-slate-100" />
+                    ) : (
+                      <div
+                        className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 text-[10px] font-bold ${complianceBadgeClass(compliance)}`}
+                      >
+                        {`${compliance.toFixed(0)}%`}
+                      </div>
+                    )}
+                  </div>
+                  <dl className="mt-3 space-y-2 text-sm">
+                    <div>
+                      <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">Gte. Tienda</dt>
+                      <dd className="text-slate-700">{t.gerente_tienda ?? '—'}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">Contacto</dt>
+                      <dd className="text-slate-700">{t.celular ?? '—'}</dd>
+                    </div>
+                  </dl>
+                </article>
+              )
+            })}
           </div>
-        ) : (
-          <>
+
+          {/* Desktop — table */}
+          <Card className="hidden overflow-hidden p-0 md:block">
             <div className="overflow-x-auto">
-              <table className="w-full text-[12px]">
+              <table className="w-full text-sm">
                 <thead>
-                  <tr className="bg-gray-50/60 border-b border-gray-100">
-                    <th className="text-center py-3 px-4 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                      Cumplimiento
-                    </th>
-                    <th className="text-left py-3 px-4 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                      Sucursal
-                    </th>
-                    <th className="text-left py-3 px-4 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                      Región
-                    </th>
-                    <th className="text-left py-3 px-4 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                      Gte. Tienda
-                    </th>
-                    <th className="text-left py-3 px-4 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                      Dirección
-                    </th>
-                    <th className="text-left py-3 px-4 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                      Contacto
-                    </th>
-                    <th className="text-right py-3 px-4 text-[10px] font-bold text-gray-400 uppercase tracking-wider"></th>
+                  <tr className="border-b border-slate-200 bg-slate-50">
+                    <th className={`${TABLE_HEAD_CELL} text-center`}>Cumplimiento</th>
+                    <th className={TABLE_HEAD_CELL}>Sucursal</th>
+                    <th className={TABLE_HEAD_CELL}>Región</th>
+                    <th className={TABLE_HEAD_CELL}>Gte. Tienda</th>
+                    <th className={TABLE_HEAD_CELL}>Dirección</th>
+                    <th className={TABLE_HEAD_CELL}>Contacto</th>
+                    <th className={`${TABLE_HEAD_CELL} text-right`}></th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-50">
+                <tbody>
                   {paginatedTiendas.map((t) => (
                     <tr
                       key={t.id}
                       onClick={() => router.push(`/directorio/${t.id}`)}
-                      className="hover:bg-blue-50/40 transition-colors cursor-pointer group"
+                      className={`${TABLE_BODY_ROW} group cursor-pointer`}
                     >
-                      <td className="py-3 px-4 text-center">
+                      <td className="px-4 py-3 text-center">
                         {loadingCompliance ? (
-                          <div className="w-8 h-8 rounded-full bg-gray-100 animate-pulse mx-auto" />
+                          <div className="mx-auto h-8 w-8 animate-pulse rounded-full bg-slate-100" />
                         ) : (
                           <div
-                            className={`inline-flex w-8 h-8 rounded-full items-center justify-center text-[9px] font-bold border-2 mx-auto ${
-                              (storeComplianceMap[t.id] ?? 0) < 50
-                                ? 'border-red-100 text-red-600 bg-red-50'
-                                : (storeComplianceMap[t.id] ?? 0) < 85
-                                  ? 'border-orange-100 text-orange-600 bg-orange-50'
-                                  : 'border-green-100 text-green-600 bg-green-50'
-                            }`}
+                            className={`mx-auto inline-flex h-8 w-8 items-center justify-center rounded-full border-2 text-[9px] font-bold ${complianceBadgeClass(storeComplianceMap[t.id] ?? 0)}`}
                           >
                             {storeComplianceMap[t.id] !== undefined
                               ? `${storeComplianceMap[t.id].toFixed(0)}%`
@@ -255,31 +297,25 @@ export default function DirectorioPage() {
                           </div>
                         )}
                       </td>
-                      <td className="py-3 px-4 font-semibold text-slate-700">{t.sucursal}</td>
-                      <td className="py-3 px-4 text-gray-500">{t.region?.nombre_region ?? '—'}</td>
-                      <td className="py-3 px-4 text-gray-500">{t.gerente_tienda ?? '—'}</td>
-                      <td className="py-3 px-4 text-gray-400 text-[11px]">
-                        {t.direccion_sucursal ?? '—'}
+                      <td className="px-4 py-3 font-semibold text-slate-800">{t.sucursal}</td>
+                      <td className="px-4 py-3 text-slate-500">{t.region?.nombre_region ?? '—'}</td>
+                      <td className="px-4 py-3 text-slate-500">{t.gerente_tienda ?? '—'}</td>
+                      <td className="px-4 py-3 text-[11px] text-slate-400">{t.direccion_sucursal ?? '—'}</td>
+                      <td className="px-4 py-3">
+                        <p className="text-slate-500">{t.celular ?? '—'}</p>
+                        <p className="text-[10px] text-slate-400">{t.correo ?? ''}</p>
                       </td>
-                      <td className="py-3 px-4">
-                        <p className="text-gray-500">{t.celular ?? '—'}</p>
-                        <p className="text-gray-400 text-[10px]">{t.correo ?? ''}</p>
-                      </td>
-                      <td className="py-3 px-4 text-right">
-                        <span className="text-gray-300 group-hover:text-red-500 transition-colors">
+                      <td className="px-4 py-3 text-right">
+                        <span className="text-slate-300 transition-colors group-hover:text-brand">
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
-                            className="h-4 w-4 inline"
+                            className="inline h-4 w-4"
                             fill="none"
                             viewBox="0 0 24 24"
                             stroke="currentColor"
                             strokeWidth={2}
                           >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M9 5l7 7-7 7"
-                            />
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                           </svg>
                         </span>
                       </td>
@@ -294,9 +330,18 @@ export default function DirectorioPage() {
               page={safePage}
               onPageChange={handlePageChange}
             />
-          </>
-        )}
-      </Card>
+          </Card>
+
+          <div className="md:hidden">
+            <TablePagination
+              totalItems={filtered.length}
+              pageSize={PAGE_SIZE}
+              page={safePage}
+              onPageChange={handlePageChange}
+            />
+          </div>
+        </>
+      )}
     </>
   )
 }

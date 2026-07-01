@@ -1,17 +1,23 @@
 interface PageHeaderProps {
+  eyebrow?: string
   title: string
   subtitle?: string
   actions?: React.ReactNode
 }
 
-export default function PageHeader({ title, subtitle, actions }: PageHeaderProps) {
+export default function PageHeader({ eyebrow, title, subtitle, actions }: PageHeaderProps) {
   return (
-    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6">
+    <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
       <div>
-        <h1 className="text-[22px] font-bold text-slate-800 tracking-tight">{title}</h1>
-        {subtitle && <p className="text-[13px] text-gray-400 mt-0.5">{subtitle}</p>}
+        {eyebrow ? (
+          <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-brand">{eyebrow}</p>
+        ) : null}
+        <h1 className="font-display text-2xl font-semibold tracking-tight text-slate-900 md:text-[1.65rem]">
+          {title}
+        </h1>
+        {subtitle ? <p className="mt-1 text-sm text-slate-500">{subtitle}</p> : null}
       </div>
-      {actions && <div className="flex items-center gap-2">{actions}</div>}
+      {actions ? <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center">{actions}</div> : null}
     </div>
   )
 }

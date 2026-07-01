@@ -4,6 +4,8 @@ import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useDashboardStats } from '@/hooks/useDashboardStats'
+import PageHeader from '@/components/ui/PageHeader'
+import { BTN_SECONDARY } from '@/components/ui/contentStyles'
 import { ProgressBar } from './ProgressBar'
 
 
@@ -46,42 +48,39 @@ export function DashboardAdmin() {
   }
 
   if (error) {
-    return <div className="p-8 text-red-500 bg-red-50 rounded-xl m-8">Error al cargar dashboard: {error}</div>
+    return <div className="m-8 rounded-sm border border-red-200 bg-red-50 p-8 text-red-600">Error al cargar dashboard: {error}</div>
   }
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Dashboard General</h1>
-          <p className="text-gray-500 mt-1">Visión global de cumplimiento normativo</p>
-        </div>
-        <Link
-          href="/descargas"
-          className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition-colors hover:bg-gray-50"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v11m0 0l-4-4m4 4l4-4m3 8v2a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-2" />
-          </svg>
-          Descarga masiva
-        </Link>
-      </div>
+    <div className="mx-auto max-w-7xl space-y-8 p-4 md:p-8">
+      <PageHeader
+        eyebrow="Permisos"
+        title="Dashboard General"
+        subtitle="Visión global de cumplimiento normativo"
+        actions={
+          <Link href="/descargas" className={BTN_SECONDARY}>
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v11m0 0l-4-4m4 4l4-4m3 8v2a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-2" />
+            </svg>
+            Descarga masiva
+          </Link>
+        }
+      />
 
-      {/* Global Card */}
-      <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm relative overflow-hidden">
-        <div className="flex flex-col md:flex-row gap-8 items-center">
-          <div className="bg-linear-to-br from-red-500 to-red-600 rounded-2xl p-6 text-white shadow-lg shadow-red-500/20 w-full md:w-auto min-w-[240px]">
-            <p className="text-red-100 font-medium text-sm mb-1">Alertas de Cumplimiento</p>
+      <div className="relative overflow-hidden rounded-sm border border-slate-200 bg-white p-6 shadow-[0_1px_3px_rgba(0,0,0,0.05)] md:p-8">
+        <div className="flex flex-col items-center gap-8 md:flex-row">
+          <div className="w-full min-w-[240px] rounded-sm bg-gradient-to-br from-brand to-brand-active p-6 text-white shadow-[0_2px_8px_-3px_rgba(237,28,36,.7)] md:w-auto">
+            <p className="mb-1 text-sm font-medium text-white/80">Alertas de Cumplimiento</p>
             <div className="flex items-end gap-3">
               <span className="text-5xl font-black tabular-nums tracking-tighter">{totalAlertas}</span>
-              <span className="text-red-200 mb-1.5 font-medium text-sm">pendientes</span>
+              <span className="mb-1.5 text-sm font-medium text-white/70">pendientes</span>
             </div>
           </div>
           
           <div className="flex-1 w-full">
             <ProgressBar percentage={compliancePercentage} className="mb-2" />
-            <p className="text-xs text-gray-400 mt-3 flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-blue-500" />
+            <p className="mt-3 flex items-center gap-2 text-xs text-slate-500">
+              <span className="h-2 w-2 rounded-full bg-steel" />
               Basado en {totalRequirements} requerimientos obligatorios totales
             </p>
           </div>
@@ -90,13 +89,14 @@ export function DashboardAdmin() {
 
       {/* Regions Grid */}
       <div>
-        <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-          <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" x2="9" y1="3" y2="18"/><line x1="15" x2="15" y1="6" y2="21"/></svg> Alertas por Región
+        <h2 className="mb-4 flex items-center gap-2 text-xl font-bold text-slate-800">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" x2="9" y1="3" y2="18"/><line x1="15" x2="15" y1="6" y2="21"/></svg>
+          Alertas por Región
         </h2>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
           {sortedRegions.map((region) => (
-            <div key={region.id} className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-              <p className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-1">
+            <div key={region.id} className="rounded-sm border border-slate-200 bg-white p-6 shadow-[0_1px_3px_rgba(0,0,0,0.05)] transition-shadow hover:shadow-md">
+              <p className="mb-1 text-sm font-medium uppercase tracking-wider text-slate-500">
                 {region.nombre_region}
               </p>
               <div className="flex justify-between items-end">

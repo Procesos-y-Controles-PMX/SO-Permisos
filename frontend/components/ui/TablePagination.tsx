@@ -22,20 +22,23 @@ export default function TablePagination({
   const rangeStart = (safePage - 1) * pageSize + 1
   const rangeEnd = Math.min(safePage * pageSize, totalItems)
 
+  const btnClass =
+    'min-h-10 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 sm:min-h-0 sm:py-1.5'
+
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 py-4 border-t border-gray-100">
-      <p className="text-[12px] text-gray-500">
+    <div className="flex flex-col gap-3 border-t border-slate-100 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+      <p className="text-sm text-slate-500">
         Mostrando {rangeStart}–{rangeEnd} de {totalItems}
       </p>
       <div className="flex items-center gap-3">
-        <span className="text-[12px] text-gray-500">
+        <span className="text-sm text-slate-500">
           Página {safePage} de {totalPages}
         </span>
         <button
           type="button"
           disabled={safePage <= 1}
           onClick={() => onPageChange(Math.max(1, safePage - 1))}
-          className="px-3 py-1.5 text-[12px] font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          className={btnClass}
         >
           Anterior
         </button>
@@ -43,7 +46,7 @@ export default function TablePagination({
           type="button"
           disabled={safePage >= totalPages}
           onClick={() => onPageChange(Math.min(totalPages, safePage + 1))}
-          className="px-3 py-1.5 text-[12px] font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          className={btnClass}
         >
           Siguiente
         </button>
