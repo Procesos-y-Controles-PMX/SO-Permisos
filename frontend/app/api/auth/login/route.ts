@@ -54,7 +54,11 @@ export async function POST(request: Request) {
       );
     }
 
-    const rolData = data.roles as { id: number; nombre_rol: RolUsuario } | null;
+    const rawRol = data.roles;
+    const rolData = (Array.isArray(rawRol) ? rawRol[0] : rawRol) as
+      | { id: number; nombre_rol: RolUsuario }
+      | null
+      | undefined;
     const perfil: Perfil = {
       id: data.id,
       email: data.email,
