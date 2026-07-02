@@ -12,6 +12,8 @@
   --brand-tint: rgba(237, 28, 36, 0.09);
   --console-bg: #0d1117;
   --status-crit: #DC2626;
+  --status-ok: #0E7C66;
+  --status-warn: #D97706;
   --focus-ring-color: var(--steel);
   --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.04), 0 14px 30px -20px rgba(16, 24, 40, 0.25);
 }
@@ -23,6 +25,9 @@
   --color-brand-hover: var(--brand-hover);
   --color-brand-active: var(--brand-active);
   --color-steel: var(--steel);
+  --color-status-ok: var(--status-ok);
+  --color-status-warn: var(--status-warn);
+  --color-status-crit: var(--status-crit);
   --font-sans: var(--font-plex-sans);
   --font-mono: var(--font-geist-mono);
   --font-display: var(--font-saira);
@@ -84,6 +89,33 @@ body {
 @media (min-width: 1024px) {
   .app-main-pad {
     padding-bottom: 1.75rem;
+  }
+}
+
+@keyframes sheet-slide-up {
+  from {
+    transform: translateY(100%);
+    opacity: 0.6;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes sheet-overlay-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-\[sheet-slide-up_280ms_cubic-bezier\(0\.32\,0\.72\,0\,1\)\],
+  .animate-\[sheet-overlay-in_200ms_ease-out\] {
+    animation: none;
   }
 }
 

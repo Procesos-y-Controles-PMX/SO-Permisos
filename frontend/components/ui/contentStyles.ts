@@ -5,6 +5,13 @@ export const PANEL_SHADOW = 'shadow-[0_1px_3px_rgba(0,0,0,0.05)]'
 export const PANEL_CARD =
   `rounded-sm border border-slate-200 bg-white ${PANEL_SHADOW}`
 
+/** Main content section — matches Equipo-Móvil list panels (Unidades Registradas). */
+export const SECTION_PANEL =
+  `overflow-hidden rounded-sm border border-slate-200 bg-white ${PANEL_SHADOW}`
+
+export const SECTION_PANEL_HEADER =
+  'flex items-center justify-between border-b border-slate-100 px-5 py-4 sm:px-6 sm:py-5'
+
 export const PANEL_INSET =
   'rounded-sm border border-slate-200 bg-slate-50'
 

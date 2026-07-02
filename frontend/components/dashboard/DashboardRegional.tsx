@@ -1,13 +1,15 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { useRouter } from 'next/navigation'
 import { useDashboardStats } from '@/hooks/useDashboardStats'
 import { useAuth } from '@/contexts/AuthContext'
 import PageHeader from '@/components/ui/PageHeader'
 import BrandLoader from '@/components/ui/BrandLoader'
-import { ALERT_ERROR, PANEL_CARD } from '@/components/ui/contentStyles'
-import { ProgressBar } from './ProgressBar'
+import DashboardDetailSheet from '@/components/dashboard/DashboardDetailSheet'
+import type { DashboardSheetTarget } from '@/components/dashboard/dashboardSheetUtils'
+import { complianceBadgeClass } from '@/components/dashboard/dashboardSheetUtils'
+import { ALERT_ERROR, SECTION_PANEL, SECTION_PANEL_HEADER } from '@/components/ui/contentStyles'
+import GaugeStat, { GaugeStatRow, complianceTone } from '@/components/ui/GaugeStat'
 
 export function DashboardRegional() {
   const {
@@ -21,8 +23,7 @@ export function DashboardRegional() {
     storesAlerts,
   } = useDashboardStats()
   const { perfil } = useAuth()
-  const router = useRouter()
-
+  const [sheetTarget, setSheetTarget] = useState<DashboardSheetTarget | null>(null)
   const [currentPage, setCurrentPage] = useState(0)
   const pageSize = 10
 
@@ -61,39 +62,47 @@ export function DashboardRegional() {
         subtitle="Gestión de cumplimiento por zona"
       />
 
-      <div className={`relative overflow-hidden p-6 md:p-8 ${PANEL_CARD}`}>
-        <div className="flex flex-col items-center gap-8 md:flex-row">
-          <div className="w-full min-w-[240px] rounded-sm bg-gradient-to-br from-brand to-brand-active p-6 text-white shadow-[0_2px_8px_-3px_rgba(237,28,36,.7)] md:w-auto">
-            <p className="mb-1 text-sm font-medium text-white/80">Alertas en la Región</p>
-            <div className="flex items-end gap-3">
-              <span className="text-5xl font-black tabular-nums tracking-tighter">{totalAlertas}</span>
-              <span className="mb-1.5 text-sm font-medium text-white/70">pendientes</span>
-            </div>
-          </div>
+      <GaugeStatRow className="mb-2">
+        <GaugeStat
+          label="Alertas"
+          value={totalAlertas}
+          tone="crit"
+          proportion={totalRequirements > 0 ? totalAlertas / totalRequirements : 0}
+          sublabel="pendientes en la región"
+          density="compact"
+        />
+        <GaugeStat
+          label="Cumplimiento"
+          value={compliancePercentage.toFixed(1)}
+          unit="%"
+          tone={complianceTone(compliancePercentage)}
+          proportion={compliancePercentage / 100}
+          sublabel={`${totalRequirements} requerimientos`}
+          density="compact"
+        />
+        <GaugeStat
+          label="Sucursales"
+          value={stores.length}
+          tone="steel"
+          sublabel={regionName}
+          density="compact"
+        />
+      </GaugeStatRow>
 
-          <div className="w-full flex-1">
-            <ProgressBar percentage={compliancePercentage} className="mb-2" />
-            <p className="mt-3 flex items-center gap-2 text-xs text-slate-500">
-              <span className="h-2 w-2 rounded-full bg-brand" />
-              Estado de cumplimiento regional ({totalRequirements} requerimientos)
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <div>
-        <h2 className="mb-4 flex items-center justify-between text-xl font-bold text-slate-800">
-          <div className="flex items-center gap-2">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg>
+      <section className={SECTION_PANEL}>
+        <div className={SECTION_PANEL_HEADER}>
+          <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-900">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-brand" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg>
             Cumplimiento por Tienda
-          </div>
-          {sortedStores.length > pageSize && (
+          </h2>
+          {sortedStores.length > pageSize ? (
             <div className="flex items-center gap-2">
               <span className="mr-2 text-xs font-normal text-slate-400">
                 Página {currentPage + 1} de {Math.ceil(sortedStores.length / pageSize)}
               </span>
               <div className="flex gap-1">
                 <button
+                  type="button"
                   onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
                   disabled={currentPage === 0}
                   className="rounded-sm border border-slate-200 p-1 transition-colors hover:bg-slate-50 disabled:opacity-30"
@@ -101,6 +110,7 @@ export function DashboardRegional() {
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
                 </button>
                 <button
+                  type="button"
                   onClick={() =>
                     setCurrentPage((p) =>
                       Math.min(Math.ceil(sortedStores.length / pageSize) - 1, p + 1),
@@ -113,9 +123,8 @@ export function DashboardRegional() {
                 </button>
               </div>
             </div>
-          )}
-        </h2>
-        <div className={`overflow-hidden ${PANEL_CARD}`}>
+          ) : null}
+        </div>
           {sortedStores.length > 0 ? (
             <div className="divide-y divide-slate-100">
               {sortedStores
@@ -125,18 +134,13 @@ export function DashboardRegional() {
                   return (
                     <button
                       key={tienda.id}
-                      onClick={() => router.push(`/directorio/${tienda.id}`)}
+                      type="button"
+                      onClick={() => setSheetTarget({ type: 'store', store: tienda })}
                       className="group flex w-full items-center justify-between p-4 text-left transition-colors hover:bg-slate-50"
                     >
                       <div className="flex items-center gap-4">
                         <div
-                          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 text-[10px] font-bold ${
-                            storeComp < 50
-                              ? 'border-red-100 bg-red-50 text-red-600'
-                              : storeComp < 85
-                                ? 'border-orange-100 bg-orange-50 text-orange-600'
-                                : 'border-green-100 bg-green-50 text-green-600'
-                          }`}
+                          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 text-[10px] font-bold ${complianceBadgeClass(storeComp)}`}
                         >
                           {storeComp.toFixed(0)}%
                         </div>
@@ -165,8 +169,15 @@ export function DashboardRegional() {
               <p className="text-slate-500">No hay sucursales configuradas en esta región.</p>
             </div>
           )}
-        </div>
-      </div>
+      </section>
+
+      <DashboardDetailSheet
+        target={sheetTarget}
+        onClose={() => setSheetTarget(null)}
+        storesAlerts={storesAlerts}
+        stores={stores}
+        storeComplianceMap={storeComplianceMap}
+      />
     </div>
   )
 }
