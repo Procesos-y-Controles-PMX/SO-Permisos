@@ -1,11 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AlertCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import LoginShell from "@/components/login/LoginShell";
 import { loginButtonClass, loginInputClass, loginTitleClass } from "@/components/login/loginStyles";
+
+// When the unified portal is configured, /login only forwards there
+// (bookmarks keep working); without it the local form still renders.
+const PORTAL_URL = process.env.NEXT_PUBLIC_PORTAL_URL;
 
 export default function LoginPage() {
   const { signIn } = useAuth();
@@ -14,6 +18,18 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (PORTAL_URL) window.location.replace(`${PORTAL_URL}/login?app=permisos`);
+  }, []);
+
+  if (PORTAL_URL) {
+    return (
+      <main className="flex min-h-dvh items-center justify-center bg-surface">
+        <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-brand" role="status" aria-label="Cargando" />
+      </main>
+    );
+  }
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
