@@ -10,6 +10,7 @@ import type { DashboardSheetTarget } from '@/components/dashboard/dashboardSheet
 import { complianceBadgeClass } from '@/components/dashboard/dashboardSheetUtils'
 import { ALERT_ERROR, SECTION_PANEL, SECTION_PANEL_HEADER } from '@/components/ui/contentStyles'
 import GaugeStat, { GaugeStatRow, complianceTone } from '@/components/ui/GaugeStat'
+import { cn } from '@/lib/utils'
 
 export function DashboardRegional() {
   const {
@@ -56,12 +57,15 @@ export function DashboardRegional() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-8">
+      <div className="animate-fade-up" style={{ animationDelay: '0ms' }}>
       <PageHeader
         eyebrow="Permisos"
         title={`Región ${regionName}`}
         subtitle="Gestión de cumplimiento por zona"
       />
+      </div>
 
+      <div className="animate-fade-up" style={{ animationDelay: '60ms' }}>
       <GaugeStatRow className="mb-2">
         <GaugeStat
           label="Alertas"
@@ -88,8 +92,9 @@ export function DashboardRegional() {
           density="compact"
         />
       </GaugeStatRow>
+      </div>
 
-      <section className={SECTION_PANEL}>
+      <section className={cn(SECTION_PANEL, 'animate-fade-up')} style={{ animationDelay: '120ms' }}>
         <div className={SECTION_PANEL_HEADER}>
           <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-900">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-brand" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg>

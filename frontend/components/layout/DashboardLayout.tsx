@@ -7,6 +7,8 @@ import { useUI } from '@/contexts/UIContext'
 import { useAuth } from '@/contexts/AuthContext'
 import { cn } from '@/lib/utils'
 import { buildMobileBottomNavItems } from '@/components/layout/navConfig'
+import AppCanvasMouseBackdrop from '@/components/common/AppCanvasMouseBackdrop'
+import ModuleTransition from '@/components/common/ModuleTransition'
 
 interface DashboardLayoutProps {
   children: React.ReactNode
@@ -38,10 +40,12 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
       <div
         className={cn(
-          'min-h-screen transition-all duration-300',
+          'relative min-h-screen transition-all duration-300',
           sidebarCollapsed ? 'lg:ml-[72px]' : 'lg:ml-[250px]',
         )}
       >
+        <AppCanvasMouseBackdrop />
+
         <header className="app-safe-x sticky top-0 z-30 flex items-center gap-3 border-b border-slate-200/80 bg-white/90 py-3 backdrop-blur-sm lg:hidden">
           <div className="min-w-0 flex-1">
             <h1 className="truncate font-display text-lg font-semibold tracking-tight text-slate-900">
@@ -61,8 +65,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           </button>
         </header>
 
-        <main className="app-safe-x app-safe-bottom app-main-pad mx-auto max-w-[1400px] overflow-x-hidden py-5 md:py-7">
-          {children}
+        <main className="relative z-10 app-safe-x app-safe-bottom app-main-pad mx-auto max-w-[1400px] overflow-x-hidden py-5 md:py-7">
+          <ModuleTransition>{children}</ModuleTransition>
         </main>
       </div>
 

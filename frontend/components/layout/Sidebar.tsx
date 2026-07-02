@@ -99,6 +99,9 @@ function SidebarPanel({
                   >
                     <span className="shrink-0">{item.icon}</span>
                     {!collapsed && <span className="truncate">{item.label}</span>}
+                    {active && !collapsed ? (
+                      <span className="animate-rail-glow pointer-events-none absolute bottom-2 left-0 top-2 w-[3px] rounded-full bg-white/70" />
+                    ) : null}
                   </Link>
                 )
               })}
