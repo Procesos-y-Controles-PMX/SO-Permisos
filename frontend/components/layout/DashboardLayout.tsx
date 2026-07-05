@@ -65,7 +65,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           </button>
         </header>
 
-        <main className="relative z-10 app-safe-x app-safe-bottom app-main-pad mx-auto max-w-[1400px] overflow-x-hidden py-5 md:py-7">
+        <main className="relative z-10 app-safe-x app-safe-bottom app-main-pad mx-auto max-w-[1720px] overflow-x-hidden py-5 md:py-7">
           <ModuleTransition>{children}</ModuleTransition>
         </main>
       </div>

@@ -6,10 +6,11 @@ import { useDashboardStats } from '@/hooks/useDashboardStats'
 import PageHeader from '@/components/ui/PageHeader'
 import BrandLoader from '@/components/ui/BrandLoader'
 import DashboardDetailSheet from '@/components/dashboard/DashboardDetailSheet'
+import RegionComplianceChart from '@/components/dashboard/RegionComplianceChart'
 import type { DashboardSheetTarget } from '@/components/dashboard/dashboardSheetUtils'
 import { complianceBadgeClass } from '@/components/dashboard/dashboardSheetUtils'
 import { ALERT_ERROR, BTN_SECONDARY, SECTION_PANEL, SECTION_PANEL_HEADER } from '@/components/ui/contentStyles'
-import GaugeStat, { GaugeStatGrid, GaugeStatRow, complianceTone } from '@/components/ui/GaugeStat'
+import GaugeStat, { GaugeStatRow, complianceTone } from '@/components/ui/GaugeStat'
 import { cn } from '@/lib/utils'
 
 export function DashboardAdmin() {
@@ -30,7 +31,7 @@ export function DashboardAdmin() {
   const pageSize = 10
 
   const sortedRegions = useMemo(() => {
-    return [...regionalCounts].sort((a, b) => b.vencidos - a.vencidos)
+    return [...regionalCounts].sort((a, b) => a.cumplimiento - b.cumplimiento)
   }, [regionalCounts])
 
   const sortedStores = useMemo(() => {
@@ -56,7 +57,7 @@ export function DashboardAdmin() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl space-y-8">
+    <div className="space-y-8">
       <div className="animate-fade-up" style={{ animationDelay: '0ms' }}>
       <PageHeader
         eyebrow="Permisos"
@@ -114,37 +115,25 @@ export function DashboardAdmin() {
       </GaugeStatRow>
       </div>
 
-      <div className="animate-fade-up" style={{ animationDelay: '120ms' }}>
+      <div className="grid grid-cols-1 gap-8 xl:grid-cols-5 xl:items-start xl:gap-6">
+      <div className="animate-fade-up xl:col-span-2" style={{ animationDelay: '120ms' }}>
         <h2 className="mb-3 flex items-center gap-2 text-base font-semibold text-slate-900">
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-brand" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" x2="9" y1="3" y2="18"/><line x1="15" x2="15" y1="6" y2="21"/></svg>
-          Alertas por Región
+          Cumplimiento por Región
         </h2>
-        <GaugeStatGrid>
-          {sortedRegions.map((region) => (
-            <button
-              key={region.id}
-              type="button"
-              onClick={() => setSheetTarget({ type: 'region', region })}
-              className="bg-white text-left transition-colors hover:bg-slate-50/80 active:bg-slate-100/80"
-            >
-              <GaugeStat
-                label={region.nombre_region}
-                value={region.vencidos}
-                tone={region.vencidos > 0 ? 'crit' : 'ok'}
-                proportion={region.cumplimiento / 100}
-                sublabel={`${region.cumplimiento.toFixed(1)}% cumplimiento`}
-                density="mini"
-              />
-            </button>
-          ))}
-        </GaugeStatGrid>
+        <div className={SECTION_PANEL}>
+          <RegionComplianceChart
+            regions={sortedRegions}
+            onSelect={(region) => setSheetTarget({ type: 'region', region })}
+          />
+        </div>
       </div>
 
-      <section className={cn(SECTION_PANEL, 'animate-fade-up')} style={{ animationDelay: '180ms' }}>
+      <section className={cn(SECTION_PANEL, 'animate-fade-up xl:col-span-3')} style={{ animationDelay: '180ms' }}>
         <div className={SECTION_PANEL_HEADER}>
           <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-900">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-brand" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg>
-            Cumplimiento por Tienda
+            Tiendas en riesgo
           </h2>
           {sortedStores.length > pageSize ? (
             <div className="flex items-center gap-2">
@@ -219,6 +208,7 @@ export function DashboardAdmin() {
             </div>
           )}
       </section>
+      </div>
 
       <DashboardDetailSheet
         target={sheetTarget}
