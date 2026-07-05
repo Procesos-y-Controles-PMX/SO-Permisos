@@ -91,9 +91,12 @@ export default function PermisosPage() {
   }, [authLoading, isAdmin, router])
 
   const filtered = useMemo(() => {
-    if (!searchText) return permisos
     const q = searchText.toLowerCase()
-    return permisos.filter((p) => p.nombre_permiso.toLowerCase().includes(q))
+    const matches = searchText
+      ? permisos.filter((p) => p.nombre_permiso.toLowerCase().includes(q))
+      : permisos
+    // Ordenados de mayor a menor por sucursales con el permiso
+    return [...matches].sort((a, b) => b.tiendaCount - a.tiendaCount)
   }, [permisos, searchText])
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))

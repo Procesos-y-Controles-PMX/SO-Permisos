@@ -83,3 +83,4 @@ dashboard.pdf
 .project
 .classpath
 .settings/
+.env*

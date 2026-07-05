@@ -28,6 +28,11 @@ interface StoreOption {
   id_region: number | null
 }
 
+interface PermisoOption {
+  id: number
+  nombre_permiso: string
+}
+
 function getFileNameFromDisposition(value: string | null): string | null {
   if (!value) return null
   const match = value.match(/filename="([^"]+)"/)
@@ -42,8 +47,10 @@ export default function AdminDescargasPage() {
   const [scope, setScope] = useState<Scope>('all')
   const [regionId, setRegionId] = useState<string>('')
   const [tiendaId, setTiendaId] = useState<string>('')
+  const [permisoId, setPermisoId] = useState<string>('')
   const [regions, setRegions] = useState<RegionOption[]>([])
   const [stores, setStores] = useState<StoreOption[]>([])
+  const [permisosCatalogo, setPermisosCatalogo] = useState<PermisoOption[]>([])
   const [loadingOptions, setLoadingOptions] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -60,16 +67,19 @@ export default function AdminDescargasPage() {
     setError(null)
 
     try {
-      const [regionsRes, storesRes] = await Promise.all([
+      const [regionsRes, storesRes, permisosRes] = await Promise.all([
         supabase.from('regiones').select('id, nombre_region').order('nombre_region'),
         supabase.from('tiendas').select('id, sucursal, id_region').order('sucursal'),
+        supabase.from('catalogo_permisos').select('id, nombre_permiso').order('nombre_permiso'),
       ])
 
       if (regionsRes.error) throw new Error(regionsRes.error.message)
       if (storesRes.error) throw new Error(storesRes.error.message)
+      if (permisosRes.error) throw new Error(permisosRes.error.message)
 
       setRegions((regionsRes.data || []) as RegionOption[])
       setStores((storesRes.data || []) as StoreOption[])
+      setPermisosCatalogo((permisosRes.data || []) as PermisoOption[])
     } catch (e: any) {
       setError(`No se pudieron cargar regiones/tiendas: ${e.message}`)
     } finally {
@@ -86,7 +96,7 @@ export default function AdminDescargasPage() {
   useEffect(() => {
     setSuccess(null)
     setError(null)
-  }, [scope, regionId, tiendaId])
+  }, [scope, regionId, tiendaId, permisoId])
 
   const filteredStores = useMemo(() => {
     if (scope === 'store' && regionId) {
@@ -106,6 +116,11 @@ export default function AdminDescargasPage() {
   const selectedStoreName = useMemo(
     () => stores.find((s) => String(s.id) === tiendaId)?.sucursal || '',
     [stores, tiendaId]
+  )
+
+  const selectedPermisoName = useMemo(
+    () => permisosCatalogo.find((p) => String(p.id) === permisoId)?.nombre_permiso || '',
+    [permisosCatalogo, permisoId]
   )
 
   const canSubmit =
@@ -129,6 +144,7 @@ export default function AdminDescargasPage() {
           scope,
           regionId: scope === 'region' || (scope === 'store' && regionId) ? Number(regionId) : null,
           tiendaId: scope === 'store' ? Number(tiendaId) : null,
+          permisoId: permisoId ? Number(permisoId) : null,
           adminId: perfil.id,
         }),
       })
@@ -244,6 +260,24 @@ export default function AdminDescargasPage() {
               </select>
             </div>
           )}
+
+          <div>
+            <label className="mb-2 block text-[11px] font-bold uppercase tracking-widest text-slate-500">
+              Permiso
+            </label>
+            <select
+              value={permisoId}
+              onChange={(e) => setPermisoId(e.target.value)}
+              className={`${FIELD_SELECT} ${CHEVRON_SELECT}`}
+            >
+              <option value="">Todos los permisos</option>
+              {permisosCatalogo.map((permiso) => (
+                <option key={permiso.id} value={permiso.id}>
+                  {permiso.nombre_permiso}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
         <div className={`${PANEL_INSET} p-4 text-xs text-slate-600`}>
@@ -251,6 +285,11 @@ export default function AdminDescargasPage() {
           {scope === 'all' && <p>TodasLasRegiones / Región / Tienda / Archivo</p>}
           {scope === 'region' && <p>{selectedRegionName || 'Región'} / Tienda / Archivo</p>}
           {scope === 'store' && <p>{selectedStoreName || 'Tienda'} / Archivo</p>}
+          {selectedPermisoName ? (
+            <p className="mt-1 text-slate-500">
+              Solo permisos de tipo: <span className="font-semibold text-slate-700">{selectedPermisoName}</span>
+            </p>
+          ) : null}
         </div>
 
         {error ? <div className={ALERT_ERROR}>{error}</div> : null}

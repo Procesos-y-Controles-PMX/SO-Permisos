@@ -28,6 +28,12 @@ function complianceBadgeClass(value: number) {
   return 'border-emerald-100 text-emerald-600 bg-emerald-50'
 }
 
+function getFileNameFromDisposition(value: string | null): string | null {
+  if (!value) return null
+  const match = value.match(/filename="([^"]+)"/)
+  return match?.[1] || null
+}
+
 const DIRECTORIO_STORAGE = {
   search: 'directorio_search_text',
   region: 'directorio_filter_region',
@@ -41,11 +47,57 @@ export default function DirectorioPage() {
   const router = useRouter()
   const { data: tiendas, loading, error } = useTiendas()
   const { storeComplianceMap, loading: loadingCompliance } = useStoreCompliance()
-  const { perfil, isTienda, isRegional } = useAuth()
+  const { perfil, isAdmin, isTienda, isRegional } = useAuth()
   const [searchText, setSearchText] = useState('')
   const [filterRegion, setFilterRegion] = useState('')
   const [page, setPage] = useState(1)
+  const [downloadingId, setDownloadingId] = useState<number | null>(null)
+  const [downloadError, setDownloadError] = useState<string | null>(null)
   const filtersRestored = useRef(false)
+
+  const handleDownloadStoreZip = useCallback(
+    async (tiendaId: number) => {
+      if (!isAdmin || !perfil?.id || downloadingId !== null) return
+
+      setDownloadingId(tiendaId)
+      setDownloadError(null)
+      try {
+        const response = await fetch('/api/admin/permisos-activos-zip', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            scope: 'store',
+            tiendaId,
+            adminId: perfil.id,
+          }),
+        })
+
+        if (!response.ok) {
+          const payload = await response.json().catch(() => ({ error: 'No se pudo generar el ZIP.' }))
+          throw new Error(payload.error || 'No se pudo generar el ZIP.')
+        }
+
+        const blob = await response.blob()
+        const filename =
+          getFileNameFromDisposition(response.headers.get('Content-Disposition')) ||
+          `permisos_activos_tienda_${tiendaId}_${new Date().toISOString().slice(0, 10)}.zip`
+
+        const url = URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = filename
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
+        URL.revokeObjectURL(url)
+      } catch (e: any) {
+        setDownloadError(e.message || 'Error al descargar permisos vigentes de la tienda.')
+      } finally {
+        setDownloadingId(null)
+      }
+    },
+    [isAdmin, perfil, downloadingId],
+  )
 
   useEffect(() => {
     try {
@@ -142,7 +194,7 @@ export default function DirectorioPage() {
   if (isTienda) {
     return (
       <>
-        <PageHeader title="Directorio" subtitle="Redirigiendo a tu sucursal..." />
+        <PageHeader title="Mi tienda" subtitle="Redirigiendo a tu sucursal..." />
         <Card className="animate-pulse">
           <div className="h-64 rounded-lg bg-slate-100" />
         </Card>
@@ -153,7 +205,7 @@ export default function DirectorioPage() {
   if (loading) {
     return (
       <>
-        <PageHeader title="Directorio" subtitle="Cargando sucursales..." />
+        <PageHeader title="Mi tienda" subtitle="Cargando sucursales..." />
         <Card className="animate-pulse">
           <div className="h-64 rounded-lg bg-slate-100" />
         </Card>
@@ -164,7 +216,7 @@ export default function DirectorioPage() {
   if (error) {
     return (
       <>
-        <PageHeader title="Directorio" subtitle="Error al cargar datos" />
+        <PageHeader title="Mi tienda" subtitle="Error al cargar datos" />
         <Card className="text-center py-10">
           <p className="text-red-500 text-sm">{error}</p>
         </Card>
@@ -179,7 +231,13 @@ export default function DirectorioPage() {
 
   return (
     <>
-      <PageHeader eyebrow="Permisos" title="Directorio" subtitle={subtitle} />
+      <PageHeader eyebrow="Permisos" title="Mi tienda" subtitle={subtitle} />
+
+      {downloadError ? (
+        <div className="mb-4 rounded-sm border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+          {downloadError}
+        </div>
+      ) : null}
 
       <div className="mb-5 flex flex-col gap-3 sm:flex-row">
         {!isRegional && (
@@ -257,6 +315,31 @@ export default function DirectorioPage() {
                       <dd className="text-slate-700">{t.celular ?? '—'}</dd>
                     </div>
                   </dl>
+                  <div className="mt-4 flex items-center gap-2 border-t border-slate-100 pt-3">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        router.push(`/directorio/${t.id}`)
+                      }}
+                      className="flex-1 rounded-sm border border-slate-200 bg-white px-3 py-2 text-[12px] font-semibold text-slate-700 transition-colors active:bg-slate-50"
+                    >
+                      Ver tienda
+                    </button>
+                    {isAdmin ? (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          void handleDownloadStoreZip(t.id)
+                        }}
+                        disabled={downloadingId !== null}
+                        className="flex-1 rounded-sm border border-slate-200 bg-white px-3 py-2 text-[12px] font-semibold text-slate-700 transition-colors active:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {downloadingId === t.id ? 'Generando...' : 'Descargar permisos vigentes'}
+                      </button>
+                    ) : null}
+                  </div>
                 </article>
               )
             })}
@@ -272,9 +355,8 @@ export default function DirectorioPage() {
                     <th className={TABLE_HEAD_CELL}>Sucursal</th>
                     <th className={TABLE_HEAD_CELL}>Región</th>
                     <th className={TABLE_HEAD_CELL}>Gte. Tienda</th>
-                    <th className={TABLE_HEAD_CELL}>Dirección</th>
                     <th className={TABLE_HEAD_CELL}>Contacto</th>
-                    <th className={`${TABLE_HEAD_CELL} text-right`}></th>
+                    <th className={`${TABLE_HEAD_CELL} text-right`}>Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -300,24 +382,39 @@ export default function DirectorioPage() {
                       <td className="px-4 py-3 font-semibold text-slate-800">{t.sucursal}</td>
                       <td className="px-4 py-3 text-slate-500">{t.region?.nombre_region ?? '—'}</td>
                       <td className="px-4 py-3 text-slate-500">{t.gerente_tienda ?? '—'}</td>
-                      <td className="px-4 py-3 text-[11px] text-slate-400">{t.direccion_sucursal ?? '—'}</td>
                       <td className="px-4 py-3">
                         <p className="text-slate-500">{t.celular ?? '—'}</p>
                         <p className="text-[10px] text-slate-400">{t.correo ?? ''}</p>
                       </td>
                       <td className="px-4 py-3 text-right">
-                        <span className="text-slate-300 transition-colors group-hover:text-brand">
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="inline h-4 w-4"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                            strokeWidth={2}
+                        <div className="flex items-center justify-end gap-2 whitespace-nowrap">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              router.push(`/directorio/${t.id}`)
+                            }}
+                            className="rounded-sm border border-slate-200 bg-white px-3 py-1.5 text-[12px] font-semibold text-slate-700 transition-colors hover:bg-slate-50"
                           >
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                          </svg>
-                        </span>
+                            Ver tienda
+                          </button>
+                          {isAdmin ? (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                void handleDownloadStoreZip(t.id)
+                              }}
+                              disabled={downloadingId !== null}
+                              className="inline-flex items-center gap-1.5 rounded-sm border border-slate-200 bg-white px-3 py-1.5 text-[12px] font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v11m0 0l-4-4m4 4l4-4m3 8v2a1 1 0 01-1 1H6a1 1 0 01-1-1v-2" />
+                              </svg>
+                              {downloadingId === t.id ? 'Generando...' : 'Descargar permisos vigentes'}
+                            </button>
+                          ) : null}
+                        </div>
                       </td>
                     </tr>
                   ))}

@@ -79,6 +79,7 @@ export async function POST(req: Request) {
     const scope = body?.scope as Scope
     const regionId = body?.regionId ? Number(body.regionId) : null
     const tiendaId = body?.tiendaId ? Number(body.tiendaId) : null
+    const permisoId = body?.permisoId ? Number(body.permisoId) : null
     const adminId = body?.adminId ? Number(body.adminId) : null
 
     if (!adminId || Number.isNaN(adminId)) {
@@ -121,6 +122,9 @@ export async function POST(req: Request) {
     }
     if (scope === 'store') {
       query = query.eq('id_tienda', tiendaId)
+    }
+    if (permisoId && !Number.isNaN(permisoId)) {
+      query = query.eq('id_tipo_permiso', permisoId)
     }
 
     const { data, error } = await query

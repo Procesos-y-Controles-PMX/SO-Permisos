@@ -597,7 +597,7 @@ export default function TiendaDetallePage() {
         <PageHeader title="Detalle de Sucursal" subtitle="Error" />
         <Card className="text-center py-10">
           <p className="text-red-500 text-sm mb-4">❌ {error || 'Tienda no encontrada'}</p>
-          <Button variant="secondary" onClick={() => router.push('/directorio')}>Volver al Directorio</Button>
+          <Button variant="secondary" onClick={() => router.push('/directorio')}>Volver a Mi tienda</Button>
         </Card>
       </div>
     )
@@ -613,7 +613,7 @@ export default function TiendaDetallePage() {
             <button
               onClick={() => router.push('/directorio')}
               className={`${BTN_GHOST} shrink-0 border border-transparent p-2 hover:border-slate-200 hover:bg-white hover:shadow-sm`}
-              title="Volver al Directorio"
+              title="Volver a Mi tienda"
             >
               <BackIcon />
             </button>
