@@ -5,6 +5,7 @@ import { useRouter, usePathname } from 'next/navigation'
 import { useTiendas } from '@/hooks/useTiendas'
 import { useAuth } from '@/contexts/AuthContext'
 import { CHEVRON_SELECT, FIELD_INPUT, FIELD_SELECT } from '@/components/ui/contentStyles'
+import { AnimatedFilterDropdown, AnimatedFilterDropdownItem } from '@/components/common/AnimatedFilterDropdown'
 
 export default function TopSearchBar() {
   const router = useRouter()
@@ -103,11 +104,14 @@ export default function TopSearchBar() {
           />
         </div>
 
-        {open && filtered.length > 0 && (
-          <div className="custom-scrollbar absolute left-0 right-0 top-full z-50 mt-1.5 max-h-80 overflow-y-auto rounded-sm border border-slate-200 bg-white shadow-lg animate-in fade-in slide-in-from-top-2 duration-200">
-            {filtered.map((t) => (
+        <AnimatedFilterDropdown
+          open={open && filtered.length > 0}
+          maxHeightClass="max-h-80"
+          className="custom-scrollbar"
+        >
+          {filtered.map((t) => (
+            <AnimatedFilterDropdownItem key={t.id}>
               <button
-                key={t.id}
                 onClick={() => handleSelect(t.id)}
                 className="group flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-brand/5"
               >
@@ -123,15 +127,15 @@ export default function TopSearchBar() {
                   <p className="truncate text-[11px] text-slate-400">{t.region?.nombre_region ?? 'Sin región'}</p>
                 </div>
               </button>
-            ))}
-          </div>
-        )}
+            </AnimatedFilterDropdownItem>
+          ))}
+        </AnimatedFilterDropdown>
 
-        {open && query.trim() && filtered.length === 0 && (
-          <div className="absolute left-0 right-0 top-full z-50 mt-1.5 overflow-hidden rounded-sm border border-slate-200 bg-white p-4 text-center shadow-lg">
+        <AnimatedFilterDropdown open={open && !!query.trim() && filtered.length === 0}>
+          <div className="p-4 text-center">
             <p className="text-[12px] text-slate-400">No se encontraron tiendas</p>
           </div>
-        )}
+        </AnimatedFilterDropdown>
       </div>
     </div>
   )
