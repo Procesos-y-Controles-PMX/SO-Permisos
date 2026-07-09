@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
 
-export default function UsuariosRedirectPage() {
+export default function ConfiguracionPage() {
   redirect('/configuracion/usuarios')
 }

@@ -4,9 +4,9 @@ export const MODULE_ORDER: readonly string[] = [
   '/directorio',
   '/solicitudes',
   '/descargas',
-  '/usuarios',
-  '/sucursales',
-  '/permisos',
+  '/configuracion/usuarios',
+  '/configuracion/sucursales',
+  '/configuracion/permisos',
   '/historial',
 ]
 

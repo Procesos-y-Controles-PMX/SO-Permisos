@@ -13,7 +13,7 @@ import {
   SIDEBAR_SHELL,
   SIDEBAR_USER_CARD,
 } from '@/components/layout/shellStyles'
-import { filterNavByRole, isPermisosNavActive } from '@/components/layout/navConfig'
+import { filterNavByRole, isPermisosNavActive, CONFIGURACION_HREF, configuracionNavIcon, isConfiguracionNavActive } from '@/components/layout/navConfig'
 
 function SidebarPanel({
   collapsed,
@@ -30,6 +30,8 @@ function SidebarPanel({
   const { perfil, rol, signOut } = useAuth()
 
   const filteredGroups = filterNavByRole(rol)
+  const showConfiguracion = rol === 'Admin'
+  const configuracionActive = isConfiguracionNavActive(pathname)
 
   const initials = perfil?.nombre_completo
     ? perfil.nombre_completo
@@ -138,6 +140,26 @@ function SidebarPanel({
             </>
           )}
         </div>
+        {showConfiguracion && (
+          <div className={cn('mt-2 border-t border-white/10 pt-2', collapsed ? 'flex justify-center' : '')}>
+            <Link
+              href={CONFIGURACION_HREF}
+              title="Configuración"
+              onClick={onNavigate}
+              className={cn(
+                'relative flex w-full items-center rounded-sm text-[13px] font-medium transition-all duration-200',
+                collapsed ? 'justify-center p-1.5' : 'gap-3 px-2 py-1.5',
+                configuracionActive ? SIDEBAR_NAV_ACTIVE : 'text-slate-500 hover:bg-white/10 hover:text-slate-200',
+              )}
+            >
+              <span className="shrink-0">{configuracionNavIcon}</span>
+              {!collapsed && <span className="truncate">Configuración</span>}
+              {configuracionActive && !collapsed ? (
+                <span className="animate-rail-glow pointer-events-none absolute bottom-1.5 left-0 top-1.5 w-[3px] rounded-full bg-white/70" />
+              ) : null}
+            </Link>
+          </div>
+        )}
       </div>
     </>
   )

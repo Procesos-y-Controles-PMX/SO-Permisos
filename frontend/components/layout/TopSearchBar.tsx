@@ -4,8 +4,9 @@ import { useState, useRef, useEffect, useMemo } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { useTiendas } from '@/hooks/useTiendas'
 import { useAuth } from '@/contexts/AuthContext'
-import { CHEVRON_SELECT, FIELD_INPUT, FIELD_SELECT } from '@/components/ui/contentStyles'
+import { FIELD_INPUT, FIELD_SELECT_TRIGGER } from '@/components/ui/contentStyles'
 import { AnimatedFilterDropdown, AnimatedFilterDropdownItem } from '@/components/common/AnimatedFilterDropdown'
+import FilterSelect from '@/components/common/FilterSelect'
 
 export default function TopSearchBar() {
   const router = useRouter()
@@ -70,16 +71,17 @@ export default function TopSearchBar() {
   return (
     <div className="flex shrink-0 items-center justify-end gap-2">
       {isAdmin && (
-        <select
-          value={filterRegion}
-          onChange={(e) => handleRegionChange(e.target.value)}
-          className={`w-64 cursor-pointer py-2 text-xs ${FIELD_SELECT} ${CHEVRON_SELECT}`}
-        >
-          <option value="">Todas las regiones</option>
-          {regionOptions.map((r) => (
-            <option key={r} value={r}>{r}</option>
-          ))}
-        </select>
+        <div className="w-64">
+          <FilterSelect
+            value={filterRegion}
+            onChange={handleRegionChange}
+            options={[
+              { value: '', label: 'Todas las regiones' },
+              ...regionOptions.map((r) => ({ value: r, label: r })),
+            ]}
+            inputClassName={`${FIELD_SELECT_TRIGGER} !min-h-0 py-2 text-xs md:text-xs`}
+          />
+        </div>
       )}
 
       <div ref={wrapperRef} className="relative w-full min-w-[240px] max-w-xs">

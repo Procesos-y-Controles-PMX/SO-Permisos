@@ -3,9 +3,20 @@ interface PageHeaderProps {
   title: string
   subtitle?: string
   actions?: React.ReactNode
+  /** When true, only renders the actions row (for nested configuración sections). */
+  compact?: boolean
 }
 
-export default function PageHeader({ eyebrow, title, subtitle, actions }: PageHeaderProps) {
+export default function PageHeader({ eyebrow, title, subtitle, actions, compact }: PageHeaderProps) {
+  if (compact) {
+    if (!actions) return null
+    return (
+      <div className="mb-5 flex justify-end">
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center">{actions}</div>
+      </div>
+    )
+  }
+
   return (
     <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
       <div>

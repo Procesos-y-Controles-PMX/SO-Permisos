@@ -8,19 +8,17 @@ import TablePagination, { TABLE_PAGE_SIZE } from '@/components/ui/TablePaginatio
 import {
   EMPTY_STATE,
   FIELD_INPUT,
-  FIELD_SELECT,
+  FIELD_SELECT_TRIGGER,
   MOBILE_LIST_CARD,
   TABLE_BODY_ROW,
   TABLE_HEAD_CELL,
 } from '@/components/ui/contentStyles'
+import FilterSelect from '@/components/common/FilterSelect'
 import { useTiendas } from '@/hooks/useTiendas'
 import { useStoreCompliance } from '@/hooks/useStoreCompliance'
 import { useAuth } from '@/contexts/AuthContext'
 
 const PAGE_SIZE = TABLE_PAGE_SIZE
-
-const CHEVRON =
-  "bg-[url('data:image/svg+xml;charset=UTF-8,%3csvg%20xmlns%3d%22http%3a%2f%2fwww.w3.org%2f2000%2fsvg%22%20width%3d%2212%22%20height%3d%2212%22%20viewBox%3d%220%200%2024%2024%22%20fill%3d%22none%22%20stroke%3d%22%2364748b%22%20stroke-width%3d%222%22%3e%3cpolyline%20points%3d%226%209%2012%2015%2018%209%22%3e%3c%2fpolyline%3e%3c%2fsvg%3e')]"
 
 function complianceBadgeClass(value: number) {
   if (value < 50) return 'border-red-100 text-red-600 bg-red-50'
@@ -242,17 +240,12 @@ export default function DirectorioPage() {
       <div className="mb-5 flex flex-col gap-3 sm:flex-row">
         {!isRegional && (
           <div className="w-full sm:w-52">
-            <select
+            <FilterSelect
               value={filterRegion}
-              onChange={(e) => handleFilterRegionChange(e.target.value)}
-              className={`${FIELD_SELECT} ${CHEVRON}`}
-            >
-              {regionOptions.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
+              onChange={handleFilterRegionChange}
+              options={regionOptions}
+              inputClassName={FIELD_SELECT_TRIGGER}
+            />
           </div>
         )}
         <div className="flex-1">

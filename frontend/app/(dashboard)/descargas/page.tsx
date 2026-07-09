@@ -8,10 +8,10 @@ import Button from '@/components/ui/Button'
 import {
   ALERT_ERROR,
   ALERT_SUCCESS,
-  CHEVRON_SELECT,
-  FIELD_SELECT,
+  FIELD_SELECT_TRIGGER,
   PANEL_INSET,
 } from '@/components/ui/contentStyles'
+import FilterSelect from '@/components/common/FilterSelect'
 import { useAuth } from '@/contexts/AuthContext'
 import { createClient } from '@/lib/supabase'
 
@@ -201,20 +201,21 @@ export default function AdminDescargasPage() {
             <label className="mb-2 block text-[11px] font-bold uppercase tracking-widest text-slate-500">
               Alcance
             </label>
-            <select
+            <FilterSelect
               value={scope}
-              onChange={(e) => {
-                const nextScope = e.target.value as Scope
+              onChange={(value) => {
+                const nextScope = value as Scope
                 setScope(nextScope)
                 setTiendaId('')
                 if (nextScope === 'all') setRegionId('')
               }}
-              className={`${FIELD_SELECT} ${CHEVRON_SELECT}`}
-            >
-              <option value="all">Todas las regiones</option>
-              <option value="region">Una región</option>
-              <option value="store">Una tienda</option>
-            </select>
+              options={[
+                { value: 'all', label: 'Todas las regiones' },
+                { value: 'region', label: 'Una región' },
+                { value: 'store', label: 'Una tienda' },
+              ]}
+              inputClassName={FIELD_SELECT_TRIGGER}
+            />
           </div>
 
           {(scope === 'region' || scope === 'store') && (
@@ -222,21 +223,18 @@ export default function AdminDescargasPage() {
               <label className="mb-2 block text-[11px] font-bold uppercase tracking-widest text-slate-500">
                 Región
               </label>
-              <select
+              <FilterSelect
                 value={regionId}
-                onChange={(e) => {
-                  setRegionId(e.target.value)
+                onChange={(value) => {
+                  setRegionId(value)
                   setTiendaId('')
                 }}
-                className={`${FIELD_SELECT} ${CHEVRON_SELECT}`}
-              >
-                <option value="">Selecciona una región</option>
-                {regions.map((region) => (
-                  <option key={region.id} value={region.id}>
-                    {region.nombre_region}
-                  </option>
-                ))}
-              </select>
+                options={[
+                  { value: '', label: 'Selecciona una región' },
+                  ...regions.map((region) => ({ value: String(region.id), label: region.nombre_region })),
+                ]}
+                inputClassName={FIELD_SELECT_TRIGGER}
+              />
             </div>
           )}
 
@@ -245,19 +243,19 @@ export default function AdminDescargasPage() {
               <label className="mb-2 block text-[11px] font-bold uppercase tracking-widest text-slate-500">
                 Tienda
               </label>
-              <select
+              <FilterSelect
                 value={tiendaId}
-                onChange={(e) => setTiendaId(e.target.value)}
-                className={`${FIELD_SELECT} ${CHEVRON_SELECT}`}
+                onChange={setTiendaId}
                 disabled={!regionId}
-              >
-                <option value="">Selecciona una tienda</option>
-                {filteredStores.map((store) => (
-                  <option key={store.id} value={store.id}>
-                    {store.sucursal || `Tienda ${store.id}`}
-                  </option>
-                ))}
-              </select>
+                options={[
+                  { value: '', label: 'Selecciona una tienda' },
+                  ...filteredStores.map((store) => ({
+                    value: String(store.id),
+                    label: store.sucursal || `Tienda ${store.id}`,
+                  })),
+                ]}
+                inputClassName={FIELD_SELECT_TRIGGER}
+              />
             </div>
           )}
 
@@ -265,18 +263,18 @@ export default function AdminDescargasPage() {
             <label className="mb-2 block text-[11px] font-bold uppercase tracking-widest text-slate-500">
               Permiso
             </label>
-            <select
+            <FilterSelect
               value={permisoId}
-              onChange={(e) => setPermisoId(e.target.value)}
-              className={`${FIELD_SELECT} ${CHEVRON_SELECT}`}
-            >
-              <option value="">Todos los permisos</option>
-              {permisosCatalogo.map((permiso) => (
-                <option key={permiso.id} value={permiso.id}>
-                  {permiso.nombre_permiso}
-                </option>
-              ))}
-            </select>
+              onChange={setPermisoId}
+              options={[
+                { value: '', label: 'Todos los permisos' },
+                ...permisosCatalogo.map((permiso) => ({
+                  value: String(permiso.id),
+                  label: permiso.nombre_permiso,
+                })),
+              ]}
+              inputClassName={FIELD_SELECT_TRIGGER}
+            />
           </div>
         </div>
 
