@@ -11,6 +11,7 @@ import type { DashboardSheetTarget } from '@/components/dashboard/dashboardSheet
 import { complianceBadgeClass } from '@/components/dashboard/dashboardSheetUtils'
 import { ALERT_ERROR, BTN_SECONDARY, SECTION_PANEL, SECTION_PANEL_HEADER } from '@/components/ui/contentStyles'
 import GaugeStat, { GaugeStatRow, complianceTone } from '@/components/ui/GaugeStat'
+import { NumberTicker } from '@/components/magicui/number-ticker'
 import { cn } from '@/lib/utils'
 
 export function DashboardAdmin() {
@@ -78,7 +79,7 @@ export function DashboardAdmin() {
       <GaugeStatRow className="mb-2">
         <GaugeStat
           label="Alertas"
-          value={totalAlertas}
+          value={<NumberTicker value={totalAlertas} className="text-inherit" />}
           tone="crit"
           proportion={totalRequirements > 0 ? totalAlertas / totalRequirements : 0}
           sublabel={`de ${totalRequirements} requerimientos`}
@@ -86,7 +87,7 @@ export function DashboardAdmin() {
         />
         <GaugeStat
           label="Cumplimiento"
-          value={compliancePercentage.toFixed(1)}
+          value={<NumberTicker value={compliancePercentage} decimalPlaces={1} className="text-inherit" />}
           unit="%"
           tone={complianceTone(compliancePercentage)}
           proportion={compliancePercentage / 100}
@@ -95,14 +96,14 @@ export function DashboardAdmin() {
         />
         <GaugeStat
           label="Requerimientos"
-          value={totalRequirements}
+          value={<NumberTicker value={totalRequirements} className="text-inherit" />}
           tone="steel"
           sublabel={`${stores.length} sucursales`}
           density="compact"
         />
         <GaugeStat
           label="Regiones"
-          value={sortedRegions.filter((r) => r.vencidos > 0).length}
+          value={<NumberTicker value={sortedRegions.filter((r) => r.vencidos > 0).length} className="text-inherit" />}
           tone={sortedRegions.some((r) => r.vencidos > 0) ? 'warn' : 'ok'}
           proportion={
             sortedRegions.length > 0
