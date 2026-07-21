@@ -46,17 +46,18 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           sidebarCollapsed ? 'lg:ml-[72px]' : 'lg:ml-[250px]',
         )}
       >
-                <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden" aria-hidden>
+                        <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden" aria-hidden>
           <InteractiveGridPattern
             width={48}
             height={48}
-            squares={[30, 18]}
-            className="absolute inset-0 h-full w-full"
+            squares={[32, 20]}
+            skewY={6}
+            className="absolute inset-0 [mask-image:radial-gradient(1200px_circle_at_50%_-10%,white,transparent)]"
             squaresClassName="stroke-slate-300/80"
           />
         </div>
 
-        <header className="app-safe-x sticky top-0 z-30 flex items-center gap-3 border-b border-slate-200/80 bg-white/90 py-3 backdrop-blur-sm lg:hidden">
+        <header className="app-safe-x sticky top-0 z-30 flex items-center gap-3 border-b border-slate-200/50 bg-white/45 py-3 backdrop-blur-md lg:hidden">
           <div className="min-w-0 flex-1">
             <h1 className="truncate font-display text-lg font-semibold tracking-tight text-slate-900">
               SO Permisos
