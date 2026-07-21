@@ -46,15 +46,12 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           sidebarCollapsed ? 'lg:ml-[72px]' : 'lg:ml-[250px]',
         )}
       >
-        <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden" aria-hidden>
+                <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden" aria-hidden>
           <InteractiveGridPattern
             width={48}
             height={48}
             squares={[30, 18]}
-            className={cn(
-              "absolute inset-x-0 inset-y-[-30%] h-[160%] w-full border-0 skew-y-6",
-              "[mask-image:radial-gradient(1100px_circle_at_50%_-5%,white,transparent)]",
-            )}
+            className="absolute inset-0 h-full w-full"
             squaresClassName="stroke-slate-300/80"
           />
         </div>
