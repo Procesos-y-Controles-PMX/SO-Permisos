@@ -52,12 +52,12 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             height={48}
             squares={[32, 20]}
             skewY={6}
-            className="absolute inset-0 [mask-image:radial-gradient(1200px_circle_at_50%_-10%,white,transparent)]"
+            className="absolute inset-0 [mask-image:radial-gradient(90%_70%_at_50%_40%,white,transparent)]"
             squaresClassName="stroke-slate-300/80"
           />
         </div>
 
-        <header className="app-safe-x sticky top-0 z-30 flex items-center gap-3 border-b border-slate-200/50 bg-white/45 py-3 backdrop-blur-md lg:hidden">
+        <header className="app-safe-x sticky top-0 z-30 flex items-center gap-3 border-b border-slate-200/50 bg-white/25 py-3 backdrop-blur-md lg:hidden">
           <div className="min-w-0 flex-1">
             <h1 className="truncate font-display text-lg font-semibold tracking-tight text-slate-900">
               SO Permisos
