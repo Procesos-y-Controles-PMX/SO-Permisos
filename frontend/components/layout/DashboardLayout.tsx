@@ -52,10 +52,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             height={48}
             squares={[30, 18]}
             className={cn(
-              'pointer-events-auto absolute inset-x-0 inset-y-[-30%] h-[160%] w-full border-0 skew-y-6',
-              '[mask-image:radial-gradient(1100px_circle_at_50%_-5%,white,transparent)]',
+              "absolute inset-x-0 inset-y-[-30%] h-[160%] w-full border-0 skew-y-6",
+              "[mask-image:radial-gradient(1100px_circle_at_50%_-5%,white,transparent)]",
             )}
-            squaresClassName="stroke-slate-200/60 hover:fill-brand/10"
+            squaresClassName="stroke-slate-300/80"
           />
         </div>
 
