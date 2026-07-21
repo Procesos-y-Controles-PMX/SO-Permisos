@@ -1,5 +1,7 @@
 'use client'
 
+
+import { NumberTicker } from "@promexma/ui";
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import { useDashboardStats } from '@/hooks/useDashboardStats'
@@ -11,7 +13,7 @@ import type { DashboardSheetTarget } from '@/components/dashboard/dashboardSheet
 import { complianceBadgeClass } from '@/components/dashboard/dashboardSheetUtils'
 import { ALERT_ERROR, BTN_SECONDARY, SECTION_PANEL, SECTION_PANEL_HEADER } from '@/components/ui/contentStyles'
 import GaugeStat, { GaugeStatRow, complianceTone } from '@/components/ui/GaugeStat'
-import { NumberTicker } from '@/components/magicui/number-ticker'
+
 import { cn } from '@/lib/utils'
 
 export function DashboardAdmin() {

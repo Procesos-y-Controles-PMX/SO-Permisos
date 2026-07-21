@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@promexma/ui": "github:Procesos-y-Controles-PMX/SO-UI#main",
     "@supabase/supabase-js": "^2.99.1",
     "clsx": "^2.1.1",
     "jose": "^6.2.3",

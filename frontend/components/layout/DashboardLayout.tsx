@@ -1,5 +1,7 @@
 'use client'
 
+
+import { InteractiveGridPattern } from "@promexma/ui";
 import { usePathname } from 'next/navigation'
 import Sidebar from './Sidebar'
 import MobileBottomNav from './MobileBottomNav'
@@ -7,7 +9,7 @@ import { useUI } from '@/contexts/UIContext'
 import { useAuth } from '@/contexts/AuthContext'
 import { cn } from '@/lib/utils'
 import { buildMobileBottomNavItems } from '@/components/layout/navConfig'
-import { InteractiveGridPattern } from '@/components/magicui/interactive-grid-pattern'
+
 import ModuleTransition from '@/components/common/ModuleTransition'
 
 interface DashboardLayoutProps {
