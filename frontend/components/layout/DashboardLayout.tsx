@@ -57,7 +57,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           />
         </div>
 
-        <header className="app-safe-x sticky top-0 z-30 flex items-center gap-3 bg-transparent py-3 lg:hidden">
+        <header className="app-safe-x sticky top-0 z-30 flex items-center gap-3 bg-transparent pt-[max(0.75rem,env(safe-area-inset-top))] pb-3 lg:hidden">
           <div className="min-w-0 flex-1">
             <h1 className="truncate font-display text-lg font-semibold tracking-tight text-slate-900">
               SO Permisos
