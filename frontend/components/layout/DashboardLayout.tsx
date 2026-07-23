@@ -51,7 +51,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             cellSize={40}
             skewY={6}
             wave
-            waveDuration={5}
+            waveDuration={8}
             className="absolute inset-0 [mask-image:radial-gradient(ellipse_90%_80%_at_50%_40%,white,transparent)]"
             squaresClassName="stroke-slate-300/80"
           />
