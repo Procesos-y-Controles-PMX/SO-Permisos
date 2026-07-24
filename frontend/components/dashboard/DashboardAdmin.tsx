@@ -31,7 +31,7 @@ export function DashboardAdmin() {
 
   const [sheetTarget, setSheetTarget] = useState<DashboardSheetTarget | null>(null)
   const [currentPage, setCurrentPage] = useState(0)
-  const pageSize = 10
+  const pageSize = 12
 
   const sortedRegions = useMemo(() => {
     return [...regionalCounts].sort((a, b) => a.cumplimiento - b.cumplimiento)
@@ -118,58 +118,58 @@ export function DashboardAdmin() {
       </GaugeStatRow>
       </div>
 
-      <div className="grid grid-cols-1 gap-8 xl:grid-cols-5 xl:items-start xl:gap-6">
-      <div className="animate-fade-up xl:col-span-2" style={{ animationDelay: '120ms' }}>
-        <h2 className="mb-3 flex items-center gap-2 text-base font-semibold text-fg">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-brand" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" x2="9" y1="3" y2="18"/><line x1="15" x2="15" y1="6" y2="21"/></svg>
-          Cumplimiento por Región
-        </h2>
-        <div className={SECTION_PANEL}>
-          <RegionComplianceChart
-            regions={sortedRegions}
-            onSelect={(region) => setSheetTarget({ type: 'region', region })}
-          />
-        </div>
-      </div>
-
-      <section className={cn(SECTION_PANEL, 'animate-fade-up xl:col-span-3')} style={{ animationDelay: '180ms' }}>
-        <div className={SECTION_PANEL_HEADER}>
-          <h2 className="flex items-center gap-2 text-lg font-semibold text-fg">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-brand" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg>
-            Tiendas en riesgo
+      <div className="space-y-8">
+        <div className="animate-fade-up" style={{ animationDelay: '120ms' }}>
+          <h2 className="mb-3 flex items-center gap-2 text-base font-semibold text-fg">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-brand" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" x2="9" y1="3" y2="18"/><line x1="15" x2="15" y1="6" y2="21"/></svg>
+            Cumplimiento por Región
           </h2>
-          {sortedStores.length > pageSize ? (
-            <div className="flex items-center gap-2">
-              <span className="mr-2 text-xs font-normal text-fg-faint">
-                Página {currentPage + 1} de {Math.ceil(sortedStores.length / pageSize)}
-              </span>
-              <div className="flex gap-1">
-                <button
-                  type="button"
-                  onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
-                  disabled={currentPage === 0}
-                  className="rounded-sm border border-line p-1 transition-colors hover:bg-muted disabled:opacity-30"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-                </button>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setCurrentPage((p) =>
-                      Math.min(Math.ceil(sortedStores.length / pageSize) - 1, p + 1),
-                    )
-                  }
-                  disabled={currentPage >= Math.ceil(sortedStores.length / pageSize) - 1}
-                  className="rounded-sm border border-line p-1 transition-colors hover:bg-muted disabled:opacity-30"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-                </button>
-              </div>
-            </div>
-          ) : null}
+          <div className={SECTION_PANEL}>
+            <RegionComplianceChart
+              regions={sortedRegions}
+              onSelect={(region) => setSheetTarget({ type: 'region', region })}
+            />
+          </div>
         </div>
+
+        <section className={cn(SECTION_PANEL, 'animate-fade-up')} style={{ animationDelay: '180ms' }}>
+          <div className={SECTION_PANEL_HEADER}>
+            <h2 className="flex items-center gap-2 text-lg font-semibold text-fg">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-brand" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg>
+              Tiendas en riesgo
+            </h2>
+            {sortedStores.length > pageSize ? (
+              <div className="flex items-center gap-2">
+                <span className="mr-2 text-xs font-normal text-fg-faint">
+                  Página {currentPage + 1} de {Math.ceil(sortedStores.length / pageSize)}
+                </span>
+                <div className="flex gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
+                    disabled={currentPage === 0}
+                    className="rounded-sm border border-line p-1 transition-colors hover:bg-muted disabled:opacity-30"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setCurrentPage((p) =>
+                        Math.min(Math.ceil(sortedStores.length / pageSize) - 1, p + 1),
+                      )
+                    }
+                    disabled={currentPage >= Math.ceil(sortedStores.length / pageSize) - 1}
+                    className="rounded-sm border border-line p-1 transition-colors hover:bg-muted disabled:opacity-30"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                  </button>
+                </div>
+              </div>
+            ) : null}
+          </div>
           {sortedStores.length > 0 ? (
-            <div className="divide-y divide-line-subtle">
+            <div className="divide-y divide-line-subtle md:grid md:grid-cols-2 md:gap-x-2 md:divide-y-0 md:px-1 lg:grid-cols-3">
               {sortedStores
                 .slice(currentPage * pageSize, (currentPage + 1) * pageSize)
                 .map((tienda) => {
@@ -179,20 +179,20 @@ export function DashboardAdmin() {
                       key={tienda.id}
                       type="button"
                       onClick={() => setSheetTarget({ type: 'store', store: tienda })}
-                      className="group flex w-full items-center justify-between p-4 text-left transition-colors hover:bg-muted"
+                      className="group flex w-full items-center justify-between gap-3 p-3.5 text-left transition-colors hover:bg-muted md:border-b md:border-line-subtle"
                     >
-                      <div className="flex items-center gap-4">
+                      <div className="flex min-w-0 items-center gap-3">
                         <div
-                          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 text-[10px] font-bold ${complianceBadgeClass(storeComp)}`}
+                          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 text-[10px] font-bold ${complianceBadgeClass(storeComp)}`}
                         >
                           {storeComp.toFixed(0)}%
                         </div>
-                        <div>
-                          <h3 className="font-semibold text-fg transition-colors group-hover:text-brand">
+                        <div className="min-w-0">
+                          <h3 className="truncate font-semibold text-fg transition-colors group-hover:text-brand">
                             {tienda.sucursal || 'Sin Sucursal'}
                           </h3>
-                          <p className="max-w-md truncate text-sm text-fg-subtle">
-                            Región: {tienda.region?.nombre_region || 'N/A'}
+                          <p className="truncate text-sm text-fg-subtle">
+                            {tienda.region?.nombre_region || 'Sin región'}
                           </p>
                         </div>
                       </div>
@@ -210,7 +210,7 @@ export function DashboardAdmin() {
               No hay sucursales configuradas para mostrar.
             </div>
           )}
-      </section>
+        </section>
       </div>
 
       <DashboardDetailSheet
