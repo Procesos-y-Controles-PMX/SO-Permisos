@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
+import { GridThemeToggle } from '@promexma/ui'
 import { useAuth } from '@/contexts/AuthContext'
 import { useUI } from '@/contexts/UIContext'
 import { cn } from '@/lib/utils'
@@ -112,7 +113,14 @@ function SidebarPanel({
         ))}
       </nav>
 
-      <div className={cn('mx-3 mb-3 shrink-0 border-t border-white/10 pt-3', SIDEBAR_USER_CARD)}>
+      <div className={cn('mx-3 mb-3 shrink-0 space-y-2 border-t border-white/10 pt-3', SIDEBAR_USER_CARD)}>
+        {collapsed ? (
+          <div className="flex justify-center">
+            <GridThemeToggle compact />
+          </div>
+        ) : (
+          <GridThemeToggle />
+        )}
         <div className={cn('flex items-center gap-3', collapsed && 'justify-center')}>
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand text-xs font-bold text-white shadow-sm">
             {initials}
@@ -141,7 +149,7 @@ function SidebarPanel({
           )}
         </div>
         {showConfiguracion && (
-          <div className={cn('mt-2 border-t border-white/10 pt-2', collapsed ? 'flex justify-center' : '')}>
+          <div className={cn('border-t border-white/10 pt-2', collapsed ? 'flex justify-center' : '')}>
             <Link
               href={CONFIGURACION_HREF}
               title="Configuración"

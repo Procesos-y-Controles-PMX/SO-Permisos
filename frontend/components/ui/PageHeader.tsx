@@ -7,11 +7,11 @@ interface PageHeaderProps {
   actions?: React.ReactNode
   /** When true, only renders the actions row (for nested configuración sections). */
   compact?: boolean
-  /** Show the light/dark toggle in the actions row (default true). */
+  /** Show the light/dark toggle in the actions row. Prefer sidebar GridThemeToggle; default off. */
   showThemeToggle?: boolean
 }
 
-export default function PageHeader({ eyebrow, title, subtitle, actions, compact, showThemeToggle = true }: PageHeaderProps) {
+export default function PageHeader({ eyebrow, title, subtitle, actions, compact, showThemeToggle = false }: PageHeaderProps) {
   if (compact) {
     if (!actions) return null
     return (
