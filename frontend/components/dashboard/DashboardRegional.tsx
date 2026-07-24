@@ -45,7 +45,7 @@ export function DashboardRegional() {
     return (
       <BrandLoader
         center
-        paddingClass="min-h-[50vh] py-8"
+        size="lg"
         label="Cargando datos de la región..."
       />
     )

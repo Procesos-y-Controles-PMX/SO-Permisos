@@ -22,7 +22,6 @@ export default function DashboardRootPage() {
       <BrandLoader
         center
         size="lg"
-        paddingClass="min-h-[50vh] py-8"
         label="Cargando Dashboard..."
       />
     )

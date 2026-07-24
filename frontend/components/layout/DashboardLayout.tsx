@@ -1,12 +1,13 @@
 'use client'
 
-
-import { InteractiveGridPattern } from "@promexma/ui";
+import { InteractiveGridPattern } from '@promexma/ui'
+import { useEffect, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import Sidebar from './Sidebar'
 import MobileBottomNav from './MobileBottomNav'
 import { useUI } from '@/contexts/UIContext'
 import { useAuth } from '@/contexts/AuthContext'
+import { AmbientGridProvider, useAmbientGrid } from '@/contexts/AmbientGridContext'
 import { cn } from '@/lib/utils'
 import { buildMobileBottomNavItems } from '@/components/layout/navConfig'
 
@@ -24,10 +25,44 @@ function LogoutIcon({ className }: { className?: string }) {
   )
 }
 
+function AmbientCanvas() {
+  const ambient = useAmbientGrid()
+  const spinner = Boolean(ambient?.spinner)
+  const origin = ambient?.spinnerOrigin ?? [0.5, 0.55]
+
+  return (
+    <div
+      className="pointer-events-none absolute inset-0 z-0 overflow-hidden"
+      aria-hidden
+      data-ambient-grid-clip
+    >
+      <InteractiveGridPattern
+        cellSize={40}
+        skewY={6}
+        wave={!spinner}
+        waveDuration={5}
+        waveGap={4}
+        spinner={spinner}
+        spinnerMs={1400}
+        spinnerRadius={3.5}
+        trailMs={750}
+        spinnerOrigin={origin}
+        className="absolute inset-0 [mask-image:radial-gradient(ellipse_90%_80%_at_50%_40%,white,transparent)]"
+        squaresClassName="stroke-slate-300/80"
+      />
+    </div>
+  )
+}
+
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const pathname = usePathname()
   const { sidebarCollapsed, mobileNavOpen, setMobileNavOpen } = useUI()
   const { perfil, rol, signOut } = useAuth()
+  const [meshReady, setMeshReady] = useState(false)
+
+  useEffect(() => {
+    setMeshReady(true)
+  }, [])
 
   const bottomNavItems = buildMobileBottomNavItems(
     pathname,
@@ -37,52 +72,44 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   )
 
   return (
-    <div className="min-h-screen app-canvas">
-      <Sidebar />
+    <AmbientGridProvider meshReady={meshReady}>
+      <div className="min-h-screen app-canvas">
+        <Sidebar />
 
-      <div
-        className={cn(
-          'relative min-h-screen transition-all duration-300',
-          sidebarCollapsed ? 'lg:ml-[72px]' : 'lg:ml-[250px]',
-        )}
-      >
-                        <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden" aria-hidden>
-          <InteractiveGridPattern
-            cellSize={40}
-            skewY={6}
-            wave
-            waveDuration={5}
-            waveGap={4}
-            className="absolute inset-0 [mask-image:radial-gradient(ellipse_90%_80%_at_50%_40%,white,transparent)]"
-            squaresClassName="stroke-slate-300/80"
-          />
+        <div
+          className={cn(
+            'relative min-h-screen transition-all duration-300',
+            sidebarCollapsed ? 'lg:ml-[72px]' : 'lg:ml-[250px]',
+          )}
+        >
+          <AmbientCanvas />
+
+          <header className="app-safe-x sticky top-0 z-30 flex items-center gap-3 bg-transparent pt-[max(0.75rem,env(safe-area-inset-top))] pb-3 lg:hidden">
+            <div className="min-w-0 flex-1">
+              <h1 className="truncate font-display text-lg font-semibold tracking-tight text-fg">
+                SO Permisos
+              </h1>
+              <p className="truncate text-xs text-fg-subtle">
+                {perfil?.nombre_completo ?? '...'} · {rol ?? '...'}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => signOut()}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-line text-fg-subtle hover:bg-muted hover:text-fg-strong"
+              aria-label="Cerrar sesión"
+            >
+              <LogoutIcon className="h-5 w-5" />
+            </button>
+          </header>
+
+          <main className="relative z-10 app-safe-x app-safe-bottom app-main-pad mx-auto max-w-[1720px] overflow-x-hidden py-5 md:py-7">
+            <ModuleTransition>{children}</ModuleTransition>
+          </main>
         </div>
 
-        <header className="app-safe-x sticky top-0 z-30 flex items-center gap-3 bg-transparent pt-[max(0.75rem,env(safe-area-inset-top))] pb-3 lg:hidden">
-          <div className="min-w-0 flex-1">
-            <h1 className="truncate font-display text-lg font-semibold tracking-tight text-fg">
-              SO Permisos
-            </h1>
-            <p className="truncate text-xs text-fg-subtle">
-              {perfil?.nombre_completo ?? '...'} · {rol ?? '...'}
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => signOut()}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-line text-fg-subtle hover:bg-muted hover:text-fg-strong"
-            aria-label="Cerrar sesión"
-          >
-            <LogoutIcon className="h-5 w-5" />
-          </button>
-        </header>
-
-        <main className="relative z-10 app-safe-x app-safe-bottom app-main-pad mx-auto max-w-[1720px] overflow-x-hidden py-5 md:py-7">
-          <ModuleTransition>{children}</ModuleTransition>
-        </main>
+        <MobileBottomNav items={bottomNavItems} />
       </div>
-
-      <MobileBottomNav items={bottomNavItems} />
-    </div>
+    </AmbientGridProvider>
   )
 }

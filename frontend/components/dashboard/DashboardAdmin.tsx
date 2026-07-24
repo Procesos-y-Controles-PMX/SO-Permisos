@@ -49,7 +49,7 @@ export function DashboardAdmin() {
     return (
       <BrandLoader
         center
-        paddingClass="min-h-[50vh] py-8"
+        size="lg"
         label="Analizando métricas globales..."
       />
     )
