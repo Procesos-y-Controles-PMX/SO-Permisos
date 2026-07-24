@@ -1,3 +1,5 @@
+import { ThemeToggle } from "@promexma/ui"
+
 interface PageHeaderProps {
   eyebrow?: string
   title: string
@@ -5,9 +7,11 @@ interface PageHeaderProps {
   actions?: React.ReactNode
   /** When true, only renders the actions row (for nested configuración sections). */
   compact?: boolean
+  /** Show the light/dark toggle in the actions row (default true). */
+  showThemeToggle?: boolean
 }
 
-export default function PageHeader({ eyebrow, title, subtitle, actions, compact }: PageHeaderProps) {
+export default function PageHeader({ eyebrow, title, subtitle, actions, compact, showThemeToggle = true }: PageHeaderProps) {
   if (compact) {
     if (!actions) return null
     return (
@@ -28,7 +32,12 @@ export default function PageHeader({ eyebrow, title, subtitle, actions, compact 
         </h1>
         {subtitle ? <p className="mt-1 text-sm text-slate-500">{subtitle}</p> : null}
       </div>
-      {actions ? <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center">{actions}</div> : null}
+      {actions || showThemeToggle ? (
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center">
+          {actions}
+          {showThemeToggle ? <ThemeToggle /> : null}
+        </div>
+      ) : null}
     </div>
   )
 }

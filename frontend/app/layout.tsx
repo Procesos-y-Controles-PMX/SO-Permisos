@@ -3,6 +3,7 @@ import { Geist_Mono, IBM_Plex_Sans, Saira_Condensed } from "next/font/google";
 import { Toaster } from "sonner";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { UIProvider } from "@/contexts/UIContext";
+import { ThemeProvider } from "@promexma/ui";
 import "./globals.css";
 
 const plexSans = IBM_Plex_Sans({
@@ -42,16 +43,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es">
+    <html lang="es" suppressHydrationWarning>
       <body
         className={`${plexSans.variable} ${geistMono.variable} ${sairaCondensed.variable} antialiased`}
       >
-        <AuthProvider>
-          <UIProvider>
-            {children}
-          </UIProvider>
-        </AuthProvider>
-        <Toaster richColors position="top-right" />
+        <ThemeProvider>
+          <AuthProvider>
+            <UIProvider>
+              {children}
+            </UIProvider>
+          </AuthProvider>
+          <Toaster richColors position="top-right" />
+        </ThemeProvider>
       </body>
     </html>
   );
