@@ -85,8 +85,8 @@ function SectionHeader({ icon, title, count, color }: { icon: React.ReactNode; t
         {icon}
       </div>
       <div>
-        <h3 className="text-[15px] font-bold text-slate-800">{title}</h3>
-        <p className="text-[11px] text-slate-400">{count} registro{count !== 1 ? 's' : ''}</p>
+        <h3 className="text-[15px] font-bold text-fg">{title}</h3>
+        <p className="text-[11px] text-fg-faint">{count} registro{count !== 1 ? 's' : ''}</p>
       </div>
     </div>
   )
@@ -585,7 +585,7 @@ export default function TiendaDetallePage() {
       <div className="space-y-4">
         <PageHeader title="Detalle de Sucursal" subtitle="Cargando..." />
         {[1, 2, 3].map(i => (
-          <Card key={i} className="animate-pulse"><div className="h-32 rounded-sm bg-slate-100" /></Card>
+          <Card key={i} className="animate-pulse"><div className="h-32 rounded-sm bg-muted-strong" /></Card>
         ))}
       </div>
     )
@@ -612,15 +612,15 @@ export default function TiendaDetallePage() {
           {(!isTienda) && (
             <button
               onClick={() => router.push('/directorio')}
-              className={`${BTN_GHOST} shrink-0 border border-transparent p-2 hover:border-slate-200 hover:bg-white hover:shadow-sm`}
+              className={`${BTN_GHOST} shrink-0 border border-transparent p-2 hover:border-line hover:bg-card hover:shadow-sm`}
               title="Volver a Mi tienda"
             >
               <BackIcon />
             </button>
           )}
           <div>
-            <h1 className="text-xl font-bold text-slate-800 line-clamp-1">{tienda.sucursal}</h1>
-            <p className="text-[12px] text-slate-400 line-clamp-1">{tienda.region?.nombre_region ?? 'Sin región asignada'}</p>
+            <h1 className="text-xl font-bold text-fg line-clamp-1">{tienda.sucursal}</h1>
+            <p className="text-[12px] text-fg-faint line-clamp-1">{tienda.region?.nombre_region ?? 'Sin región asignada'}</p>
           </div>
         </div>
         <div className="min-w-0 flex items-center gap-2">
@@ -684,7 +684,7 @@ export default function TiendaDetallePage() {
                 {isAdmin && <col className="w-[10%]" />}
               </colgroup>
               <thead>
-                <tr className="border-b border-slate-200">
+                <tr className="border-b border-line">
                   <Th className="py-4">Permiso</Th>
                   <Th align="center" className="py-4">Vencimiento</Th>
                   <Th align="center" className="py-4">Estatus</Th>
@@ -693,23 +693,23 @@ export default function TiendaDetallePage() {
                   {isAdmin && <Th align="center" className="py-4">Acciones</Th>}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-line-subtle">
                 {permisosVigentes.map((p) => (
                   <tr key={p.id} className={`${TABLE_BODY_ROW} hover:bg-green-50/30`}>
                     <Td className="py-5 pr-4">
-                      <span className="font-medium text-slate-700 leading-relaxed">{p.tipo_permiso?.nombre_permiso ?? '—'}</span>
+                      <span className="font-medium text-fg-strong leading-relaxed">{p.tipo_permiso?.nombre_permiso ?? '—'}</span>
                       {p.obligatorio && <span className="ml-2 text-[9px] font-bold text-red-500 uppercase">Obligatorio</span>}
                     </Td>
                     <Td align="center" className="py-5">
                       <div className="flex items-center justify-center gap-3 whitespace-nowrap">
-                        <span className="font-mono text-[12px] text-slate-600">
+                        <span className="font-mono text-[12px] text-fg-muted">
                           {formatFechaVigencia(p.permiso_vigente?.fecha_vencimiento)}
                         </span>
                         {isAdmin && (
                           <button
                             type="button"
                             onClick={() => handleOpenVigenciaEdit(p)}
-                            className="inline-flex rounded-sm p-1 text-steel transition-colors hover:bg-slate-100 hover:text-brand"
+                            className="inline-flex rounded-sm p-1 text-steel transition-colors hover:bg-muted-strong hover:text-brand"
                             title="Editar vigencia"
                           >
                             <PencilIcon />
@@ -777,7 +777,7 @@ export default function TiendaDetallePage() {
           <div className="overflow-x-auto -mx-5 sm:-mx-6">
             <table className="w-full text-left">
               <thead>
-                <tr className="border-b border-slate-200">
+                <tr className="border-b border-line">
                   <Th>Permiso Requerido</Th>
                   <Th>Estatus</Th>
                   <Th align="center">Notas</Th>
@@ -785,7 +785,7 @@ export default function TiendaDetallePage() {
                   {isAdmin && <Th align="right">Carga Directa</Th>}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-line-subtle">
                 {permisosVencidos.map((p) => {
                   const upload = isUploadBlocked(p)
                   const shouldBeExpiredByDate = isExpiredPermiso(p)
@@ -795,14 +795,14 @@ export default function TiendaDetallePage() {
                   return (
                     <tr key={p.id} className={`${TABLE_BODY_ROW} hover:bg-red-50/20`}>
                       <Td>
-                        <span className="font-medium text-slate-700">{p.tipo_permiso?.nombre_permiso ?? '—'}</span>
+                        <span className="font-medium text-fg-strong">{p.tipo_permiso?.nombre_permiso ?? '—'}</span>
                         {p.obligatorio && <span className="ml-2 text-[9px] font-bold text-red-500 uppercase">Obligatorio</span>}
                       </Td>
                       <Td>
                         {p.permiso_vigente ? (
                           <Badge variant="danger">{visibleStatus}</Badge>
                         ) : (
-                          <span className="inline-flex items-center rounded-sm border border-slate-200 bg-slate-100 px-2.5 py-0.5 text-[11px] font-medium text-slate-500">
+                          <span className="inline-flex items-center rounded-sm border border-line bg-muted-strong px-2.5 py-0.5 text-[11px] font-medium text-fg-subtle">
                             No Subido
                           </span>
                         )}
@@ -883,7 +883,7 @@ export default function TiendaDetallePage() {
           <div className="overflow-x-auto -mx-5 sm:-mx-6">
             <table className="w-full text-left">
               <thead>
-                <tr className="border-b border-slate-200">
+                <tr className="border-b border-line">
                   <Th>Permiso</Th>
                   <Th>Fecha</Th>
                   <Th>Vigencia Propuesta</Th>
@@ -892,19 +892,19 @@ export default function TiendaDetallePage() {
                   {isAdmin && <Th align="right">Acciones</Th>}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-line-subtle">
                 {solicitudesVisibles.map((s) => (
                   <tr key={s.id} className={`${TABLE_BODY_ROW} hover:bg-amber-50/20`}>
                     <Td>
-                      <span className="font-medium text-slate-700">{s.tipo_permiso?.nombre_permiso ?? '—'}</span>
+                      <span className="font-medium text-fg-strong">{s.tipo_permiso?.nombre_permiso ?? '—'}</span>
                     </Td>
                     <Td>
-                      <span className="font-mono text-[11px] text-slate-500">
+                      <span className="font-mono text-[11px] text-fg-subtle">
                         {new Date(s.fecha_solicitud).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })}
                       </span>
                     </Td>
                     <Td>
-                      <span className="font-mono text-[11px] text-slate-500">
+                      <span className="font-mono text-[11px] text-fg-subtle">
                         {formatFechaVigencia(s.vigencia_propuesta)}
                       </span>
                     </Td>
@@ -919,7 +919,7 @@ export default function TiendaDetallePage() {
                           viewClassName="inline-flex items-center gap-1.5 text-[11px] font-medium text-brand transition-colors hover:text-brand-hover"
                         />
                       ) : (
-                        <span className="text-[11px] text-slate-300">—</span>
+                        <span className="text-[11px] text-fg-faint">—</span>
                       )}
                     </Td>
                     {isAdmin && (
@@ -982,12 +982,12 @@ export default function TiendaDetallePage() {
             <div className={`${PANEL_INSET} p-4`}>
               <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-steel">📄 Subiendo</p>
               <div className="flex justify-between items-start">
-                <h4 className="text-[15px] font-bold text-slate-800">{selectedConfig.tipo_permiso?.nombre_permiso}</h4>
+                <h4 className="text-[15px] font-bold text-fg">{selectedConfig.tipo_permiso?.nombre_permiso}</h4>
                 <Badge variant={selectedConfig.obligatorio ? 'danger' : 'neutral'}>
                   {selectedConfig.obligatorio ? 'Crítico' : 'Opcional'}
                 </Badge>
               </div>
-              <p className="text-[12px] text-slate-500 mt-1">Tienda: <span className="font-semibold text-slate-700">{tienda?.sucursal}</span></p>
+              <p className="text-[12px] text-fg-subtle mt-1">Tienda: <span className="font-semibold text-fg-strong">{tienda?.sucursal}</span></p>
             </div>
 
             <VigenciaField
@@ -998,14 +998,14 @@ export default function TiendaDetallePage() {
             />
 
             <div className="space-y-2">
-              <label className="block text-[11px] font-bold uppercase tracking-widest text-slate-500">
+              <label className="block text-[11px] font-bold uppercase tracking-widest text-fg-subtle">
                 Documento Probatorio (PDF o Imagen)
               </label>
               <div
                 className={`
                   rounded-sm border-2 border-dashed p-6 text-center transition-all duration-200
                   ${isDraggingUpload ? 'border-brand bg-brand/5' : ''}
-                  ${archivo ? 'border-emerald-200 bg-emerald-50/30' : 'border-slate-200 bg-slate-50/50 hover:border-brand/30 hover:bg-slate-50'}
+                  ${archivo ? 'border-emerald-200 bg-emerald-50/30' : 'border-line bg-muted/50 hover:border-brand/30 hover:bg-muted'}
                 `}
                 onDragOver={(e) => { e.preventDefault(); setIsDraggingUpload(true) }}
                 onDragLeave={(e) => { e.preventDefault(); setIsDraggingUpload(false) }}
@@ -1021,11 +1021,11 @@ export default function TiendaDetallePage() {
                 <label htmlFor="file-upload-detail" className="cursor-pointer">
                   {!archivo ? (
                     <div className="flex flex-col items-center">
-                      <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-sm bg-white text-brand shadow-sm">
+                      <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-sm bg-card text-brand shadow-sm">
                         <UploadIcon />
                       </div>
-                      <p className="text-[13px] font-semibold text-slate-700">Click para seleccionar o arrastra aquí</p>
-                      <p className="mt-1 text-[11px] text-slate-400">Máximo 10MB • PDF, JPG, PNG, WEBP</p>
+                      <p className="text-[13px] font-semibold text-fg-strong">Click para seleccionar o arrastra aquí</p>
+                      <p className="mt-1 text-[11px] text-fg-faint">Máximo 10MB • PDF, JPG, PNG, WEBP</p>
                     </div>
                   ) : previewUrl ? (
                     <div className="flex flex-col items-center gap-2">
@@ -1039,7 +1039,7 @@ export default function TiendaDetallePage() {
                     </div>
                   ) : (
                     <div className="flex flex-col items-center">
-                      <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-sm bg-white text-emerald-600 shadow-sm">
+                      <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-sm bg-card text-emerald-600 shadow-sm">
                         <CheckCircleIcon />
                       </div>
                       <p className="text-[13px] font-semibold text-green-700 truncate w-64 px-4">{archivo.name}</p>
@@ -1088,12 +1088,12 @@ export default function TiendaDetallePage() {
 
             {/* ── Admin security context: Sucursal + Documento ── */}
             <div className={`${PANEL_CARD} flex flex-col gap-2 bg-slate-800 p-4 text-white`}>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Contexto de carga</p>
+              <p className="text-[10px] font-bold text-fg-faint uppercase tracking-widest">Contexto de carga</p>
               <div className="flex flex-wrap gap-x-6 gap-y-1">
                 <div className="flex items-center gap-2">
                   <span className="text-base">🏪</span>
                   <div>
-                    <p className="text-[9px] text-slate-400 uppercase tracking-wide">Sucursal</p>
+                    <p className="text-[9px] text-fg-faint uppercase tracking-wide">Sucursal</p>
                     <p className="text-[13px] font-bold text-white">{tienda?.sucursal ?? '—'}</p>
                   </div>
                 </div>
@@ -1101,7 +1101,7 @@ export default function TiendaDetallePage() {
                 <div className="flex items-center gap-2">
                   <span className="text-base">📄</span>
                   <div>
-                    <p className="text-[9px] text-slate-400 uppercase tracking-wide">Documento</p>
+                    <p className="text-[9px] text-fg-faint uppercase tracking-wide">Documento</p>
                     <p className="text-[13px] font-bold text-white">{selectedConfig.tipo_permiso?.nombre_permiso ?? '—'}</p>
                   </div>
                 </div>
@@ -1131,14 +1131,14 @@ export default function TiendaDetallePage() {
             />
 
             <div className="space-y-2">
-              <label className="block text-[11px] font-bold uppercase tracking-widest text-slate-500">
+              <label className="block text-[11px] font-bold uppercase tracking-widest text-fg-subtle">
                 Documento Probatorio (PDF o Imagen)
               </label>
               <div
                 className={`
                   rounded-sm border-2 border-dashed p-6 text-center transition-all duration-200
                   ${isDraggingDirectUpload ? 'border-brand bg-brand/5' : ''}
-                  ${archivo ? 'border-emerald-200 bg-emerald-50/30' : 'border-slate-200 bg-slate-50/50 hover:border-brand/30 hover:bg-slate-50'}
+                  ${archivo ? 'border-emerald-200 bg-emerald-50/30' : 'border-line bg-muted/50 hover:border-brand/30 hover:bg-muted'}
                 `}
                 onDragOver={(e) => { e.preventDefault(); setIsDraggingDirectUpload(true) }}
                 onDragLeave={(e) => { e.preventDefault(); setIsDraggingDirectUpload(false) }}
@@ -1154,11 +1154,11 @@ export default function TiendaDetallePage() {
                 <label htmlFor="file-upload-direct" className="cursor-pointer">
                   {!archivo ? (
                     <div className="flex flex-col items-center">
-                      <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-sm bg-white text-brand shadow-sm">
+                      <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-sm bg-card text-brand shadow-sm">
                         <UploadIcon />
                       </div>
-                      <p className="text-[13px] font-semibold text-slate-700">Click para seleccionar o arrastra aquí</p>
-                      <p className="mt-1 text-[11px] text-slate-400">Máximo 10MB • PDF, JPG, PNG, WEBP</p>
+                      <p className="text-[13px] font-semibold text-fg-strong">Click para seleccionar o arrastra aquí</p>
+                      <p className="mt-1 text-[11px] text-fg-faint">Máximo 10MB • PDF, JPG, PNG, WEBP</p>
                     </div>
                   ) : previewUrl ? (
                     <div className="flex flex-col items-center gap-2">
@@ -1172,7 +1172,7 @@ export default function TiendaDetallePage() {
                     </div>
                   ) : (
                     <div className="flex flex-col items-center">
-                      <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-sm bg-white text-emerald-600 shadow-sm">
+                      <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-sm bg-card text-emerald-600 shadow-sm">
                         <CheckCircleIcon />
                       </div>
                       <p className="text-[13px] font-semibold text-green-700 truncate w-64 px-4">{archivo.name}</p>
@@ -1213,17 +1213,17 @@ export default function TiendaDetallePage() {
             )}
 
             <div className={`rounded-sm border p-4 ${accion === 'aprobar' ? 'border-emerald-100 bg-emerald-50' : 'border-red-100 bg-red-50'}`}>
-              <p className="text-[13px] font-medium text-slate-700">
+              <p className="text-[13px] font-medium text-fg-strong">
                 {selectedSolicitud.tipo_permiso?.nombre_permiso} — <span className="font-semibold">{tienda?.sucursal}</span>
               </p>
-              <p className="mt-1 text-[11px] text-slate-400">
+              <p className="mt-1 text-[11px] text-fg-faint">
                 Solicitud #{selectedSolicitud.id} • Vigencia propuesta:{' '}
                 {formatFechaVigencia(selectedSolicitud.vigencia_propuesta)}
               </p>
             </div>
 
             <div className="space-y-1.5">
-              <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-fg-faint">
                 Comentarios {accion === 'rechazar' && <span className="text-red-500">* (obligatorio)</span>}
               </label>
               <textarea
@@ -1270,15 +1270,15 @@ export default function TiendaDetallePage() {
 
             <div className={`${PANEL_INSET} p-4`}>
               <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-steel">Permiso</p>
-              <h4 className="text-[15px] font-bold text-slate-800">
+              <h4 className="text-[15px] font-bold text-fg">
                 {vigenciaEditConfig.tipo_permiso?.nombre_permiso}
               </h4>
-              <p className="text-[12px] text-slate-500 mt-1">
-                Sucursal: <span className="font-semibold text-slate-700">{tienda?.sucursal}</span>
+              <p className="text-[12px] text-fg-subtle mt-1">
+                Sucursal: <span className="font-semibold text-fg-strong">{tienda?.sucursal}</span>
               </p>
-              <p className="text-[12px] text-slate-500 mt-1">
+              <p className="text-[12px] text-fg-subtle mt-1">
                 Vigencia actual:{' '}
-                <span className="font-mono font-semibold text-slate-700">
+                <span className="font-mono font-semibold text-fg-strong">
                   {formatFechaVigencia(vigenciaEditConfig.permiso_vigente?.fecha_vencimiento)}
                 </span>
               </p>
@@ -1323,8 +1323,8 @@ export default function TiendaDetallePage() {
         title="Borrar Permiso"
       >
         <div className="space-y-4">
-          <p className="text-[13px] text-slate-600">
-            ¿Estás seguro de que deseas borrar el permiso <span className="font-semibold text-slate-800">{permisoToDelete?.tipo_permiso?.nombre_permiso}</span>?
+          <p className="text-[13px] text-fg-muted">
+            ¿Estás seguro de que deseas borrar el permiso <span className="font-semibold text-fg">{permisoToDelete?.tipo_permiso?.nombre_permiso}</span>?
           </p>
           <div className={`${ALERT_ERROR} bg-red-50/50`}>
             <p className="text-[12px] font-medium whitespace-pre-wrap text-red-600">
@@ -1336,7 +1336,7 @@ export default function TiendaDetallePage() {
             <div className={ALERT_ERROR}>{deleteError}</div>
           )}
 
-          <div className="flex justify-end gap-3 border-t border-slate-200 pt-4">
+          <div className="flex justify-end gap-3 border-t border-line pt-4">
             <Button
               variant="secondary"
               onClick={() => {
@@ -1404,8 +1404,8 @@ function Td({
 function InfoItem({ label, value }: { label: string; value: string | null | undefined }) {
   return (
     <div>
-      <p className="mb-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">{label}</p>
-      <p className="text-[13px] text-slate-700 font-medium">{value || '—'}</p>
+      <p className="mb-0.5 text-[10px] font-bold uppercase tracking-wider text-fg-faint">{label}</p>
+      <p className="text-[13px] text-fg-strong font-medium">{value || '—'}</p>
     </div>
   )
 }

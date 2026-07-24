@@ -193,7 +193,7 @@ export default function UsuarioFormModal({
             autoComplete={isEdit ? 'new-password' : 'new-password'}
           />
           {isEdit && (
-            <span className="block text-[11px] font-normal normal-case text-slate-400">
+            <span className="block text-[11px] font-normal normal-case text-fg-faint">
               Dejar vacío para mantener la contraseña actual.
             </span>
           )}
@@ -257,7 +257,7 @@ export default function UsuarioFormModal({
                 </option>
               ))}
             </select>
-            <span className="block text-[11px] font-normal normal-case text-slate-400">
+            <span className="block text-[11px] font-normal normal-case text-fg-faint">
               Selecciona la región para elegir la tienda.
             </span>
           </label>
@@ -276,7 +276,7 @@ export default function UsuarioFormModal({
                   id_tienda: e.target.value ? Number(e.target.value) : null,
                 }))
               }
-              className={`${selectClass} disabled:cursor-not-allowed disabled:bg-slate-100`}
+              className={`${selectClass} disabled:cursor-not-allowed disabled:bg-muted-strong`}
             >
               <option value="">
                 {!form.id_region

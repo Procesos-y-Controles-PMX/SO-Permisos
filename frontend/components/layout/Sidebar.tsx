@@ -50,7 +50,7 @@ function SidebarPanel({
           {!collapsed && (
             <div className="min-w-0">
               <p className="text-sm font-bold leading-none text-white">Promexma</p>
-              <p className="mt-0.5 text-[10px] font-medium text-slate-500">SO Permisos</p>
+              <p className="mt-0.5 text-[10px] font-medium text-fg-subtle">SO Permisos</p>
             </div>
           )}
         </Link>
@@ -58,7 +58,7 @@ function SidebarPanel({
           <button
             type="button"
             onClick={onToggleCollapse}
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-slate-600 bg-slate-900 text-slate-400 transition-all hover:border-slate-500 hover:bg-slate-800 hover:text-slate-200"
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-slate-600 bg-slate-900 text-fg-faint transition-all hover:border-slate-500 hover:bg-slate-800 hover:text-fg-faint"
             aria-label={collapsed ? 'Expandir menú' : 'Colapsar menú'}
           >
             <svg
@@ -102,7 +102,7 @@ function SidebarPanel({
                     <span className="shrink-0">{item.icon}</span>
                     {!collapsed && <span className="truncate">{item.label}</span>}
                     {active && !collapsed ? (
-                      <span className="animate-rail-glow pointer-events-none absolute bottom-2 left-0 top-2 w-[3px] rounded-full bg-white/70" />
+                      <span className="animate-rail-glow pointer-events-none absolute bottom-2 left-0 top-2 w-[3px] rounded-full bg-card/70" />
                     ) : null}
                   </Link>
                 )
@@ -120,9 +120,9 @@ function SidebarPanel({
           {!collapsed && (
             <>
               <div className="min-w-0 flex-1">
-                <p className="text-[10px] font-medium uppercase tracking-wider text-slate-500">Usuario</p>
-                <p className="truncate text-xs font-semibold text-slate-200">{perfil?.nombre_completo || 'Cargando...'}</p>
-                <p className="text-[10px] text-slate-500">{rol || '...'}</p>
+                <p className="text-[10px] font-medium uppercase tracking-wider text-fg-subtle">Usuario</p>
+                <p className="truncate text-xs font-semibold text-fg-faint">{perfil?.nombre_completo || 'Cargando...'}</p>
+                <p className="text-[10px] text-fg-subtle">{rol || '...'}</p>
               </div>
               <button
                 type="button"
@@ -130,7 +130,7 @@ function SidebarPanel({
                   onNavigate?.()
                   signOut()
                 }}
-                className="rounded-sm p-1.5 text-slate-500 transition-colors hover:bg-white/10 hover:text-slate-200"
+                className="rounded-sm p-1.5 text-fg-subtle transition-colors hover:bg-white/10 hover:text-fg-faint"
                 title="Cerrar sesión"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -149,13 +149,13 @@ function SidebarPanel({
               className={cn(
                 'relative flex w-full items-center rounded-sm text-[13px] font-medium transition-all duration-200',
                 collapsed ? 'justify-center p-1.5' : 'gap-3 px-2 py-1.5',
-                configuracionActive ? SIDEBAR_NAV_ACTIVE : 'text-slate-500 hover:bg-white/10 hover:text-slate-200',
+                configuracionActive ? SIDEBAR_NAV_ACTIVE : 'text-fg-subtle hover:bg-white/10 hover:text-fg-faint',
               )}
             >
               <span className="shrink-0">{configuracionNavIcon}</span>
               {!collapsed && <span className="truncate">Configuración</span>}
               {configuracionActive && !collapsed ? (
-                <span className="animate-rail-glow pointer-events-none absolute bottom-1.5 left-0 top-1.5 w-[3px] rounded-full bg-white/70" />
+                <span className="animate-rail-glow pointer-events-none absolute bottom-1.5 left-0 top-1.5 w-[3px] rounded-full bg-card/70" />
               ) : null}
             </Link>
           </div>
@@ -190,7 +190,7 @@ export default function Sidebar() {
         <div className="flex items-center justify-end border-b border-white/10 px-3 py-2">
           <button
             type="button"
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 hover:bg-white/10 hover:text-slate-200"
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-fg-faint hover:bg-white/10 hover:text-fg-faint"
             aria-label="Cerrar menú"
             onClick={() => setMobileNavOpen(false)}
           >

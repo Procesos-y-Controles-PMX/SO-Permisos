@@ -198,7 +198,7 @@ export default function AdminDescargasPage() {
       <Card className="space-y-5">
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
           <div>
-            <label className="mb-2 block text-[11px] font-bold uppercase tracking-widest text-slate-500">
+            <label className="mb-2 block text-[11px] font-bold uppercase tracking-widest text-fg-subtle">
               Alcance
             </label>
             <FilterSelect
@@ -220,7 +220,7 @@ export default function AdminDescargasPage() {
 
           {(scope === 'region' || scope === 'store') && (
             <div>
-              <label className="mb-2 block text-[11px] font-bold uppercase tracking-widest text-slate-500">
+              <label className="mb-2 block text-[11px] font-bold uppercase tracking-widest text-fg-subtle">
                 Región
               </label>
               <FilterSelect
@@ -240,7 +240,7 @@ export default function AdminDescargasPage() {
 
           {scope === 'store' && (
             <div>
-              <label className="mb-2 block text-[11px] font-bold uppercase tracking-widest text-slate-500">
+              <label className="mb-2 block text-[11px] font-bold uppercase tracking-widest text-fg-subtle">
                 Tienda
               </label>
               <FilterSelect
@@ -260,7 +260,7 @@ export default function AdminDescargasPage() {
           )}
 
           <div>
-            <label className="mb-2 block text-[11px] font-bold uppercase tracking-widest text-slate-500">
+            <label className="mb-2 block text-[11px] font-bold uppercase tracking-widest text-fg-subtle">
               Permiso
             </label>
             <FilterSelect
@@ -278,14 +278,14 @@ export default function AdminDescargasPage() {
           </div>
         </div>
 
-        <div className={`${PANEL_INSET} p-4 text-xs text-slate-600`}>
-          <p className="mb-1 font-semibold text-slate-700">Estructura del ZIP</p>
+        <div className={`${PANEL_INSET} p-4 text-xs text-fg-muted`}>
+          <p className="mb-1 font-semibold text-fg-strong">Estructura del ZIP</p>
           {scope === 'all' && <p>TodasLasRegiones / Región / Tienda / Archivo</p>}
           {scope === 'region' && <p>{selectedRegionName || 'Región'} / Tienda / Archivo</p>}
           {scope === 'store' && <p>{selectedStoreName || 'Tienda'} / Archivo</p>}
           {selectedPermisoName ? (
-            <p className="mt-1 text-slate-500">
-              Solo permisos de tipo: <span className="font-semibold text-slate-700">{selectedPermisoName}</span>
+            <p className="mt-1 text-fg-subtle">
+              Solo permisos de tipo: <span className="font-semibold text-fg-strong">{selectedPermisoName}</span>
             </p>
           ) : null}
         </div>

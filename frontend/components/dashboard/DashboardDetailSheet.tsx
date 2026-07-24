@@ -41,11 +41,11 @@ function AlertRow({ alert }: { alert: StoreAlertDetail }) {
         {alert.tipo_alerta}
       </span>
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-semibold text-slate-900">{permiso?.nombre_permiso ?? 'Permiso'}</p>
+        <p className="text-sm font-semibold text-fg">{permiso?.nombre_permiso ?? 'Permiso'}</p>
         {tienda?.sucursal ? (
-          <p className="mt-0.5 truncate text-xs text-slate-500">{tienda.sucursal}</p>
+          <p className="mt-0.5 truncate text-xs text-fg-subtle">{tienda.sucursal}</p>
         ) : null}
-        <p className="mt-1 text-xs text-slate-400">Vence: {formatAlertDate(alert.fecha_vencimiento)}</p>
+        <p className="mt-1 text-xs text-fg-faint">Vence: {formatAlertDate(alert.fecha_vencimiento)}</p>
       </div>
     </div>
   )
@@ -94,7 +94,7 @@ function RegionSheetBody({
       </GaugeStatRow>
 
       <section>
-        <h3 className="mb-3 text-sm font-bold uppercase tracking-wider text-slate-500">
+        <h3 className="mb-3 text-sm font-bold uppercase tracking-wider text-fg-subtle">
           Sucursales ({regionStores.length})
         </h3>
         {regionStores.length === 0 ? (
@@ -108,19 +108,19 @@ function RegionSheetBody({
                   key={store.id}
                   type="button"
                   onClick={() => onSelectStore?.(store)}
-                  className="flex w-full items-center gap-3 rounded-sm border border-slate-200 bg-white p-3 text-left transition-colors hover:border-brand/30 hover:bg-slate-50"
+                  className="flex w-full items-center gap-3 rounded-sm border border-line bg-card p-3 text-left transition-colors hover:border-brand/30 hover:bg-muted"
                 >
                   <div
                     className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 text-[10px] font-bold ${complianceBadgeClass(comp)}`}
                   >
                     {comp.toFixed(0)}%
                   </div>
-                  <span className="min-w-0 flex-1 truncate font-medium text-slate-900">
+                  <span className="min-w-0 flex-1 truncate font-medium text-fg">
                     {store.sucursal || 'Sin sucursal'}
                   </span>
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
-                    className="h-4 w-4 shrink-0 text-slate-300"
+                    className="h-4 w-4 shrink-0 text-fg-faint"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -136,7 +136,7 @@ function RegionSheetBody({
       </section>
 
       <section>
-        <h3 className="mb-3 text-sm font-bold uppercase tracking-wider text-slate-500">
+        <h3 className="mb-3 text-sm font-bold uppercase tracking-wider text-fg-subtle">
           Alertas ({regionAlerts.length})
         </h3>
         {regionAlerts.length === 0 ? (
@@ -187,7 +187,7 @@ function StoreSheetBody({
       </GaugeStatRow>
 
       <section>
-        <h3 className="mb-3 text-sm font-bold uppercase tracking-wider text-slate-500">
+        <h3 className="mb-3 text-sm font-bold uppercase tracking-wider text-fg-subtle">
           Permisos con alerta
         </h3>
         {storeAlerts.length === 0 ? (

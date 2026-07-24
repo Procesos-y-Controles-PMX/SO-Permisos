@@ -21,7 +21,7 @@ export default function Select({ label, options, placeholder, className = '', id
       {label ? (
         <label
           htmlFor={id}
-          className="block text-xs font-semibold uppercase tracking-wider text-slate-500"
+          className="block text-xs font-semibold uppercase tracking-wider text-fg-subtle"
         >
           {label}
         </label>

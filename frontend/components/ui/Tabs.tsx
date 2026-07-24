@@ -23,7 +23,7 @@ export default function Tabs({ tabs, defaultTab, onChange }: TabsProps) {
   }
 
   return (
-    <div className="inline-flex rounded-sm border border-slate-200 bg-white p-1 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+    <div className="inline-flex rounded-sm border border-line bg-card p-1 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
       {tabs.map((tab) => (
         <button
           key={tab.key}
@@ -32,8 +32,8 @@ export default function Tabs({ tabs, defaultTab, onChange }: TabsProps) {
             flex items-center gap-1.5 rounded-sm px-4 py-2 text-[13px] font-medium
             transition-all duration-200
             ${active === tab.key
-              ? 'border border-slate-200 bg-white text-brand shadow-sm'
-              : 'text-slate-400 hover:text-slate-600'
+              ? 'border border-line bg-card text-brand shadow-sm'
+              : 'text-fg-faint hover:text-fg-muted'
             }
           `}
         >

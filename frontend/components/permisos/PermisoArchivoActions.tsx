@@ -28,7 +28,7 @@ export default function PermisoArchivoActions({
   filePath,
   className = '',
   viewClassName = 'inline-flex items-center gap-1.5 text-blue-500 hover:text-blue-700 text-[11px] font-medium transition-colors',
-  downloadClassName = 'inline-flex items-center gap-1.5 text-slate-600 hover:text-slate-800 text-[11px] font-medium transition-colors disabled:opacity-50',
+  downloadClassName = 'inline-flex items-center gap-1.5 text-fg-muted hover:text-fg text-[11px] font-medium transition-colors disabled:opacity-50',
   iconOnly = false,
 }: PermisoArchivoActionsProps) {
   const [downloading, setDownloading] = useState(false)

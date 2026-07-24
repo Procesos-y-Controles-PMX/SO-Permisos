@@ -331,7 +331,7 @@ export default function HistorialPage() {
         <PageHeader title="Historial de Solicitudes" subtitle="Cargando..." />
         <div className="space-y-3">
           {[1, 2, 3].map(i => (
-            <Card key={i} className="animate-pulse"><div className="h-24 rounded-lg bg-slate-100" /></Card>
+            <Card key={i} className="animate-pulse"><div className="h-24 rounded-lg bg-muted-strong" /></Card>
           ))}
         </div>
       </>
@@ -363,8 +363,8 @@ export default function HistorialPage() {
           onClick={() => setFilterEstatus(filterEstatus === 'No Subido' ? '' : 'No Subido')}
           className={filterEstatus === 'No Subido' ? STAT_TILE_ACTIVE : STAT_TILE}
         >
-          <p className="text-2xl font-bold text-slate-600">{countNoSubido}</p>
-          <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">No Subido</p>
+          <p className="text-2xl font-bold text-fg-muted">{countNoSubido}</p>
+          <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-fg-faint">No Subido</p>
         </button>
         <button
           type="button"
@@ -372,7 +372,7 @@ export default function HistorialPage() {
           className={filterEstatus === 'En Revisión' ? `${STAT_TILE_ACTIVE} border-amber-300 bg-amber-50` : `${STAT_TILE} hover:border-amber-200`}
         >
           <p className="text-2xl font-bold text-amber-600">{countEnRevision}</p>
-          <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">En Revisión</p>
+          <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-fg-faint">En Revisión</p>
         </button>
         <button
           type="button"
@@ -380,7 +380,7 @@ export default function HistorialPage() {
           className={filterEstatus === 'Aceptado' ? `${STAT_TILE_ACTIVE} border-emerald-300 bg-emerald-50` : `${STAT_TILE} hover:border-emerald-200`}
         >
           <p className="text-2xl font-bold text-emerald-600">{countAceptado}</p>
-          <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">Aprobados</p>
+          <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-fg-faint">Aprobados</p>
         </button>
         <button
           type="button"
@@ -388,19 +388,19 @@ export default function HistorialPage() {
           className={filterEstatus === 'Rechazado' ? `${STAT_TILE_ACTIVE} border-red-300 bg-red-50` : `${STAT_TILE} hover:border-red-200`}
         >
           <p className="text-2xl font-bold text-red-600">{countRechazado}</p>
-          <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">Rechazados</p>
+          <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-fg-faint">Rechazados</p>
         </button>
       </div>
 
       {/* Cards */}
       {filtered.length === 0 ? (
         <Card className="text-center py-16">
-          <div className="mb-4 inline-flex h-14 w-14 items-center justify-center rounded-full bg-slate-100 text-slate-400">
+          <div className="mb-4 inline-flex h-14 w-14 items-center justify-center rounded-full bg-muted-strong text-fg-faint">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
-          <p className="text-[13px] text-slate-500">No hay registros con este filtro.</p>
+          <p className="text-[13px] text-fg-subtle">No hay registros con este filtro.</p>
           {filterEstatus && (
             <button type="button" onClick={() => setFilterEstatus('')} className="mt-2 text-[12px] font-semibold text-brand hover:underline">
               Ver todos
@@ -418,7 +418,7 @@ export default function HistorialPage() {
               <Card
                 key={item.idTipoPermiso}
                 className={`transition-all duration-200 ${
-                  isNoSubido ? 'border-slate-200 bg-slate-50/40' :
+                  isNoSubido ? 'border-line bg-muted/40' :
                   isRechazado ? 'border-red-200 bg-red-50/20' :
                   isEnRevision ? 'border-amber-200 bg-amber-50/10' :
                   'border-green-200 bg-green-50/10'
@@ -430,23 +430,23 @@ export default function HistorialPage() {
                     <div className="flex items-center gap-2 mb-2">
                       <Badge variant={statusToBadgeVariant(item.estado)}>{item.estado}</Badge>
                       {item.fechaActualizacion && (
-                        <span className="text-[11px] font-mono text-slate-400">
+                        <span className="text-[11px] font-mono text-fg-faint">
                           {new Date(item.fechaActualizacion).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })}
                         </span>
                       )}
                     </div>
 
                     {/* Permit name */}
-                    <h4 className="text-[14px] font-semibold text-slate-800">
+                    <h4 className="text-[14px] font-semibold text-fg">
                       {item.nombrePermiso}
                       {item.obligatorio && <span className="ml-2 text-[9px] font-bold uppercase text-brand">Obligatorio</span>}
                     </h4>
 
                     {/* Vigencia */}
                     {item.estado !== 'No Subido' && (
-                      <p className="mt-1 text-[11px] text-slate-500">
+                      <p className="mt-1 text-[11px] text-fg-subtle">
                         Vigencia:{' '}
-                        <span className="font-mono text-slate-600">{formatFechaVigencia(item.vigencia)}</span>
+                        <span className="font-mono text-fg-muted">{formatFechaVigencia(item.vigencia)}</span>
                       </p>
                     )}
 
@@ -461,7 +461,7 @@ export default function HistorialPage() {
                           {isRechazado ? '⚠️ Motivo del Rechazo' : '💬 Comentario del Admin'}
                         </p>
                         <p className={`text-[12px] leading-relaxed font-medium ${
-                          isRechazado ? 'text-slate-900' : 'text-slate-800'
+                          isRechazado ? 'text-fg' : 'text-fg'
                         }`}>
                           {item.comentariosAdmin}
                         </p>
@@ -507,7 +507,7 @@ export default function HistorialPage() {
                         filePath={item.archivoPath}
                         className="flex-col sm:flex-row items-end sm:items-center"
                         viewClassName="inline-flex items-center gap-1.5 px-2.5 py-2 rounded-xl text-blue-500 hover:bg-blue-50 hover:text-blue-700 border border-transparent hover:border-blue-200 text-[12px] font-medium transition-all"
-                        downloadClassName="inline-flex items-center gap-1.5 rounded-sm border border-transparent px-2.5 py-2 text-[12px] font-medium text-slate-600 transition-all hover:border-slate-200 hover:bg-slate-50 disabled:opacity-50"
+                        downloadClassName="inline-flex items-center gap-1.5 rounded-sm border border-transparent px-2.5 py-2 text-[12px] font-medium text-fg-muted transition-all hover:border-line hover:bg-muted disabled:opacity-50"
                       />
                     )}
                   </div>
@@ -550,7 +550,7 @@ export default function HistorialPage() {
 
             <div className="bg-blue-50/60 border border-blue-200 rounded-xl p-4">
               <p className="text-[10px] font-bold text-blue-500 uppercase tracking-widest mb-1">Subiendo</p>
-              <h4 className="text-[15px] font-bold text-slate-800">{selectedItem.nombrePermiso}</h4>
+              <h4 className="text-[15px] font-bold text-fg">{selectedItem.nombrePermiso}</h4>
             </div>
 
             <VigenciaField
@@ -568,7 +568,7 @@ export default function HistorialPage() {
                 className={`
                   border-2 border-dashed rounded-2xl p-6 transition-all duration-200 text-center
                   ${isDraggingUpload ? 'border-blue-400 bg-blue-50/40' : ''}
-                  ${archivo ? 'border-green-200 bg-green-50/30' : 'border-slate-200 bg-slate-50/50 hover:border-brand/30 hover:bg-slate-50'}
+                  ${archivo ? 'border-green-200 bg-green-50/30' : 'border-line bg-muted/50 hover:border-brand/30 hover:bg-muted'}
                 `}
                 onDragOver={(e) => { e.preventDefault(); setIsDraggingUpload(true) }}
                 onDragLeave={(e) => { e.preventDefault(); setIsDraggingUpload(false) }}
@@ -584,7 +584,7 @@ export default function HistorialPage() {
                 <label htmlFor="file-upload-historial" className="cursor-pointer">
                   {!archivo ? (
                     <div className="flex flex-col items-center">
-                      <p className="text-[13px] font-semibold text-slate-700">Click para seleccionar o arrastra aquí</p>
+                      <p className="text-[13px] font-semibold text-fg-strong">Click para seleccionar o arrastra aquí</p>
                       <p className="text-[11px] text-gray-400 mt-1">Máximo 10MB • PDF, JPG, PNG, WEBP</p>
                     </div>
                   ) : previewUrl ? (

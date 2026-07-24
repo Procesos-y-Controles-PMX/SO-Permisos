@@ -23,15 +23,15 @@ export default function TablePagination({
   const rangeEnd = Math.min(safePage * pageSize, totalItems)
 
   const btnClass =
-    'min-h-10 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 sm:min-h-0 sm:py-1.5'
+    'min-h-10 rounded-lg border border-line bg-card px-3 py-2 text-sm font-semibold text-fg-muted transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40 sm:min-h-0 sm:py-1.5'
 
   return (
-    <div className="flex flex-col gap-3 border-t border-slate-100 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
-      <p className="text-sm text-slate-500">
+    <div className="flex flex-col gap-3 border-t border-line-subtle px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+      <p className="text-sm text-fg-subtle">
         Mostrando {rangeStart}–{rangeEnd} de {totalItems}
       </p>
       <div className="flex items-center gap-3">
-        <span className="text-sm text-slate-500">
+        <span className="text-sm text-fg-subtle">
           Página {safePage} de {totalPages}
         </span>
         <button

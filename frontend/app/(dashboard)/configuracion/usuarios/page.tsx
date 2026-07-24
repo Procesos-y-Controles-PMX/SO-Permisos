@@ -286,7 +286,7 @@ export default function UsuariosPage() {
         const isSelf = perfil?.id === u.id
         return (
           <div className="flex items-center gap-2">
-            <span className="font-medium text-slate-800">{u.nombre_completo || '—'}</span>
+            <span className="font-medium text-fg">{u.nombre_completo || '—'}</span>
             {isSelf && (
               <Badge variant="neutral" className="text-[10px]">
                 Tu cuenta
@@ -299,7 +299,7 @@ export default function UsuariosPage() {
     {
       key: 'email',
       header: 'Correo',
-      render: (u) => <span className="text-slate-600">{u.email}</span>,
+      render: (u) => <span className="text-fg-muted">{u.email}</span>,
     },
     {
       key: 'rol',
@@ -312,20 +312,20 @@ export default function UsuariosPage() {
       key: 'tienda',
       header: 'Tienda',
       render: (u) => (
-        <span className="text-slate-600">{u.tienda?.sucursal ?? '—'}</span>
+        <span className="text-fg-muted">{u.tienda?.sucursal ?? '—'}</span>
       ),
     },
     {
       key: 'region',
       header: 'Región',
       render: (u) => (
-        <span className="text-slate-600">{getUsuarioRegionNombre(u) ?? '—'}</span>
+        <span className="text-fg-muted">{getUsuarioRegionNombre(u) ?? '—'}</span>
       ),
     },
     {
       key: 'created_at',
       header: 'Alta',
-      render: (u) => <span className="text-[12px] text-slate-500">{formatDate(u.created_at)}</span>,
+      render: (u) => <span className="text-[12px] text-fg-subtle">{formatDate(u.created_at)}</span>,
     },
     {
       key: 'acciones',
@@ -340,7 +340,7 @@ export default function UsuariosPage() {
               disabled={isSelf}
               title={isSelf ? 'No puedes editar tu propia cuenta' : undefined}
               onClick={() => handleOpenEdit(u)}
-              className="text-[12px] font-semibold text-brand hover:text-brand-hover px-2 py-1 rounded-lg hover:bg-slate-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              className="text-[12px] font-semibold text-brand hover:text-brand-hover px-2 py-1 rounded-lg hover:bg-muted-strong transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Editar
             </button>
@@ -352,7 +352,7 @@ export default function UsuariosPage() {
                 setActionError(null)
                 setDeleteTarget(u)
               }}
-              className="text-[12px] font-semibold text-slate-500 hover:text-red-600 px-2 py-1 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              className="text-[12px] font-semibold text-fg-subtle hover:text-red-600 px-2 py-1 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Eliminar
             </button>
@@ -366,7 +366,7 @@ export default function UsuariosPage() {
     return (
       <>
         <Card className="animate-pulse">
-          <div className="h-64 rounded-lg bg-slate-100" />
+          <div className="h-64 rounded-lg bg-muted-strong" />
         </Card>
       </>
     )
@@ -376,7 +376,7 @@ export default function UsuariosPage() {
     return (
       <>
         <Card className="animate-pulse">
-          <div className="h-64 rounded-lg bg-slate-100" />
+          <div className="h-64 rounded-lg bg-muted-strong" />
         </Card>
       </>
     )
@@ -450,7 +450,7 @@ export default function UsuariosPage() {
 
       <div className="space-y-3 md:hidden">
         {paginatedUsuarios.length === 0 ? (
-          <p className="text-center text-sm text-slate-500">{emptyMessage}</p>
+          <p className="text-center text-sm text-fg-subtle">{emptyMessage}</p>
         ) : (
           paginatedUsuarios.map((u) => {
             const isSelf = perfil?.id === u.id
@@ -458,27 +458,27 @@ export default function UsuariosPage() {
               <article key={u.id} className={MOBILE_LIST_CARD}>
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="font-semibold text-slate-900">{u.nombre_completo || '—'}</p>
-                    <p className="mt-0.5 truncate text-sm text-slate-600">{u.email}</p>
+                    <p className="font-semibold text-fg">{u.nombre_completo || '—'}</p>
+                    <p className="mt-0.5 truncate text-sm text-fg-muted">{u.email}</p>
                   </div>
                   <Badge variant={rolBadgeVariant(u.rol?.nombre_rol)}>{u.rol?.nombre_rol ?? '—'}</Badge>
                 </div>
                 <dl className="mt-3 space-y-2 text-sm">
                   <div>
-                    <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">Tienda</dt>
-                    <dd className="text-slate-700">{u.tienda?.sucursal ?? '—'}</dd>
+                    <dt className="text-xs font-medium uppercase tracking-wide text-fg-faint">Tienda</dt>
+                    <dd className="text-fg-strong">{u.tienda?.sucursal ?? '—'}</dd>
                   </div>
                   <div>
-                    <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">Región</dt>
-                    <dd className="text-slate-700">{getUsuarioRegionNombre(u) ?? '—'}</dd>
+                    <dt className="text-xs font-medium uppercase tracking-wide text-fg-faint">Región</dt>
+                    <dd className="text-fg-strong">{getUsuarioRegionNombre(u) ?? '—'}</dd>
                   </div>
                 </dl>
-                <div className="mt-3 flex gap-2 border-t border-slate-100 pt-3">
+                <div className="mt-3 flex gap-2 border-t border-line-subtle pt-3">
                   <button
                     type="button"
                     disabled={isSelf}
                     onClick={() => handleOpenEdit(u)}
-                    className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold text-slate-700"
+                    className="flex-1 rounded-lg border border-line bg-card px-3 py-2.5 text-sm font-semibold text-fg-strong"
                   >
                     Editar
                   </button>
@@ -553,7 +553,7 @@ export default function UsuariosPage() {
       >
         {deleteTarget && (
           <div className="space-y-3">
-            <p className="text-sm text-slate-600">
+            <p className="text-sm text-fg-muted">
               ¿Eliminar a{' '}
               <strong>{deleteTarget.nombre_completo || deleteTarget.email}</strong>? Las
               notificaciones asociadas se eliminarán. Las solicitudes que haya revisado

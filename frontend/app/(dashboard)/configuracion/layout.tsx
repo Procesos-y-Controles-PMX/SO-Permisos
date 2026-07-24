@@ -19,9 +19,9 @@ export default function ConfiguracionLayout({ children }: { children: React.Reac
   if (loading || !isAdmin) {
     return (
       <div className="animate-pulse space-y-4">
-        <div className="h-10 w-48 rounded-lg bg-slate-100" />
-        <div className="h-10 w-full max-w-md rounded-xl bg-slate-100" />
-        <div className="h-64 rounded-lg bg-slate-100" />
+        <div className="h-10 w-48 rounded-lg bg-muted-strong" />
+        <div className="h-10 w-full max-w-md rounded-xl bg-muted-strong" />
+        <div className="h-64 rounded-lg bg-muted-strong" />
       </div>
     )
   }

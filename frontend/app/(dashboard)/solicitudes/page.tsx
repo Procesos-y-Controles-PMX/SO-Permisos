@@ -87,7 +87,7 @@ export default function SolicitudesPendientesPage() {
         <PageHeader eyebrow="Permisos" title="Solicitudes Pendientes" subtitle="Cargando..." />
         <div className="space-y-3">
           {[1, 2, 3].map(i => (
-            <Card key={i} className="animate-pulse"><div className="h-20 rounded-lg bg-slate-100" /></Card>
+            <Card key={i} className="animate-pulse"><div className="h-20 rounded-lg bg-muted-strong" /></Card>
           ))}
         </div>
       </>
@@ -118,8 +118,8 @@ export default function SolicitudesPendientesPage() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
-          <p className="text-[15px] font-semibold text-slate-700">¡Todo al día!</p>
-          <p className="mt-1 text-[13px] text-slate-500">No hay solicitudes pendientes de revisión.</p>
+          <p className="text-[15px] font-semibold text-fg-strong">¡Todo al día!</p>
+          <p className="mt-1 text-[13px] text-fg-subtle">No hay solicitudes pendientes de revisión.</p>
         </Card>
       ) : (
         <div className="space-y-3">
@@ -139,10 +139,10 @@ export default function SolicitudesPendientesPage() {
                   </div>
 
                   <div>
-                    <h3 className="text-[14px] font-bold text-slate-800 transition-colors group-hover:text-brand">
+                    <h3 className="text-[14px] font-bold text-fg transition-colors group-hover:text-brand">
                       {item.tienda?.sucursal ?? 'Tienda desconocida'}
                     </h3>
-                    <p className="mt-0.5 text-[11px] text-slate-500">
+                    <p className="mt-0.5 text-[11px] text-fg-subtle">
                       {item.tienda?.region?.nombre_region ?? 'Sin región'} • Gte: {item.tienda?.gerente_tienda ?? '—'}
                     </p>
                     {/* List of pending permit types */}
@@ -153,7 +153,7 @@ export default function SolicitudesPendientesPage() {
                         </span>
                       ))}
                       {item.solicitudes.length > 4 && (
-                        <span className="px-1 text-[10px] text-slate-400">+{item.solicitudes.length - 4} más</span>
+                        <span className="px-1 text-[10px] text-fg-faint">+{item.solicitudes.length - 4} más</span>
                       )}
                     </div>
                   </div>
@@ -161,7 +161,7 @@ export default function SolicitudesPendientesPage() {
 
                 <div className="flex items-center gap-3">
                   <Badge variant="warning">{item.pendientes} pendiente{item.pendientes !== 1 ? 's' : ''}</Badge>
-                  <span className="text-slate-300 transition-colors group-hover:text-brand">
+                  <span className="text-fg-faint transition-colors group-hover:text-brand">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                     </svg>

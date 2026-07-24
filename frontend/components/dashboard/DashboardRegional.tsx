@@ -96,13 +96,13 @@ export function DashboardRegional() {
 
       <section className={cn(SECTION_PANEL, 'animate-fade-up')} style={{ animationDelay: '120ms' }}>
         <div className={SECTION_PANEL_HEADER}>
-          <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-900">
+          <h2 className="flex items-center gap-2 text-lg font-semibold text-fg">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-brand" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg>
             Tiendas en riesgo
           </h2>
           {sortedStores.length > pageSize ? (
             <div className="flex items-center gap-2">
-              <span className="mr-2 text-xs font-normal text-slate-400">
+              <span className="mr-2 text-xs font-normal text-fg-faint">
                 Página {currentPage + 1} de {Math.ceil(sortedStores.length / pageSize)}
               </span>
               <div className="flex gap-1">
@@ -110,7 +110,7 @@ export function DashboardRegional() {
                   type="button"
                   onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
                   disabled={currentPage === 0}
-                  className="rounded-sm border border-slate-200 p-1 transition-colors hover:bg-slate-50 disabled:opacity-30"
+                  className="rounded-sm border border-line p-1 transition-colors hover:bg-muted disabled:opacity-30"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
                 </button>
@@ -122,7 +122,7 @@ export function DashboardRegional() {
                     )
                   }
                   disabled={currentPage >= Math.ceil(sortedStores.length / pageSize) - 1}
-                  className="rounded-sm border border-slate-200 p-1 transition-colors hover:bg-slate-50 disabled:opacity-30"
+                  className="rounded-sm border border-line p-1 transition-colors hover:bg-muted disabled:opacity-30"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
                 </button>
@@ -131,7 +131,7 @@ export function DashboardRegional() {
           ) : null}
         </div>
           {sortedStores.length > 0 ? (
-            <div className="divide-y divide-slate-100 xl:grid xl:grid-cols-2 xl:gap-x-8 xl:divide-y-0 xl:px-2">
+            <div className="divide-y divide-line-subtle xl:grid xl:grid-cols-2 xl:gap-x-8 xl:divide-y-0 xl:px-2">
               {sortedStores
                 .slice(currentPage * pageSize, (currentPage + 1) * pageSize)
                 .map((tienda) => {
@@ -141,7 +141,7 @@ export function DashboardRegional() {
                       key={tienda.id}
                       type="button"
                       onClick={() => setSheetTarget({ type: 'store', store: tienda })}
-                      className="group flex w-full items-center justify-between p-4 text-left transition-colors hover:bg-slate-50 xl:border-b xl:border-slate-100"
+                      className="group flex w-full items-center justify-between p-4 text-left transition-colors hover:bg-muted xl:border-b xl:border-line-subtle"
                     >
                       <div className="flex items-center gap-4">
                         <div
@@ -150,13 +150,13 @@ export function DashboardRegional() {
                           {storeComp.toFixed(0)}%
                         </div>
                         <div>
-                          <h3 className="font-semibold text-slate-900 transition-colors group-hover:text-brand">
+                          <h3 className="font-semibold text-fg transition-colors group-hover:text-brand">
                             {tienda.sucursal || 'Sin Sucursal'}
                           </h3>
-                          <p className="text-sm text-slate-500">Ir a detalle de la sucursal</p>
+                          <p className="text-sm text-fg-subtle">Ir a detalle de la sucursal</p>
                         </div>
                       </div>
-                      <div className="shrink-0 text-slate-300 transition-colors group-hover:text-brand">
+                      <div className="shrink-0 text-fg-faint transition-colors group-hover:text-brand">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                         </svg>
@@ -170,8 +170,8 @@ export function DashboardRegional() {
               <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-full bg-green-50">
                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-500 text-white">✓</div>
               </div>
-              <h3 className="mb-1 text-lg font-medium text-slate-900">Sin sucursales por mostrar</h3>
-              <p className="text-slate-500">No hay sucursales configuradas en esta región.</p>
+              <h3 className="mb-1 text-lg font-medium text-fg">Sin sucursales por mostrar</h3>
+              <p className="text-fg-subtle">No hay sucursales configuradas en esta región.</p>
             </div>
           )}
       </section>

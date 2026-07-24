@@ -36,11 +36,11 @@ export default function VigenciaField({
           type="checkbox"
           checked={sinVencimiento}
           onChange={(e) => handleSinVencimientoChange(e.target.checked)}
-          className="mt-0.5 h-4 w-4 rounded-sm border-slate-300 text-brand focus:ring-brand/15"
+          className="mt-0.5 h-4 w-4 rounded-sm border-line-strong text-brand focus:ring-brand/15"
         />
-        <span className="text-[13px] text-slate-700 group-hover:text-slate-900">
+        <span className="text-[13px] text-fg-strong group-hover:text-fg">
           Sin fecha de vencimiento
-          <span className="mt-0.5 block text-[11px] font-normal text-slate-400">
+          <span className="mt-0.5 block text-[11px] font-normal text-fg-faint">
             El permiso permanece vigente hasta que un administrador lo elimine.
           </span>
         </span>
@@ -48,7 +48,7 @@ export default function VigenciaField({
 
       {!sinVencimiento && (
         <div className="space-y-1.5">
-          <label className="block text-[11px] font-bold uppercase tracking-widest text-slate-500">
+          <label className="block text-[11px] font-bold uppercase tracking-widest text-fg-subtle">
             {dateLabel}
           </label>
           <input

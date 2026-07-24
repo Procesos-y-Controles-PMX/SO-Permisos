@@ -194,7 +194,7 @@ export default function DirectorioPage() {
       <>
         <PageHeader title="Mi tienda" subtitle="Redirigiendo a tu sucursal..." />
         <Card className="animate-pulse">
-          <div className="h-64 rounded-lg bg-slate-100" />
+          <div className="h-64 rounded-lg bg-muted-strong" />
         </Card>
       </>
     )
@@ -205,7 +205,7 @@ export default function DirectorioPage() {
       <>
         <PageHeader title="Mi tienda" subtitle="Cargando sucursales..." />
         <Card className="animate-pulse">
-          <div className="h-64 rounded-lg bg-slate-100" />
+          <div className="h-64 rounded-lg bg-muted-strong" />
         </Card>
       </>
     )
@@ -272,7 +272,7 @@ export default function DirectorioPage() {
               return (
                 <article
                   key={t.id}
-                  className={`${MOBILE_LIST_CARD} cursor-pointer active:bg-slate-50`}
+                  className={`${MOBILE_LIST_CARD} cursor-pointer active:bg-muted`}
                   onClick={() => router.push(`/directorio/${t.id}`)}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
@@ -285,11 +285,11 @@ export default function DirectorioPage() {
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="font-semibold text-slate-900">{t.sucursal}</p>
-                      <p className="mt-0.5 text-sm text-slate-500">{t.region?.nombre_region ?? '—'}</p>
+                      <p className="font-semibold text-fg">{t.sucursal}</p>
+                      <p className="mt-0.5 text-sm text-fg-subtle">{t.region?.nombre_region ?? '—'}</p>
                     </div>
                     {loadingCompliance ? (
-                      <div className="h-9 w-9 shrink-0 animate-pulse rounded-full bg-slate-100" />
+                      <div className="h-9 w-9 shrink-0 animate-pulse rounded-full bg-muted-strong" />
                     ) : (
                       <div
                         className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 text-[10px] font-bold ${complianceBadgeClass(compliance)}`}
@@ -300,22 +300,22 @@ export default function DirectorioPage() {
                   </div>
                   <dl className="mt-3 space-y-2 text-sm">
                     <div>
-                      <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">Gte. Tienda</dt>
-                      <dd className="text-slate-700">{t.gerente_tienda ?? '—'}</dd>
+                      <dt className="text-xs font-medium uppercase tracking-wide text-fg-faint">Gte. Tienda</dt>
+                      <dd className="text-fg-strong">{t.gerente_tienda ?? '—'}</dd>
                     </div>
                     <div>
-                      <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">Contacto</dt>
-                      <dd className="text-slate-700">{t.celular ?? '—'}</dd>
+                      <dt className="text-xs font-medium uppercase tracking-wide text-fg-faint">Contacto</dt>
+                      <dd className="text-fg-strong">{t.celular ?? '—'}</dd>
                     </div>
                   </dl>
-                  <div className="mt-4 flex items-center gap-2 border-t border-slate-100 pt-3">
+                  <div className="mt-4 flex items-center gap-2 border-t border-line-subtle pt-3">
                     <button
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation()
                         router.push(`/directorio/${t.id}`)
                       }}
-                      className="flex-1 rounded-sm border border-slate-200 bg-white px-3 py-2 text-[12px] font-semibold text-slate-700 transition-colors active:bg-slate-50"
+                      className="flex-1 rounded-sm border border-line bg-card px-3 py-2 text-[12px] font-semibold text-fg-strong transition-colors active:bg-muted"
                     >
                       Ver tienda
                     </button>
@@ -327,7 +327,7 @@ export default function DirectorioPage() {
                           void handleDownloadStoreZip(t.id)
                         }}
                         disabled={downloadingId !== null}
-                        className="flex-1 rounded-sm border border-slate-200 bg-white px-3 py-2 text-[12px] font-semibold text-slate-700 transition-colors active:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                        className="flex-1 rounded-sm border border-line bg-card px-3 py-2 text-[12px] font-semibold text-fg-strong transition-colors active:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         {downloadingId === t.id ? 'Generando...' : 'Descargar permisos vigentes'}
                       </button>
@@ -343,7 +343,7 @@ export default function DirectorioPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-slate-200 bg-slate-50">
+                  <tr className="border-b border-line bg-muted">
                     <th className={`${TABLE_HEAD_CELL} text-center`}>Cumplimiento</th>
                     <th className={TABLE_HEAD_CELL}>Sucursal</th>
                     <th className={TABLE_HEAD_CELL}>Región</th>
@@ -361,7 +361,7 @@ export default function DirectorioPage() {
                     >
                       <td className="px-4 py-3 text-center">
                         {loadingCompliance ? (
-                          <div className="mx-auto h-8 w-8 animate-pulse rounded-full bg-slate-100" />
+                          <div className="mx-auto h-8 w-8 animate-pulse rounded-full bg-muted-strong" />
                         ) : (
                           <div
                             className={`mx-auto inline-flex h-8 w-8 items-center justify-center rounded-full border-2 text-[9px] font-bold ${complianceBadgeClass(storeComplianceMap[t.id] ?? 0)}`}
@@ -372,12 +372,12 @@ export default function DirectorioPage() {
                           </div>
                         )}
                       </td>
-                      <td className="px-4 py-3 font-semibold text-slate-800">{t.sucursal}</td>
-                      <td className="px-4 py-3 text-slate-500">{t.region?.nombre_region ?? '—'}</td>
-                      <td className="px-4 py-3 text-slate-500">{t.gerente_tienda ?? '—'}</td>
+                      <td className="px-4 py-3 font-semibold text-fg">{t.sucursal}</td>
+                      <td className="px-4 py-3 text-fg-subtle">{t.region?.nombre_region ?? '—'}</td>
+                      <td className="px-4 py-3 text-fg-subtle">{t.gerente_tienda ?? '—'}</td>
                       <td className="px-4 py-3">
-                        <p className="text-slate-500">{t.celular ?? '—'}</p>
-                        <p className="text-[10px] text-slate-400">{t.correo ?? ''}</p>
+                        <p className="text-fg-subtle">{t.celular ?? '—'}</p>
+                        <p className="text-[10px] text-fg-faint">{t.correo ?? ''}</p>
                       </td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-2 whitespace-nowrap">
@@ -387,7 +387,7 @@ export default function DirectorioPage() {
                               e.stopPropagation()
                               router.push(`/directorio/${t.id}`)
                             }}
-                            className="rounded-sm border border-slate-200 bg-white px-3 py-1.5 text-[12px] font-semibold text-slate-700 transition-colors hover:bg-slate-50"
+                            className="rounded-sm border border-line bg-card px-3 py-1.5 text-[12px] font-semibold text-fg-strong transition-colors hover:bg-muted"
                           >
                             Ver tienda
                           </button>
@@ -399,7 +399,7 @@ export default function DirectorioPage() {
                                 void handleDownloadStoreZip(t.id)
                               }}
                               disabled={downloadingId !== null}
-                              className="inline-flex items-center gap-1.5 rounded-sm border border-slate-200 bg-white px-3 py-1.5 text-[12px] font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                              className="inline-flex items-center gap-1.5 rounded-sm border border-line bg-card px-3 py-1.5 text-[12px] font-semibold text-fg-strong transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
                             >
                               <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v11m0 0l-4-4m4 4l4-4m3 8v2a1 1 0 01-1 1H6a1 1 0 01-1-1v-2" />

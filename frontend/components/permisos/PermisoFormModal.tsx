@@ -108,7 +108,7 @@ export default function PermisoFormModal({
             }
             className={`${FIELD_INPUT} normal-case`}
           />
-          <span className="block text-[11px] font-normal normal-case text-slate-400">
+          <span className="block text-[11px] font-normal normal-case text-fg-faint">
             Peso del permiso en métricas de cumplimiento (entero ≥ 1).
           </span>
         </label>

@@ -60,17 +60,17 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
         <header className="app-safe-x sticky top-0 z-30 flex items-center gap-3 bg-transparent pt-[max(0.75rem,env(safe-area-inset-top))] pb-3 lg:hidden">
           <div className="min-w-0 flex-1">
-            <h1 className="truncate font-display text-lg font-semibold tracking-tight text-slate-900">
+            <h1 className="truncate font-display text-lg font-semibold tracking-tight text-fg">
               SO Permisos
             </h1>
-            <p className="truncate text-xs text-slate-500">
+            <p className="truncate text-xs text-fg-subtle">
               {perfil?.nombre_completo ?? '...'} · {rol ?? '...'}
             </p>
           </div>
           <button
             type="button"
             onClick={() => signOut()}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-700"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-line text-fg-subtle hover:bg-muted hover:text-fg-strong"
             aria-label="Cerrar sesión"
           >
             <LogoutIcon className="h-5 w-5" />

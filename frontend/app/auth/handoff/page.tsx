@@ -72,7 +72,7 @@ function HandoffInner() {
       ) : (
         <div className="flex flex-col items-center gap-3">
           <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-brand" role="status" aria-label="Cargando" />
-          <p className="text-sm text-slate-500">Entrando a SO Permisos...</p>
+          <p className="text-sm text-fg-subtle">Entrando a SO Permisos...</p>
         </div>
       )}
     </main>

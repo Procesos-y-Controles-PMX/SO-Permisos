@@ -68,17 +68,17 @@ export default function PermisoNotasPanel({
   }
 
   const readOnlyBlock = (
-    <div className={`${PANEL_INSET} ${compact ? 'p-2.5' : 'p-3'} ${!hasNotas ? 'bg-slate-50/50' : ''}`}>
+    <div className={`${PANEL_INSET} ${compact ? 'p-2.5' : 'p-3'} ${!hasNotas ? 'bg-muted/50' : ''}`}>
       {hasNotas ? (
         <p
-          className={`whitespace-pre-wrap leading-relaxed text-slate-700 ${
+          className={`whitespace-pre-wrap leading-relaxed text-fg-strong ${
             compact ? 'text-[12px]' : 'text-[13px]'
           }`}
         >
           {comentarios}
         </p>
       ) : (
-        <p className={`italic text-slate-400 ${compact ? 'text-[11px]' : 'text-[12px]'}`}>
+        <p className={`italic text-fg-faint ${compact ? 'text-[11px]' : 'text-[12px]'}`}>
           Sin notas registradas
         </p>
       )}
@@ -88,7 +88,7 @@ export default function PermisoNotasPanel({
   if (!canEdit) {
     return (
       <div className={compact ? 'mt-3' : 'space-y-2'}>
-        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+        <p className="text-[10px] font-bold uppercase tracking-wider text-fg-faint">
           Notas del permiso
         </p>
         {readOnlyBlock}
@@ -99,13 +99,13 @@ export default function PermisoNotasPanel({
   return (
     <div className="space-y-3">
       {nombrePermiso && (
-        <p className="text-[12px] text-slate-500">
-          Permiso: <span className="font-medium text-slate-700">{nombrePermiso}</span>
+        <p className="text-[12px] text-fg-subtle">
+          Permiso: <span className="font-medium text-fg-strong">{nombrePermiso}</span>
         </p>
       )}
 
       <div>
-        <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
+        <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-fg-faint">
           Notas del permiso
         </label>
         <textarea
@@ -116,7 +116,7 @@ export default function PermisoNotasPanel({
           placeholder="Recordatorios o notas importantes para este permiso..."
           className={`${FIELD_INPUT} min-h-[80px] resize-y`}
         />
-        <p className="mt-1 text-right text-[10px] text-slate-400">
+        <p className="mt-1 text-right text-[10px] text-fg-faint">
           {draft.length}/{MAX_PERMISO_COMENTARIOS_LENGTH}
         </p>
       </div>
@@ -138,7 +138,7 @@ export default function PermisoNotasPanel({
 
       {!compact && hasNotas && (
         <div>
-          <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+          <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wider text-fg-faint">
             Vista previa (lectura)
           </p>
           {readOnlyBlock}

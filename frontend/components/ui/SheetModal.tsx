@@ -60,26 +60,26 @@ export default function SheetModal({
         className={cn(
           'relative flex w-full min-h-[min(85vh,920px)] max-h-[min(92vh,920px)] flex-col',
           'animate-[sheet-slide-up_280ms_cubic-bezier(0.32,0.72,0,1)]',
-          'rounded-t-sm border border-slate-200 bg-white shadow-2xl',
+          'rounded-t-sm border border-line bg-card shadow-2xl',
           'pb-[env(safe-area-inset-bottom,0px)]',
           maxWidth,
         )}
       >
         <div className="flex shrink-0 justify-center pt-3 pb-1">
-          <div className="h-1 w-10 rounded-full bg-slate-200" aria-hidden />
+          <div className="h-1 w-10 rounded-full bg-muted-strong" aria-hidden />
         </div>
 
-        <div className="flex shrink-0 items-center justify-between border-b border-slate-200 px-5 py-3 sm:px-6">
+        <div className="flex shrink-0 items-center justify-between border-b border-line px-5 py-3 sm:px-6">
           <h2
             id="sheet-modal-title"
-            className="font-display text-lg font-semibold tracking-tight text-slate-900 sm:text-xl"
+            className="font-display text-lg font-semibold tracking-tight text-fg sm:text-xl"
           >
             {title}
           </h2>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-sm p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+            className="rounded-sm p-1.5 text-fg-faint transition-colors hover:bg-muted-strong hover:text-fg-muted"
             aria-label="Cerrar"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -95,7 +95,7 @@ export default function SheetModal({
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:px-6">{children}</div>
 
         {footer ? (
-          <div className="flex shrink-0 flex-col-reverse gap-2 border-t border-slate-200 px-5 py-4 sm:flex-row sm:justify-end sm:gap-3 sm:px-6">
+          <div className="flex shrink-0 flex-col-reverse gap-2 border-t border-line px-5 py-4 sm:flex-row sm:justify-end sm:gap-3 sm:px-6">
             {footer}
           </div>
         ) : null}

@@ -163,7 +163,7 @@ export default function PermisosPage() {
     {
       key: 'nombre',
       header: 'Permiso',
-      render: (p) => <span className="font-medium text-slate-800">{p.nombre_permiso}</span>,
+      render: (p) => <span className="font-medium text-fg">{p.nombre_permiso}</span>,
     },
     {
       key: 'ponderacion',
@@ -217,7 +217,7 @@ export default function PermisosPage() {
     return (
       <>
         <Card className="animate-pulse">
-          <div className="h-64 animate-pulse rounded-sm bg-slate-100" />
+          <div className="h-64 animate-pulse rounded-sm bg-muted-strong" />
         </Card>
       </>
     )
@@ -227,7 +227,7 @@ export default function PermisosPage() {
     return (
       <>
         <Card className="animate-pulse">
-          <div className="h-64 animate-pulse rounded-sm bg-slate-100" />
+          <div className="h-64 animate-pulse rounded-sm bg-muted-strong" />
         </Card>
       </>
     )
@@ -310,20 +310,20 @@ export default function PermisosPage() {
       >
         {deleteTarget && (
           <div className="space-y-4">
-            <p className="text-[13px] text-slate-600">
+            <p className="text-[13px] text-fg-muted">
               ¿Eliminar el permiso{' '}
-              <span className="font-semibold text-slate-800">{deleteTarget.nombre_permiso}</span>?
+              <span className="font-semibold text-fg">{deleteTarget.nombre_permiso}</span>?
             </p>
             <div className={`${PANEL_INSET} space-y-1 p-3`}>
-              <p className="text-[12px] text-slate-600">
+              <p className="text-[12px] text-fg-muted">
                 Sucursales con este permiso:{' '}
                 <span className="font-semibold tabular-nums">{deleteTarget.tiendaCount}</span>
               </p>
-              <p className="text-[12px] text-slate-600">
+              <p className="text-[12px] text-fg-muted">
                 Registros vigentes:{' '}
                 <span className="font-semibold tabular-nums">{deleteTarget.vigenteCount}</span>
               </p>
-              <p className="text-[12px] text-slate-600">
+              <p className="text-[12px] text-fg-muted">
                 Solicitudes:{' '}
                 <span className="font-semibold tabular-nums">{deleteTarget.solicitudCount}</span>
               </p>
@@ -338,7 +338,7 @@ export default function PermisosPage() {
             {actionError && deleteTarget && (
               <p className={ALERT_ERROR}>{actionError}</p>
             )}
-            <div className="flex flex-col-reverse gap-2 border-t border-slate-200 pt-4 sm:flex-row sm:justify-end sm:gap-3">
+            <div className="flex flex-col-reverse gap-2 border-t border-line pt-4 sm:flex-row sm:justify-end sm:gap-3">
               <button
                 type="button"
                 onClick={() => setDeleteTarget(null)}

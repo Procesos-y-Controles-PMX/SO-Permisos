@@ -224,9 +224,9 @@ export default function SucursalFormModal({
           </div>
         </div>
 
-        <div className="space-y-2 border-t border-slate-100 pt-2">
+        <div className="space-y-2 border-t border-line-subtle pt-2">
           <p className={PAGE_EYEBROW}>Permisos de la sucursal *</p>
-          <p className="text-[11px] leading-relaxed text-slate-500">
+          <p className="text-[11px] leading-relaxed text-fg-subtle">
             Selecciona los permisos que aplican a esta sucursal. Al desmarcar uno en edición, se
             eliminan su configuración y los expedientes o solicitudes asociados a ese permiso en
             esta tienda.
@@ -235,28 +235,28 @@ export default function SucursalFormModal({
           {catalogo.length === 0 ? (
             <p className="text-[12px] italic text-amber-600">No hay permisos en el catálogo.</p>
           ) : (
-            <div className="max-h-48 divide-y divide-slate-50 overflow-y-auto rounded-sm border border-slate-200">
+            <div className="max-h-48 divide-y divide-line-subtle overflow-y-auto rounded-sm border border-line">
               {catalogo.map((perm) => {
                 const checked = form.permisosSeleccionados.includes(perm.id)
                 return (
                   <label
                     key={perm.id}
-                    className="flex cursor-pointer items-center gap-3 px-3 py-2.5 hover:bg-slate-50/80"
+                    className="flex cursor-pointer items-center gap-3 px-3 py-2.5 hover:bg-muted/80"
                   >
                     <input
                       type="checkbox"
                       checked={checked}
                       onChange={() => togglePermiso(perm.id)}
-                      className="rounded-sm border-slate-300 text-brand focus:ring-brand/15"
+                      className="rounded-sm border-line-strong text-brand focus:ring-brand/15"
                     />
-                    <span className="text-[13px] text-slate-700">{perm.nombre_permiso}</span>
+                    <span className="text-[13px] text-fg-strong">{perm.nombre_permiso}</span>
                   </label>
                 )
               })}
             </div>
           )}
 
-          <p className="text-[11px] text-slate-400">
+          <p className="text-[11px] text-fg-faint">
             {form.permisosSeleccionados.length} permiso
             {form.permisosSeleccionados.length !== 1 ? 's' : ''} seleccionado
             {form.permisosSeleccionados.length !== 1 ? 's' : ''}

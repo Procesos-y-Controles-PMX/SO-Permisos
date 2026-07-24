@@ -7,7 +7,7 @@ export interface CardProps {
 export default function Card({ children, className = '', onClick }: CardProps) {
   return (
     <div
-      className={`rounded-sm border border-slate-200 bg-white p-5 shadow-[0_1px_3px_rgba(0,0,0,0.05)] ${className}`}
+      className={`rounded-sm border border-line bg-card p-5 shadow-[0_1px_3px_rgba(0,0,0,0.05)] ${className}`}
       onClick={onClick}
     >
       {children}
@@ -24,7 +24,7 @@ interface StatCardProps {
 }
 
 const accentMap = {
-  blue:   { iconBg: 'bg-slate-100', iconText: 'text-steel', underline: 'bg-steel' },
+  blue:   { iconBg: 'bg-muted-strong', iconText: 'text-steel', underline: 'bg-steel' },
   green:  { iconBg: 'bg-emerald-100', iconText: 'text-emerald-600', underline: 'bg-emerald-400' },
   red:    { iconBg: 'bg-red-100', iconText: 'text-red-500', underline: 'bg-red-400' },
   orange: { iconBg: 'bg-amber-100', iconText: 'text-amber-600', underline: 'bg-amber-400' },
@@ -39,9 +39,9 @@ export function StatCard({ icon, value, label, sublabel, accentColor = 'blue' }:
           {icon}
         </div>
         <div>
-          <p className="mb-1 text-[13px] text-slate-500">{label}</p>
-          <p className="text-[28px] font-bold leading-none tracking-tight text-slate-800">{value}</p>
-          {sublabel ? <p className="mt-1.5 text-[12px] text-slate-400">{sublabel}</p> : null}
+          <p className="mb-1 text-[13px] text-fg-subtle">{label}</p>
+          <p className="text-[28px] font-bold leading-none tracking-tight text-fg">{value}</p>
+          {sublabel ? <p className="mt-1.5 text-[12px] text-fg-faint">{sublabel}</p> : null}
         </div>
         <div className={`h-[3px] w-10 rounded-sm ${colors.underline}`} />
       </div>

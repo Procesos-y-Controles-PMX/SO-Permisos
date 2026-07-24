@@ -19,7 +19,7 @@ export function ProgressBar({ percentage, showLabel = true, className = '' }: Pr
     <div className={`w-full ${className}`}>
       {showLabel && (
         <div className="mb-2 flex items-end justify-between">
-          <span className="text-sm font-medium text-slate-500">Nivel de Cumplimiento</span>
+          <span className="text-sm font-medium text-fg-subtle">Nivel de Cumplimiento</span>
           <span
             className={`text-lg font-bold tabular-nums ${
               rounded < 50 ? 'text-red-600' : rounded < 85 ? 'text-orange-600' : 'text-green-600'
@@ -29,7 +29,7 @@ export function ProgressBar({ percentage, showLabel = true, className = '' }: Pr
           </span>
         </div>
       )}
-      <div className="relative h-2.5 w-full overflow-hidden rounded-full bg-slate-100 shadow-inner">
+      <div className="relative h-2.5 w-full overflow-hidden rounded-full bg-muted-strong shadow-inner">
         <div
           className={`h-full rounded-full shadow-sm transition-all duration-1000 ease-out ${getColorClass()}`}
           style={{ width: `${rounded}%` }}

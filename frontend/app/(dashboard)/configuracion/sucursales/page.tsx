@@ -269,7 +269,7 @@ export default function SucursalesPage() {
     {
       key: 'nombre_region',
       header: 'Región',
-      render: (r) => <span className="font-medium text-slate-800">{r.nombre_region}</span>,
+      render: (r) => <span className="font-medium text-fg">{r.nombre_region}</span>,
     },
     {
       key: 'gerente',
@@ -339,7 +339,7 @@ export default function SucursalesPage() {
     {
       key: 'sucursal',
       header: 'Sucursal',
-      render: (t) => <span className="font-medium text-slate-800">{t.sucursal}</span>,
+      render: (t) => <span className="font-medium text-fg">{t.sucursal}</span>,
     },
     {
       key: 'region',
@@ -408,7 +408,7 @@ export default function SucursalesPage() {
     return (
       <>
         <Card className="animate-pulse">
-          <div className="h-64 rounded-sm bg-slate-100" />
+          <div className="h-64 rounded-sm bg-muted-strong" />
         </Card>
       </>
     )
@@ -418,7 +418,7 @@ export default function SucursalesPage() {
     return (
       <>
         <Card className="animate-pulse">
-          <div className="h-64 rounded-sm bg-slate-100" />
+          <div className="h-64 rounded-sm bg-muted-strong" />
         </Card>
       </>
     )
@@ -467,8 +467,8 @@ export default function SucursalesPage() {
       <Card className="mb-5">
         <div className="flex items-center justify-between gap-3 mb-4">
           <div>
-            <h2 className="text-[15px] font-bold text-slate-800">Regiones</h2>
-            <p className="text-[11px] text-slate-400">
+            <h2 className="text-[15px] font-bold text-fg">Regiones</h2>
+            <p className="text-[11px] text-fg-faint">
               {regiones.length} región{regiones.length !== 1 ? 'es' : ''} registrada
               {regiones.length !== 1 ? 's' : ''}
             </p>
@@ -478,7 +478,7 @@ export default function SucursalesPage() {
         {/* Mobile — region cards */}
         <div className="space-y-3 md:hidden">
           {regiones.length === 0 ? (
-            <p className="text-center text-sm text-slate-500">
+            <p className="text-center text-sm text-fg-subtle">
               No hay regiones. Crea una para asignarla a las sucursales.
             </p>
           ) : (
@@ -486,8 +486,8 @@ export default function SucursalesPage() {
               <article key={r.id} className={MOBILE_LIST_CARD}>
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="font-semibold text-slate-900">{r.nombre_region}</p>
-                    <p className="mt-0.5 text-sm text-slate-500">{r.gerente_regional ?? '—'}</p>
+                    <p className="font-semibold text-fg">{r.nombre_region}</p>
+                    <p className="mt-0.5 text-sm text-fg-subtle">{r.gerente_regional ?? '—'}</p>
                   </div>
                   {r.tiendaCount > 0 ? (
                     <button
@@ -498,26 +498,26 @@ export default function SucursalesPage() {
                       {r.tiendaCount} sucursal{r.tiendaCount !== 1 ? 'es' : ''}
                     </button>
                   ) : (
-                    <span className="shrink-0 text-sm tabular-nums text-slate-400">0</span>
+                    <span className="shrink-0 text-sm tabular-nums text-fg-faint">0</span>
                   )}
                 </div>
                 <dl className="mt-3 space-y-2 text-sm">
                   <div>
-                    <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">Contacto</dt>
-                    <dd className="text-slate-700">
+                    <dt className="text-xs font-medium uppercase tracking-wide text-fg-faint">Contacto</dt>
+                    <dd className="text-fg-strong">
                       {[r.celular, r.correo].filter(Boolean).join(' · ') || '—'}
                     </dd>
                   </div>
                   <div>
-                    <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">Usuarios Regional</dt>
-                    <dd className="text-slate-700">{r.usuarioCount}</dd>
+                    <dt className="text-xs font-medium uppercase tracking-wide text-fg-faint">Usuarios Regional</dt>
+                    <dd className="text-fg-strong">{r.usuarioCount}</dd>
                   </div>
                 </dl>
-                <div className="mt-3 flex gap-2 border-t border-slate-100 pt-3">
+                <div className="mt-3 flex gap-2 border-t border-line-subtle pt-3">
                   <button
                     type="button"
                     onClick={() => handleOpenEditRegion(r)}
-                    className="flex-1 rounded-sm border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold text-slate-700"
+                    className="flex-1 rounded-sm border border-line bg-card px-3 py-2.5 text-sm font-semibold text-fg-strong"
                   >
                     Editar
                   </button>
@@ -573,7 +573,7 @@ export default function SucursalesPage() {
       {/* Mobile — sucursal cards */}
       <div className="space-y-3 md:hidden">
         {paginated.length === 0 ? (
-          <p className="text-center text-sm text-slate-500">
+          <p className="text-center text-sm text-fg-subtle">
             No hay sucursales que coincidan con los filtros.
           </p>
         ) : (
@@ -581,34 +581,34 @@ export default function SucursalesPage() {
             <article key={t.id} className={MOBILE_LIST_CARD}>
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="font-semibold text-slate-900">{t.sucursal}</p>
-                  <p className="mt-0.5 text-sm text-slate-500">{t.region?.nombre_region ?? '—'}</p>
+                  <p className="font-semibold text-fg">{t.sucursal}</p>
+                  <p className="mt-0.5 text-sm text-fg-subtle">{t.region?.nombre_region ?? '—'}</p>
                 </div>
-                <span className="shrink-0 text-sm tabular-nums text-slate-600">{t.permisoCount} permisos</span>
+                <span className="shrink-0 text-sm tabular-nums text-fg-muted">{t.permisoCount} permisos</span>
               </div>
               <dl className="mt-3 space-y-2 text-sm">
                 <div>
-                  <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">Gerente</dt>
-                  <dd className="text-slate-700">{t.gerente_tienda ?? '—'}</dd>
+                  <dt className="text-xs font-medium uppercase tracking-wide text-fg-faint">Gerente</dt>
+                  <dd className="text-fg-strong">{t.gerente_tienda ?? '—'}</dd>
                 </div>
                 <div>
-                  <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">Contacto</dt>
-                  <dd className="text-slate-700">
+                  <dt className="text-xs font-medium uppercase tracking-wide text-fg-faint">Contacto</dt>
+                  <dd className="text-fg-strong">
                     {[t.celular, t.correo].filter(Boolean).join(' · ') || '—'}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">Centro / CC</dt>
-                  <dd className="font-mono text-slate-700">
+                  <dt className="text-xs font-medium uppercase tracking-wide text-fg-faint">Centro / CC</dt>
+                  <dd className="font-mono text-fg-strong">
                     {[t.centro, t.cc].filter(Boolean).join(' / ') || '—'}
                   </dd>
                 </div>
               </dl>
-              <div className="mt-3 flex gap-2 border-t border-slate-100 pt-3">
+              <div className="mt-3 flex gap-2 border-t border-line-subtle pt-3">
                 <button
                   type="button"
                   onClick={() => handleOpenEdit(t)}
-                  className="flex-1 rounded-sm border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold text-slate-700"
+                  className="flex-1 rounded-sm border border-line bg-card px-3 py-2.5 text-sm font-semibold text-fg-strong"
                 >
                   Editar
                 </button>
@@ -680,7 +680,7 @@ export default function SucursalesPage() {
 
       {formOpen && loadingPermisos && (
         <Card className="fixed inset-0 z-50 m-auto max-w-sm h-fit text-center py-8 shadow-xl">
-          <p className="text-sm text-slate-500">Cargando permisos...</p>
+          <p className="text-sm text-fg-subtle">Cargando permisos...</p>
         </Card>
       )}
 
@@ -693,16 +693,16 @@ export default function SucursalesPage() {
       >
         {deleteRegionTarget && (
           <div className="space-y-4">
-            <p className="text-[13px] text-slate-600">
+            <p className="text-[13px] text-fg-muted">
               ¿Eliminar la región{' '}
-              <span className="font-semibold text-slate-800">{deleteRegionTarget.nombre_region}</span>?
+              <span className="font-semibold text-fg">{deleteRegionTarget.nombre_region}</span>?
             </p>
             <div className={`${PANEL_INSET} space-y-1 p-3`}>
-              <p className="text-[12px] text-slate-600">
+              <p className="text-[12px] text-fg-muted">
                 Sucursales vinculadas:{' '}
                 <span className="font-semibold tabular-nums">{deleteRegionTarget.tiendaCount}</span>
               </p>
-              <p className="text-[12px] text-slate-600">
+              <p className="text-[12px] text-fg-muted">
                 Usuarios Regional vinculados:{' '}
                 <span className="font-semibold tabular-nums">{deleteRegionTarget.usuarioCount}</span>
               </p>
@@ -723,7 +723,7 @@ export default function SucursalesPage() {
             {actionError && deleteRegionTarget && (
               <p className={ALERT_ERROR}>{actionError}</p>
             )}
-            <div className="flex flex-col-reverse gap-2 border-t border-slate-200 pt-4 sm:flex-row sm:justify-end sm:gap-3">
+            <div className="flex flex-col-reverse gap-2 border-t border-line pt-4 sm:flex-row sm:justify-end sm:gap-3">
               <button
                 type="button"
                 onClick={() => setDeleteRegionTarget(null)}
@@ -758,9 +758,9 @@ export default function SucursalesPage() {
       >
         {deleteTarget && (
           <div className="space-y-4">
-            <p className="text-[13px] text-slate-600">
+            <p className="text-[13px] text-fg-muted">
               ¿Eliminar la sucursal{' '}
-              <span className="font-semibold text-slate-800">{deleteTarget.sucursal}</span>?
+              <span className="font-semibold text-fg">{deleteTarget.sucursal}</span>?
             </p>
             <div className={ALERT_WARNING}>
               <p className="text-[12px] leading-relaxed">
@@ -772,7 +772,7 @@ export default function SucursalesPage() {
             {actionError && deleteTarget && (
               <p className={ALERT_ERROR}>{actionError}</p>
             )}
-            <div className="flex flex-col-reverse gap-2 border-t border-slate-200 pt-4 sm:flex-row sm:justify-end sm:gap-3">
+            <div className="flex flex-col-reverse gap-2 border-t border-line pt-4 sm:flex-row sm:justify-end sm:gap-3">
               <button
                 type="button"
                 onClick={() => setDeleteTarget(null)}

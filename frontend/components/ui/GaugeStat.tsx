@@ -5,7 +5,7 @@ import Link from 'next/link'
 type Tone = 'default' | 'ok' | 'warn' | 'crit' | 'steel'
 
 const TONE: Record<Tone, { value: string; fill: string; label: string }> = {
-  default: { value: 'text-slate-900', fill: 'bg-slate-400', label: 'text-slate-600' },
+  default: { value: 'text-fg', fill: 'bg-slate-400', label: 'text-fg-muted' },
   ok: { value: 'text-status-ok', fill: 'bg-status-ok', label: 'text-status-ok' },
   warn: { value: 'text-status-warn', fill: 'bg-status-warn', label: 'text-status-warn' },
   crit: { value: 'text-brand', fill: 'bg-brand', label: 'text-brand' },
@@ -56,7 +56,7 @@ function TickMeter({
         return (
           <span
             key={i}
-            className={`w-px rounded-full ${major ? majorH : minorH} ${on ? fill : 'bg-slate-200'}`}
+            className={`w-px rounded-full ${major ? majorH : minorH} ${on ? fill : 'bg-muted-strong'}`}
           />
         )
       })}
@@ -96,7 +96,7 @@ export default function GaugeStat({
           {value}
         </span>
         {unit ? (
-          <span className={`font-mono font-medium text-slate-400 ${isMini ? 'text-[10px]' : 'text-xs'}`}>
+          <span className={`font-mono font-medium text-fg-faint ${isMini ? 'text-[10px]' : 'text-xs'}`}>
             {unit}
           </span>
         ) : null}
@@ -113,10 +113,10 @@ export default function GaugeStat({
         <p
           className={`font-mono leading-snug ${
             isMini
-              ? 'mt-1.5 text-[9px] text-slate-500'
+              ? 'mt-1.5 text-[9px] text-fg-subtle'
               : isCompact
-                ? 'mt-2 text-[10px] text-slate-600'
-                : 'mt-3 text-[11px] leading-relaxed text-slate-400'
+                ? 'mt-2 text-[10px] text-fg-muted'
+                : 'mt-3 text-[11px] leading-relaxed text-fg-faint'
           }`}
         >
           {sublabel}
@@ -133,7 +133,7 @@ export default function GaugeStat({
             ? `text-[11px] ${t.label}`
             : isCompact
               ? `text-sm ${t.label}`
-              : 'font-mono text-[11px] font-medium text-slate-400 tracking-[0.18em]'
+              : 'font-mono text-[11px] font-medium text-fg-faint tracking-[0.18em]'
         }`}
       >
         {label}
@@ -150,7 +150,7 @@ export default function GaugeStat({
 
   if (href) {
     return (
-      <Link href={href} className={`${base} block transition-colors hover:bg-slate-50/70 ${className}`}>
+      <Link href={href} className={`${base} block transition-colors hover:bg-muted/70 ${className}`}>
         {body}
       </Link>
     )
@@ -169,7 +169,7 @@ export function GaugeStatRow({
 }) {
   return (
     <div
-      className={`flex flex-col overflow-hidden rounded-sm border border-slate-200 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.05)] divide-y divide-slate-100 sm:flex-row sm:divide-x sm:divide-y-0 ${className}`}
+      className={`flex flex-col overflow-hidden rounded-sm border border-line bg-card shadow-[0_1px_3px_rgba(0,0,0,0.05)] divide-y divide-line-subtle sm:flex-row sm:divide-x sm:divide-y-0 ${className}`}
     >
       {children}
     </div>
@@ -186,7 +186,7 @@ export function GaugeStatGrid({
 }) {
   return (
     <div
-      className={`grid grid-cols-2 gap-px overflow-hidden rounded-sm border border-slate-200 bg-slate-100 shadow-[0_1px_2px_rgba(0,0,0,0.04)] sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 ${className}`}
+      className={`grid grid-cols-2 gap-px overflow-hidden rounded-sm border border-line bg-muted-strong shadow-[0_1px_2px_rgba(0,0,0,0.04)] sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 ${className}`}
     >
       {children}
     </div>
