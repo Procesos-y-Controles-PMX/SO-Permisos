@@ -21,7 +21,7 @@ export default function DashboardGroupLayout({
   }, [perfil, loading, router])
 
   if (loading) {
-    return <GridLoadingScreen message="Verificando sesión..." variant="light" />
+    return <GridLoadingScreen message="Verificando sesión..." variant="dark" />
   }
 
   // Not logged in — will redirect
