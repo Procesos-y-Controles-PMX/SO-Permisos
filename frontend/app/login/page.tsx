@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AlertCircle } from "lucide-react";
+import { GridLoadingScreen } from "@promexma/ui";
 import { useAuth } from "@/contexts/AuthContext";
 import LoginShell from "@/components/login/LoginShell";
 import { loginButtonClass, loginInputClass, loginTitleClass } from "@/components/login/loginStyles";
@@ -24,11 +25,7 @@ export default function LoginPage() {
   }, []);
 
   if (PORTAL_URL) {
-    return (
-      <main className="flex min-h-dvh items-center justify-center bg-[#0d1117]">
-        <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-brand" role="status" aria-label="Cargando" />
-      </main>
-    );
+    return <GridLoadingScreen variant="dark" message="Redirigiendo al portal..." />;
   }
 
   const onSubmit = async (e: React.FormEvent) => {
