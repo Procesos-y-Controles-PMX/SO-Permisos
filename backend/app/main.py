@@ -23,7 +23,19 @@ else:
     # Esta instancia es la que usarás para guardar las solicitudes en la DB
     supabase: Client = create_client(url, key)
 
-app = FastAPI(title="SO-Permisos API")
+# Disable interactive API docs in production (endpoint/schema recon). ON locally.
+_IS_PRODUCTION = bool(os.getenv("RAILWAY_ENVIRONMENT") or os.getenv("RAILWAY_PROJECT_ID"))
+_DOCS_ENABLED = (
+    os.getenv("ENABLE_API_DOCS", "").strip().lower() in ("1", "true", "yes")
+    or not _IS_PRODUCTION
+)
+
+app = FastAPI(
+    title="SO-Permisos API",
+    docs_url="/docs" if _DOCS_ENABLED else None,
+    redoc_url="/redoc" if _DOCS_ENABLED else None,
+    openapi_url="/openapi.json" if _DOCS_ENABLED else None,
+)
 
 # --- Middleware (CRUCIAL para conectar con Next.js) ---
 app.add_middleware(
@@ -56,4 +68,6 @@ def check_supabase():
         response = supabase.table("test_connection").select("*").execute()
         return {"datos": response.data}
     except Exception as e:
-        return {"error": str(e)}
+        # Log the detail server-side; don't leak internals to the caller.
+        print(f"⚠️ supabase-check failed: {e}")
+        return {"error": "No se pudo verificar la conexión."}
