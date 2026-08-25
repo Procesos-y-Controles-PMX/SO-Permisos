@@ -86,7 +86,7 @@ function sortUsuariosByRol(list: Perfil[]): Perfil[] {
 
 export default function UsuariosPage() {
   const router = useRouter()
-  const { perfil, isAdmin, loading: authLoading } = useAuth()
+  const { perfil, isAdmin, isOwnerAdmin, loading: authLoading } = useAuth()
   const {
     usuarios,
     roles,
@@ -323,11 +323,17 @@ export default function UsuariosPage() {
         <span className="text-fg-muted">{getUsuarioRegionNombre(u) ?? '—'}</span>
       ),
     },
-    {
-      key: 'created_at',
-      header: 'Alta',
-      render: (u) => <span className="text-[12px] text-fg-subtle">{formatDate(u.created_at)}</span>,
-    },
+    ...(isOwnerAdmin
+      ? [
+          {
+            key: 'created_at',
+            header: 'Alta',
+            render: (u: Perfil) => (
+              <span className="text-[12px] text-fg-subtle">{formatDate(u.created_at)}</span>
+            ),
+          } as Column<Perfil>,
+        ]
+      : []),
     {
       key: 'acciones',
       header: 'Acciones',

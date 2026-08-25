@@ -14,7 +14,13 @@ import {
   SIDEBAR_SHELL,
   SIDEBAR_USER_CARD,
 } from '@/components/layout/shellStyles'
-import { filterNavByRole, isPermisosNavActive, CONFIGURACION_HREF, configuracionNavIcon, isConfiguracionNavActive } from '@/components/layout/navConfig'
+import {
+  filterNavByRole,
+  isPermisosNavActive,
+  CONFIGURACION_HREF,
+  configuracionNavIcon,
+  isConfiguracionNavActive,
+} from '@/components/layout/navConfig'
 
 function SidebarPanel({
   collapsed,

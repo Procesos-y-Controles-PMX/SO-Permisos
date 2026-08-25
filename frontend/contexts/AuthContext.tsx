@@ -17,6 +17,7 @@ interface AuthState {
   loading: boolean
   // Role helpers
   isAdmin: boolean
+  isOwnerAdmin: boolean
   isTienda: boolean
   isRegional: boolean
   // Actions
@@ -135,6 +136,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // ─ Role helpers ─
   const isAdmin = rol === 'Admin' || isOwnerAdminEmail(perfil?.email)
+  const isOwnerAdmin = isOwnerAdminEmail(perfil?.email)
   const isTienda = rol === 'Tienda'
   const isRegional = rol === 'Regional'
 
@@ -145,6 +147,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         rol,
         loading,
         isAdmin,
+        isOwnerAdmin,
         isTienda,
         isRegional,
         signIn,

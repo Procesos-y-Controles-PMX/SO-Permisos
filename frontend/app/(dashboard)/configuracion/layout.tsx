@@ -8,7 +8,7 @@ import { useAuth } from '@/contexts/AuthContext'
 
 export default function ConfiguracionLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
-  const { isAdmin, loading } = useAuth()
+  const { isAdmin, isOwnerAdmin, loading } = useAuth()
 
   useEffect(() => {
     if (!loading && !isAdmin) {
@@ -31,7 +31,11 @@ export default function ConfiguracionLayout({ children }: { children: React.Reac
       <PageHeader
         eyebrow="Permisos"
         title="Configuración"
-        subtitle="Administración de usuarios, sucursales y catálogo de permisos."
+        subtitle={
+          isOwnerAdmin
+            ? "Usuarios, sucursales, catálogo de permisos y accesos."
+            : "Usuarios, sucursales y catálogo de permisos."
+        }
       />
       <ConfiguracionTabs />
       {children}

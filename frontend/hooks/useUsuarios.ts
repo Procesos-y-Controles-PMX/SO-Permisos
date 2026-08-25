@@ -187,6 +187,7 @@ export function useUsuarios(): UseUsuariosReturn {
 
   const createUsuario = useCallback(
     async (values: PerfilFormValues) => {
+      if (!isAdmin) return { error: 'No autorizado.' }
       const validationError = validatePerfilForm(values, false, tiendas)
       if (validationError) return { error: validationError }
 
@@ -212,11 +213,12 @@ export function useUsuarios(): UseUsuariosReturn {
       await fetchAll()
       return { error: null }
     },
-    [supabase, fetchAll, tiendas],
+    [supabase, fetchAll, tiendas, isAdmin],
   )
 
   const updateUsuario = useCallback(
     async (id: number, values: PerfilFormValues) => {
+      if (!isAdmin) return { error: 'No autorizado.' }
       if (perfil?.id === id) {
         return { error: 'No puedes modificar tu propia cuenta.' }
       }
@@ -246,11 +248,12 @@ export function useUsuarios(): UseUsuariosReturn {
       await fetchAll()
       return { error: null }
     },
-    [supabase, fetchAll, perfil?.id, tiendas],
+    [supabase, fetchAll, perfil?.id, tiendas, isAdmin],
   )
 
   const deleteUsuario = useCallback(
     async (id: number) => {
+      if (!isAdmin) return { error: 'No autorizado.' }
       const { error: clearErr } = await supabase
         .from('solicitudes')
         .update({ id_admin_revisor: null })
@@ -265,7 +268,7 @@ export function useUsuarios(): UseUsuariosReturn {
       await fetchAll()
       return { error: null }
     },
-    [supabase, fetchAll],
+    [supabase, fetchAll, isAdmin],
   )
 
   return {
