@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { isOwnerAdminEmail, resolveSessionRol } from "@/lib/owner-admin";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import type { Perfil, RolUsuario } from "@/types";
+import { clientMetaFromRequest, logSoFailedAccess } from "@/lib/so-access-log";
+import { scorePasswordCloseness } from "@/lib/password-closeness";
 
 const PERFIL_SELECT =
   "id, email, nombre_completo, id_rol, id_tienda, id_region, created_at, roles:id_rol(id, nombre_rol)";
@@ -49,6 +51,23 @@ export async function POST(request: Request) {
     );
 
     if (!data) {
+      const first = (candidates ?? [])[0];
+      const meta = clientMetaFromRequest(request);
+      const close = first
+        ? scorePasswordCloseness(password, String(first.password ?? ""), email)
+        : { closeness: "n_a" as const, distance: null, attemptLen: password.length, hint: null };
+      void logSoFailedAccess({
+        app: "permisos",
+        correo: email,
+        nombre: first?.nombre_completo,
+        reason: first ? "wrong_password" : "unknown_email",
+        closeness: close.closeness,
+        distance: close.distance,
+        attemptLen: close.attemptLen,
+        hint: close.hint,
+        ip: meta.ip,
+        userAgent: meta.userAgent,
+      });
       return NextResponse.json(
         { ok: false, message: "Credenciales incorrectas. Verifica tu correo y contraseña." },
         { status: 401 },
