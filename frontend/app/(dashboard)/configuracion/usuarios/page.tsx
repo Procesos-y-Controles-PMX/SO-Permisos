@@ -18,6 +18,7 @@ import {
   MOBILE_LIST_CARD,
 } from '@/components/ui/contentStyles'
 import FilterSelect from '@/components/common/FilterSelect'
+import { rolDisplayName } from '@/lib/owner-admin'
 import type { Perfil, PerfilFormValues, RolUsuario } from '@/types'
 
 const PAGE_SIZE = TABLE_PAGE_SIZE
@@ -305,7 +306,7 @@ export default function UsuariosPage() {
       key: 'rol',
       header: 'Rol',
       render: (u) => (
-        <Badge variant={rolBadgeVariant(u.rol?.nombre_rol)}>{u.rol?.nombre_rol ?? '—'}</Badge>
+        <Badge variant={rolBadgeVariant(u.rol?.nombre_rol)}>{rolDisplayName(u.rol?.nombre_rol)}</Badge>
       ),
     },
     {
@@ -421,7 +422,7 @@ export default function UsuariosPage() {
             onChange={handleFilterRolChange}
             options={[
               { value: '', label: 'Todos los roles' },
-              ...roles.map((r) => ({ value: String(r.id), label: r.nombre_rol })),
+              ...roles.map((r) => ({ value: String(r.id), label: rolDisplayName(r.nombre_rol) })),
             ]}
             inputClassName={FIELD_SELECT_TRIGGER}
           />
@@ -461,7 +462,7 @@ export default function UsuariosPage() {
                     <p className="font-semibold text-fg">{u.nombre_completo || '—'}</p>
                     <p className="mt-0.5 truncate text-sm text-fg-muted">{u.email}</p>
                   </div>
-                  <Badge variant={rolBadgeVariant(u.rol?.nombre_rol)}>{u.rol?.nombre_rol ?? '—'}</Badge>
+                  <Badge variant={rolBadgeVariant(u.rol?.nombre_rol)}>{rolDisplayName(u.rol?.nombre_rol)}</Badge>
                 </div>
                 <dl className="mt-3 space-y-2 text-sm">
                   <div>

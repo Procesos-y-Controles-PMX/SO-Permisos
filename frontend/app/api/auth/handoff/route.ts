@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { jwtVerify } from "jose";
+import { isOwnerAdminEmail, resolveSessionRol } from "@/lib/owner-admin";
 import type { Perfil, RolUsuario } from "@/types";
 
 /**
@@ -34,7 +35,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: false, message: "Token inválido." }, { status: 401 });
     }
 
-    return NextResponse.json({ ok: true, perfil: session.perfil, rol: session.rol ?? null });
+    const perfil = isOwnerAdminEmail(session.perfil.email)
+      ? { ...session.perfil, id_rol: 1, id_tienda: null, id_region: null }
+      : session.perfil;
+
+    return NextResponse.json({
+      ok: true,
+      perfil,
+      rol: resolveSessionRol(perfil.email, session.rol ?? null),
+    });
   } catch {
     return NextResponse.json(
       { ok: false, message: "Token inválido o expirado. Inicia sesión de nuevo." },

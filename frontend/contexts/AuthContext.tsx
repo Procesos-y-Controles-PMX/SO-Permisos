@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useState, useCallback } from 'rea
 import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import type { Perfil, RolUsuario } from '@/types'
+import { isOwnerAdminEmail, resolveSessionRol } from '@/lib/owner-admin'
 
 // ── Storage key ────────────────────────────────────────────
 const STORAGE_KEY = 'permisos_user'
@@ -82,7 +83,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     setPerfil(perfilData)
-    setRol(rolData?.nombre_rol ?? null)
+    setRol(resolveSessionRol(perfilData.email, rolData?.nombre_rol ?? null))
   }, [supabase])
 
   // ─ Sign In via server API (service role + TLS-safe) ─
@@ -133,7 +134,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   // ─ Role helpers ─
-  const isAdmin = rol === 'Admin'
+  const isAdmin = rol === 'Admin' || isOwnerAdminEmail(perfil?.email)
   const isTienda = rol === 'Tienda'
   const isRegional = rol === 'Regional'
 

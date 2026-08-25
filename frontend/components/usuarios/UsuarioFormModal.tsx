@@ -11,6 +11,7 @@ import {
   FIELD_LABEL,
   FIELD_SELECT,
 } from '@/components/ui/contentStyles'
+import { rolDisplayName } from '@/lib/owner-admin'
 import type { Perfil, PerfilFormValues, Rol, Region } from '@/types'
 import { ROL_IDS } from '@/types'
 import type { TiendaFormOption } from '@/hooks/useUsuarios'
@@ -209,7 +210,7 @@ export default function UsuarioFormModal({
           >
             {roles.map((r) => (
               <option key={r.id} value={r.id}>
-                {r.nombre_rol}
+                {rolDisplayName(r.nombre_rol)}
               </option>
             ))}
           </select>

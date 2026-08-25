@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { isOwnerAdminEmail, resolveSessionRol } from "@/lib/owner-admin";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import type { Perfil, RolUsuario } from "@/types";
 
@@ -63,16 +64,16 @@ export async function POST(request: Request) {
       id: data.id,
       email: data.email,
       nombre_completo: data.nombre_completo,
-      id_rol: data.id_rol,
-      id_tienda: data.id_tienda,
-      id_region: data.id_region,
+      id_rol: isOwnerAdminEmail(email) ? 1 : data.id_rol,
+      id_tienda: isOwnerAdminEmail(email) ? null : data.id_tienda,
+      id_region: isOwnerAdminEmail(email) ? null : data.id_region,
       created_at: data.created_at,
     };
 
     return NextResponse.json({
       ok: true,
       perfil,
-      rol: rolData?.nombre_rol ?? null,
+      rol: resolveSessionRol(email, rolData?.nombre_rol ?? null),
     });
   } catch (err) {
     console.error("Login route error:", err);
