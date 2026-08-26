@@ -51,7 +51,7 @@ function SidebarPanel({
 
   return (
     <>
-      <div className="relative flex h-16 shrink-0 items-center justify-between border-b border-white/10 px-5">
+      <div className="relative flex h-16 shrink-0 items-center justify-between px-5">
         <Link href="/directorio" className="flex items-center gap-2.5 overflow-hidden" onClick={onNavigate}>
           <Image src="/circulo-promexma.png" alt="Promexma" width={30} height={30} className="shrink-0 rounded-full" />
           {!collapsed && (
@@ -65,7 +65,7 @@ function SidebarPanel({
           <button
             type="button"
             onClick={onToggleCollapse}
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-slate-600 bg-slate-900 text-fg-faint transition-all hover:border-slate-500 hover:bg-slate-800 hover:text-fg-faint"
+            className="neu-button flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-fg-subtle hover:text-fg"
             aria-label={collapsed ? 'Expandir menú' : 'Colapsar menú'}
           >
             <svg
@@ -108,9 +108,6 @@ function SidebarPanel({
                   >
                     <span className="shrink-0">{item.icon}</span>
                     {!collapsed && <span className="truncate">{item.label}</span>}
-                    {active && !collapsed ? (
-                      <span className="animate-rail-glow pointer-events-none absolute bottom-2 left-0 top-2 w-[3px] rounded-full bg-card/70" />
-                    ) : null}
                   </Link>
                 )
               })}
@@ -119,7 +116,7 @@ function SidebarPanel({
         ))}
       </nav>
 
-      <div className={cn('mx-3 mb-3 shrink-0 space-y-2 border-t border-white/10 pt-3', SIDEBAR_USER_CARD)}>
+      <div className={cn('mx-3 mb-3 shrink-0 space-y-2', SIDEBAR_USER_CARD)}>
         {collapsed ? (
           <div className="flex justify-center">
             <GridThemeToggle compact />
@@ -144,7 +141,7 @@ function SidebarPanel({
                   onNavigate?.()
                   signOut()
                 }}
-                className="rounded-sm p-1.5 text-fg-subtle transition-colors hover:bg-white/10 hover:text-fg-faint"
+                className="neu-button rounded-full p-1.5 text-fg-subtle hover:text-fg"
                 title="Cerrar sesión"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -155,22 +152,19 @@ function SidebarPanel({
           )}
         </div>
         {showConfiguracion && (
-          <div className={cn('border-t border-white/10 pt-2', collapsed ? 'flex justify-center' : '')}>
+          <div className={cn(collapsed ? 'flex justify-center' : '')}>
             <Link
               href={CONFIGURACION_HREF}
               title="Configuración"
               onClick={onNavigate}
               className={cn(
-                'relative flex w-full items-center rounded-sm text-[13px] font-medium transition-all duration-200',
+                'relative flex w-full items-center rounded-sm text-[13px] font-medium',
                 collapsed ? 'justify-center p-1.5' : 'gap-3 px-2 py-1.5',
-                configuracionActive ? SIDEBAR_NAV_ACTIVE : 'text-fg-subtle hover:bg-white/10 hover:text-fg-faint',
+                configuracionActive ? SIDEBAR_NAV_ACTIVE : SIDEBAR_NAV_IDLE,
               )}
             >
               <span className="shrink-0">{configuracionNavIcon}</span>
               {!collapsed && <span className="truncate">Configuración</span>}
-              {configuracionActive && !collapsed ? (
-                <span className="animate-rail-glow pointer-events-none absolute bottom-1.5 left-0 top-1.5 w-[3px] rounded-full bg-card/70" />
-              ) : null}
             </Link>
           </div>
         )}
@@ -195,16 +189,16 @@ export default function Sidebar() {
 
       <aside
         className={cn(
-          'fixed left-0 top-0 z-50 flex w-[min(280px,88vw)] flex-col shadow-xl transition-transform duration-300 ease-in-out lg:hidden',
+          'fixed left-0 top-0 z-50 flex w-[min(280px,88vw)] flex-col transition-transform duration-300 ease-in-out lg:hidden',
           SIDEBAR_SHELL,
           mobileNavOpen ? 'translate-x-0' : '-translate-x-full pointer-events-none',
         )}
         aria-hidden={!mobileNavOpen}
       >
-        <div className="flex items-center justify-end border-b border-white/10 px-3 py-2">
+        <div className="flex items-center justify-end px-3 py-2">
           <button
             type="button"
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-fg-faint hover:bg-white/10 hover:text-fg-faint"
+            className="neu-button flex h-9 w-9 items-center justify-center rounded-sm text-fg-subtle hover:text-fg"
             aria-label="Cerrar menú"
             onClick={() => setMobileNavOpen(false)}
           >
@@ -218,7 +212,7 @@ export default function Sidebar() {
 
       <aside
         className={cn(
-          'fixed left-0 top-0 z-40 hidden shadow-lg transition-all duration-300 ease-in-out lg:flex lg:flex-col',
+          'fixed left-0 top-0 z-40 hidden transition-all duration-300 ease-in-out lg:flex lg:flex-col',
           SIDEBAR_SHELL,
           sidebarCollapsed ? 'w-[72px]' : 'w-[250px]',
         )}

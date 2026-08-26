@@ -19,12 +19,9 @@ export default function Input({ label, error, className = '', id, ...props }: In
       <input
         id={id}
         className={`
-          w-full min-h-12 rounded-sm border border-line bg-muted px-4 py-2.5 text-base text-fg
-          placeholder:text-fg-faint
-          transition-all duration-200
-          focus:border-brand focus:bg-card focus:outline-none focus:ring-2 focus:ring-brand/15
+          neu-field w-full min-h-12 rounded-sm px-4 py-2.5 text-base text-fg
+          placeholder:text-fg-faint focus:outline-none
           md:min-h-0 md:py-2.5 md:text-sm
-          ${error ? 'border-red-400 focus:border-red-400 focus:ring-red-400/20' : ''}
           ${className}
         `}
         {...props}
