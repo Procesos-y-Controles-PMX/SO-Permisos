@@ -10,6 +10,8 @@ import { cn } from '@/lib/utils'
 import {
   SIDEBAR_NAV_ACTIVE,
   SIDEBAR_NAV_IDLE,
+  SIDEBAR_NAV_LIST,
+  SIDEBAR_NAV_LIST_COLLAPSED,
   SIDEBAR_SECTION_LABEL,
   SIDEBAR_SHELL,
   SIDEBAR_USER_CARD,
@@ -91,7 +93,7 @@ function SidebarPanel({
                 <p className={SIDEBAR_SECTION_LABEL}>{group.title}</p>
               </div>
             )}
-            <div className="space-y-0.5">
+            <div className={collapsed ? SIDEBAR_NAV_LIST_COLLAPSED : SIDEBAR_NAV_LIST}>
               {group.items.map((item) => {
                 const active = isPermisosNavActive(pathname, item.href)
                 return (
