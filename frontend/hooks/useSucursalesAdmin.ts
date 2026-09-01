@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
+import { formatErrorMessage } from '@/lib/format-error'
 import type { CatalogoPermiso, Region, Tienda } from '@/types'
 
 export interface TiendaFormValues {
@@ -170,7 +171,7 @@ interface UseSucursalesAdminReturn {
 
 export function useSucursalesAdmin(): UseSucursalesAdminReturn {
   const supabase = useMemo(() => createClient(), [])
-  const { isAdmin } = useAuth()
+  const { isAdmin, loading: authLoading } = useAuth()
 
   const [tiendas, setTiendas] = useState<TiendaAdminRow[]>([])
   const [regiones, setRegiones] = useState<RegionAdminRow[]>([])
@@ -179,6 +180,8 @@ export function useSucursalesAdmin(): UseSucursalesAdminReturn {
   const [error, setError] = useState<string | null>(null)
 
   const fetchAll = useCallback(async () => {
+    if (authLoading) return
+
     if (!isAdmin) {
       setTiendas([])
       setLoading(false)
@@ -189,65 +192,28 @@ export function useSucursalesAdmin(): UseSucursalesAdminReturn {
     setError(null)
 
     try {
-      const [tiendasRes, regionesRes, catalogoRes, configRes, perfilesRes] = await Promise.all([
-        supabase
-          .from('tiendas')
-          .select('*, region:id_region(id, nombre_region)')
-          .order('sucursal'),
-        supabase
-          .from('regiones')
-          .select('id, nombre_region, gerente_regional, celular, correo')
-          .order('nombre_region'),
-        supabase.from('catalogo_permisos').select('id, nombre_permiso, ponderacion').order('nombre_permiso'),
-        supabase.from('configuracion_tienda_permisos').select('id_tienda'),
-        supabase.from('perfiles').select('id_region'),
-      ])
+      const response = await fetch('/api/admin/sucursales', { cache: 'no-store' })
+      const payload = (await response.json()) as {
+        ok: boolean
+        message?: string
+        tiendas?: TiendaAdminRow[]
+        regiones?: RegionAdminRow[]
+        catalogo?: CatalogoPermiso[]
+      }
 
-      if (tiendasRes.error) throw tiendasRes.error
-      if (regionesRes.error) throw regionesRes.error
-      if (catalogoRes.error) throw catalogoRes.error
-      if (configRes.error) throw configRes.error
-      if (perfilesRes.error) throw perfilesRes.error
+      if (!response.ok || !payload.ok) {
+        throw new Error(payload.message || 'Error al cargar sucursales')
+      }
 
-      const countByTienda = new Map<number, number>()
-      ;(configRes.data || []).forEach((row) => {
-        const tid = row.id_tienda as number
-        countByTienda.set(tid, (countByTienda.get(tid) || 0) + 1)
-      })
-
-      const rows: TiendaAdminRow[] = (tiendasRes.data || []).map((t) => ({
-        ...(t as Tienda),
-        permisoCount: countByTienda.get((t as Tienda).id) || 0,
-      }))
-
-      const countByRegion = new Map<number, number>()
-      rows.forEach((t) => {
-        const rid = t.id_region ?? t.region?.id
-        if (rid) countByRegion.set(rid, (countByRegion.get(rid) || 0) + 1)
-      })
-
-      const countUsersByRegion = new Map<number, number>()
-      ;(perfilesRes.data || []).forEach((p) => {
-        const rid = p.id_region as number | null
-        if (rid) countUsersByRegion.set(rid, (countUsersByRegion.get(rid) || 0) + 1)
-      })
-
-      const regionRows: RegionAdminRow[] = (regionesRes.data || []).map((r) => ({
-        ...(r as RegionAdminRow),
-        tiendaCount: countByRegion.get((r as RegionAdminRow).id) || 0,
-        usuarioCount: countUsersByRegion.get((r as RegionAdminRow).id) || 0,
-      }))
-
-      setTiendas(rows)
-      setRegiones(regionRows)
-      setCatalogo((catalogoRes.data || []) as CatalogoPermiso[])
+      setTiendas(payload.tiendas || [])
+      setRegiones(payload.regiones || [])
+      setCatalogo(payload.catalogo || [])
     } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : 'Error al cargar sucursales'
-      setError(message)
+      setError(formatErrorMessage(e, 'Error al cargar sucursales'))
     } finally {
       setLoading(false)
     }
-  }, [supabase, isAdmin])
+  }, [isAdmin, authLoading])
 
   useEffect(() => {
     fetchAll()
@@ -255,15 +221,22 @@ export function useSucursalesAdmin(): UseSucursalesAdminReturn {
 
   const getPermisosAsignados = useCallback(
     async (idTienda: number) => {
-      const { data, error: err } = await supabase
-        .from('configuracion_tienda_permisos')
-        .select('id_tipo_permiso')
-        .eq('id_tienda', idTienda)
+      try {
+        const response = await fetch(`/api/admin/sucursales/permisos?id_tienda=${idTienda}`, {
+          cache: 'no-store',
+        })
+        const payload = (await response.json()) as {
+          ok: boolean
+          permisos?: number[]
+        }
 
-      if (err) return []
-      return (data || []).map((r) => r.id_tipo_permiso as number)
+        if (!response.ok || !payload.ok) return []
+        return payload.permisos || []
+      } catch {
+        return []
+      }
     },
-    [supabase],
+    [],
   )
 
   const createRegion = useCallback(

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
+import { formatErrorMessage } from '@/lib/format-error'
 import type { CatalogoPermiso } from '@/types'
 
 export interface PermisoFormValues {
@@ -79,13 +80,15 @@ interface UsePermisosAdminReturn {
 
 export function usePermisosAdmin(): UsePermisosAdminReturn {
   const supabase = useMemo(() => createClient(), [])
-  const { isAdmin } = useAuth()
+  const { isAdmin, loading: authLoading } = useAuth()
 
   const [permisos, setPermisos] = useState<PermisoAdminRow[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   const fetchAll = useCallback(async () => {
+    if (authLoading) return
+
     if (!isAdmin) {
       setPermisos([])
       setLoading(false)
@@ -96,56 +99,24 @@ export function usePermisosAdmin(): UsePermisosAdminReturn {
     setError(null)
 
     try {
-      const [catalogoRes, configRes, vigentesRes, solicitudesRes] = await Promise.all([
-        supabase
-          .from('catalogo_permisos')
-          .select('id, nombre_permiso, ponderacion')
-          .order('nombre_permiso'),
-        supabase.from('configuracion_tienda_permisos').select('id_tipo_permiso, id_tienda'),
-        supabase.from('permisos_vigentes').select('id_tipo_permiso'),
-        supabase.from('solicitudes').select('id_tipo_permiso'),
-      ])
+      const response = await fetch('/api/admin/permisos', { cache: 'no-store' })
+      const payload = (await response.json()) as {
+        ok: boolean
+        message?: string
+        permisos?: PermisoAdminRow[]
+      }
 
-      if (catalogoRes.error) throw catalogoRes.error
-      if (configRes.error) throw configRes.error
-      if (vigentesRes.error) throw vigentesRes.error
-      if (solicitudesRes.error) throw solicitudesRes.error
+      if (!response.ok || !payload.ok) {
+        throw new Error(payload.message || 'Error al cargar permisos')
+      }
 
-      const tiendasByPermiso = new Map<number, Set<number>>()
-      ;(configRes.data || []).forEach((row) => {
-        const idTipo = row.id_tipo_permiso as number
-        const idTienda = row.id_tienda as number
-        if (!tiendasByPermiso.has(idTipo)) tiendasByPermiso.set(idTipo, new Set())
-        tiendasByPermiso.get(idTipo)!.add(idTienda)
-      })
-
-      const vigentesByPermiso = new Map<number, number>()
-      ;(vigentesRes.data || []).forEach((row) => {
-        const idTipo = row.id_tipo_permiso as number
-        vigentesByPermiso.set(idTipo, (vigentesByPermiso.get(idTipo) || 0) + 1)
-      })
-
-      const solicitudesByPermiso = new Map<number, number>()
-      ;(solicitudesRes.data || []).forEach((row) => {
-        const idTipo = row.id_tipo_permiso as number
-        solicitudesByPermiso.set(idTipo, (solicitudesByPermiso.get(idTipo) || 0) + 1)
-      })
-
-      const rows: PermisoAdminRow[] = (catalogoRes.data || []).map((p) => ({
-        ...(p as CatalogoPermiso),
-        tiendaCount: tiendasByPermiso.get((p as CatalogoPermiso).id)?.size || 0,
-        vigenteCount: vigentesByPermiso.get((p as CatalogoPermiso).id) || 0,
-        solicitudCount: solicitudesByPermiso.get((p as CatalogoPermiso).id) || 0,
-      }))
-
-      setPermisos(rows)
+      setPermisos(payload.permisos || [])
     } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : 'Error al cargar permisos'
-      setError(message)
+      setError(formatErrorMessage(e, 'Error al cargar permisos'))
     } finally {
       setLoading(false)
     }
-  }, [supabase, isAdmin])
+  }, [isAdmin, authLoading])
 
   useEffect(() => {
     fetchAll()

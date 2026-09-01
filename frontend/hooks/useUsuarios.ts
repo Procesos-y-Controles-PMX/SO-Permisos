@@ -3,57 +3,19 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
-import type { Perfil, PerfilFormValues, Rol, Region, Tienda, RolUsuario } from '@/types'
+import { formatErrorMessage } from '@/lib/format-error'
+import type { Perfil, PerfilFormValues, Rol, Region, Tienda } from '@/types'
 import { ROL_IDS } from '@/types'
 
-const PERFIL_SELECT = `
-  id,
-  email,
-  nombre_completo,
-  id_rol,
-  id_tienda,
-  id_region,
-  created_at,
-  roles:id_rol(id, nombre_rol),
-  tienda:id_tienda(id, sucursal, region:id_region(id, nombre_region)),
-  region:id_region(id, nombre_region)
-`
+export type TiendaFormOption = Pick<Tienda, 'id' | 'sucursal' | 'id_region'>
 
-function mapPerfilRow(row: Record<string, unknown>): Perfil {
-  const rolData = row.roles as { id: number; nombre_rol: RolUsuario } | null
-  const tiendaData = row.tienda as {
-    id: number
-    sucursal: string
-    region?: { id: number; nombre_region: string } | null
-  } | null
-  const regionData = row.region as { id: number; nombre_region: string } | null
-
-  return {
-    id: row.id as number,
-    email: row.email as string,
-    nombre_completo: row.nombre_completo as string | null,
-    id_rol: row.id_rol as number,
-    id_tienda: row.id_tienda as number | null,
-    id_region: row.id_region as number | null,
-    created_at: row.created_at as string,
-    rol: rolData ? { id: rolData.id, nombre_rol: rolData.nombre_rol } : undefined,
-    tienda: tiendaData
-      ? ({
-          id: tiendaData.id,
-          sucursal: tiendaData.sucursal,
-          id_region: tiendaData.region?.id ?? 0,
-          region: tiendaData.region
-            ? ({
-                id: tiendaData.region.id,
-                nombre_region: tiendaData.region.nombre_region,
-              } as Region)
-            : undefined,
-        } as Tienda)
-      : undefined,
-    region: regionData
-      ? ({ id: regionData.id, nombre_region: regionData.nombre_region } as Region)
-      : undefined,
-  }
+interface UsuariosApiResponse {
+  ok: boolean
+  message?: string
+  usuarios?: Perfil[]
+  roles?: Rol[]
+  tiendas?: TiendaFormOption[]
+  regiones?: Pick<Region, 'id' | 'nombre_region'>[]
 }
 
 export function buildPerfilPayload(values: PerfilFormValues): {
@@ -85,8 +47,6 @@ export function buildPerfilPayload(values: PerfilFormValues): {
   }
   return payload
 }
-
-export type TiendaFormOption = Pick<Tienda, 'id' | 'sucursal' | 'id_region'>
 
 export function validatePerfilForm(
   values: PerfilFormValues,
@@ -137,7 +97,7 @@ interface UseUsuariosReturn {
 
 export function useUsuarios(): UseUsuariosReturn {
   const supabase = useMemo(() => createClient(), [])
-  const { isAdmin, perfil } = useAuth()
+  const { isAdmin, loading: authLoading, perfil } = useAuth()
 
   const [usuarios, setUsuarios] = useState<Perfil[]>([])
   const [roles, setRoles] = useState<Rol[]>([])
@@ -147,6 +107,8 @@ export function useUsuarios(): UseUsuariosReturn {
   const [error, setError] = useState<string | null>(null)
 
   const fetchAll = useCallback(async () => {
+    if (authLoading) return
+
     if (!isAdmin) {
       setUsuarios([])
       setLoading(false)
@@ -157,29 +119,23 @@ export function useUsuarios(): UseUsuariosReturn {
     setError(null)
 
     try {
-      const [perfilesRes, rolesRes, tiendasRes, regionesRes] = await Promise.all([
-        supabase.from('perfiles').select(PERFIL_SELECT),
-        supabase.from('roles').select('id, nombre_rol').order('id'),
-        supabase.from('tiendas').select('id, sucursal, id_region').order('sucursal'),
-        supabase.from('regiones').select('id, nombre_region').order('nombre_region'),
-      ])
+      const response = await fetch('/api/admin/usuarios', { cache: 'no-store' })
+      const payload = (await response.json()) as UsuariosApiResponse
 
-      if (perfilesRes.error) throw perfilesRes.error
-      if (rolesRes.error) throw rolesRes.error
-      if (tiendasRes.error) throw tiendasRes.error
-      if (regionesRes.error) throw regionesRes.error
+      if (!response.ok || !payload.ok) {
+        throw new Error(payload.message || 'Error al cargar usuarios')
+      }
 
-      setUsuarios((perfilesRes.data || []).map((row) => mapPerfilRow(row as Record<string, unknown>)))
-      setRoles((rolesRes.data || []) as Rol[])
-      setTiendas((tiendasRes.data || []) as TiendaFormOption[])
-      setRegiones((regionesRes.data || []) as Pick<Region, 'id' | 'nombre_region'>[])
+      setUsuarios(payload.usuarios || [])
+      setRoles(payload.roles || [])
+      setTiendas(payload.tiendas || [])
+      setRegiones(payload.regiones || [])
     } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : 'Error al cargar usuarios'
-      setError(message)
+      setError(formatErrorMessage(e, 'Error al cargar usuarios'))
     } finally {
       setLoading(false)
     }
-  }, [supabase, isAdmin])
+  }, [isAdmin, authLoading])
 
   useEffect(() => {
     fetchAll()
