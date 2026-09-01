@@ -52,6 +52,8 @@ export default function Modal({ open, onClose, title, children, actions }: Modal
 
           <motion.div
             className="relative flex max-h-[min(90vh,calc(100dvh-env(safe-area-inset-bottom)))] w-full max-w-lg flex-col self-end rounded-t-sm bg-card shadow-2xl sm:max-h-[calc(100vh-4rem)] sm:self-center sm:rounded-sm"
+            initial={reduceMotion ? undefined : 'hidden'}
+            animate={reduceMotion ? undefined : 'visible'}
             variants={SMOOTH_DRAWER_VARIANTS}
           >
             <motion.div
