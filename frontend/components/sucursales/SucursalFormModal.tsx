@@ -24,6 +24,7 @@ interface SucursalFormModalProps {
   catalogo: CatalogoPermiso[]
   onSubmit: (values: TiendaFormValues) => Promise<{ error: string | null }>
   saving?: boolean
+  loading?: boolean
 }
 
 function emptyForm(): TiendaFormValues {
@@ -63,6 +64,7 @@ export default function SucursalFormModal({
   catalogo,
   onSubmit,
   saving = false,
+  loading = false,
 }: SucursalFormModalProps) {
   const isEdit = Boolean(tienda)
   const [form, setForm] = useState<TiendaFormValues>(emptyForm)
@@ -109,6 +111,7 @@ export default function SucursalFormModal({
       onClose={onClose}
       title={isEdit ? 'Editar sucursal' : 'Nueva sucursal'}
       actions={
+        loading ? undefined : (
         <>
           <button type="button" onClick={onClose} disabled={saving} className={BTN_SECONDARY}>
             Cancelar
@@ -117,8 +120,12 @@ export default function SucursalFormModal({
             {saving ? 'Guardando...' : isEdit ? 'Guardar cambios' : 'Crear sucursal'}
           </button>
         </>
+        )
       }
     >
+      {loading ? (
+        <p className="py-10 text-center text-sm text-fg-subtle">Cargando permisos...</p>
+      ) : (
       <form id="sucursal-form" onSubmit={handleSubmit} className="max-h-[70vh] space-y-5 overflow-y-auto pr-1">
         {formError && <p className={ALERT_ERROR}>{formError}</p>}
 
@@ -263,6 +270,7 @@ export default function SucursalFormModal({
           </p>
         </div>
       </form>
+      )}
     </Modal>
   )
 }

@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { SMOOTH_DRAWER_ITEM_VARIANTS, SMOOTH_DRAWER_VARIANTS } from '@/lib/smoothDrawerMotion'
 
@@ -15,6 +16,11 @@ interface ModalProps {
 export default function Modal({ open, onClose, title, children, actions }: ModalProps) {
   const overlayRef = useRef<HTMLDivElement>(null)
   const reduceMotion = useReducedMotion()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
@@ -22,20 +28,26 @@ export default function Modal({ open, onClose, title, children, actions }: Modal
     }
     if (open) {
       document.addEventListener('keydown', handleEsc)
+      const previousOverflow = document.body.style.overflow
       document.body.style.overflow = 'hidden'
+      return () => {
+        document.removeEventListener('keydown', handleEsc)
+        document.body.style.overflow = previousOverflow
+      }
     }
     return () => {
       document.removeEventListener('keydown', handleEsc)
-      document.body.style.overflow = ''
     }
   }, [open, onClose])
 
-  return (
+  if (!mounted) return null
+
+  return createPortal(
     <AnimatePresence>
       {open && (
         <motion.div
           ref={overlayRef}
-          className="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-4 md:p-8"
+          className="fixed inset-0 z-[100] flex h-[100dvh] w-full items-end justify-center p-0 sm:items-center sm:p-4 md:p-8"
           initial={reduceMotion ? undefined : 'hidden'}
           animate={reduceMotion ? undefined : 'visible'}
           exit={reduceMotion ? undefined : 'hidden'}
@@ -44,14 +56,14 @@ export default function Modal({ open, onClose, title, children, actions }: Modal
           }}
         >
           <motion.div
-            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            className="absolute inset-0 h-full w-full bg-black/40 backdrop-blur-sm"
             variants={{ hidden: { opacity: 0 }, visible: { opacity: 1 } }}
             transition={{ duration: 0.2 }}
             onClick={onClose}
           />
 
           <motion.div
-            className="relative flex max-h-[min(90vh,calc(100dvh-env(safe-area-inset-bottom)))] w-full max-w-lg flex-col self-end rounded-t-sm bg-card shadow-2xl sm:max-h-[calc(100vh-4rem)] sm:self-center sm:rounded-sm"
+            className="relative flex max-h-[min(90dvh,calc(100dvh-env(safe-area-inset-bottom)))] w-full max-w-lg flex-col overflow-hidden self-end rounded-t-sm bg-card shadow-2xl sm:max-h-[calc(100dvh-4rem)] sm:self-center sm:rounded-sm"
             initial={reduceMotion ? undefined : 'hidden'}
             animate={reduceMotion ? undefined : 'visible'}
             variants={SMOOTH_DRAWER_VARIANTS}
@@ -73,7 +85,10 @@ export default function Modal({ open, onClose, title, children, actions }: Modal
               </button>
             </motion.div>
 
-            <motion.div className="flex-1 overflow-y-auto px-5 py-5 sm:px-6" variants={SMOOTH_DRAWER_ITEM_VARIANTS}>
+            <motion.div
+              className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain px-5 py-5 sm:px-6"
+              variants={SMOOTH_DRAWER_ITEM_VARIANTS}
+            >
               {children}
             </motion.div>
 
@@ -88,6 +103,7 @@ export default function Modal({ open, onClose, title, children, actions }: Modal
           </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   )
 }

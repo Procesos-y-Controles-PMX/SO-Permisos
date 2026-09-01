@@ -664,7 +664,7 @@ export default function SucursalesPage() {
       />
 
       <SucursalFormModal
-        open={formOpen && !loadingPermisos}
+        open={formOpen}
         onClose={() => {
           setFormOpen(false)
           setEditing(null)
@@ -676,13 +676,8 @@ export default function SucursalesPage() {
         catalogo={catalogo}
         onSubmit={handleSubmit}
         saving={saving}
+        loading={loadingPermisos}
       />
-
-      {formOpen && loadingPermisos && (
-        <Card className="fixed inset-0 z-50 m-auto max-w-sm h-fit text-center py-8 shadow-xl">
-          <p className="text-sm text-fg-subtle">Cargando permisos...</p>
-        </Card>
-      )}
 
       <Modal
         open={!!deleteRegionTarget}

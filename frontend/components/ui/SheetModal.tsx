@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { cn } from '@/lib/utils'
 
 interface SheetModalProps {
@@ -23,6 +24,11 @@ export default function SheetModal({
 }: SheetModalProps) {
   const overlayRef = useRef<HTMLDivElement>(null)
   const sheetRef = useRef<HTMLDivElement>(null)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
@@ -30,21 +36,25 @@ export default function SheetModal({
     }
     if (open) {
       document.addEventListener('keydown', handleEsc)
+      const previousOverflow = document.body.style.overflow
       document.body.style.overflow = 'hidden'
       sheetRef.current?.focus()
+      return () => {
+        document.removeEventListener('keydown', handleEsc)
+        document.body.style.overflow = previousOverflow
+      }
     }
     return () => {
       document.removeEventListener('keydown', handleEsc)
-      document.body.style.overflow = ''
     }
   }, [open, onClose])
 
-  if (!open) return null
+  if (!mounted || !open) return null
 
-  return (
+  return createPortal(
     <div
       ref={overlayRef}
-      className="fixed inset-0 z-50 flex items-end justify-center"
+      className="fixed inset-0 z-[100] flex h-[100dvh] w-full items-end justify-center"
       onClick={(e) => {
         if (e.target === overlayRef.current) onClose()
       }}
@@ -100,6 +110,7 @@ export default function SheetModal({
           </div>
         ) : null}
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
