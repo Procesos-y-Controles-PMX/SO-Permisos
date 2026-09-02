@@ -1,9 +1,14 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
-import { SMOOTH_DRAWER_ITEM_VARIANTS, SMOOTH_DRAWER_VARIANTS } from '@/lib/smoothDrawerMotion'
+import {
+  MODAL_CENTER_VARIANTS,
+  SMOOTH_DRAWER_ITEM_VARIANTS,
+  SMOOTH_DRAWER_VARIANTS,
+} from '@/lib/smoothDrawerMotion'
+import { cn } from '@/lib/utils'
 
 interface ModalProps {
   open: boolean
@@ -13,14 +18,40 @@ interface ModalProps {
   actions?: React.ReactNode
 }
 
+const DESKTOP_MEDIA = '(min-width: 640px)'
+
+function subscribeDesktop(callback: () => void) {
+  const mq = window.matchMedia(DESKTOP_MEDIA)
+  mq.addEventListener('change', callback)
+  return () => mq.removeEventListener('change', callback)
+}
+
+function getDesktopSnapshot() {
+  return window.matchMedia(DESKTOP_MEDIA).matches
+}
+
+function getDesktopServerSnapshot() {
+  return false
+}
+
+function useIsDesktop() {
+  return useSyncExternalStore(subscribeDesktop, getDesktopSnapshot, getDesktopServerSnapshot)
+}
+
 export default function Modal({ open, onClose, title, children, actions }: ModalProps) {
   const overlayRef = useRef<HTMLDivElement>(null)
   const reduceMotion = useReducedMotion()
+  const isDesktop = useIsDesktop()
   const [mounted, setMounted] = useState(false)
+  const [openSession, setOpenSession] = useState(0)
 
   useEffect(() => {
     setMounted(true)
   }, [])
+
+  useEffect(() => {
+    if (open) setOpenSession((n) => n + 1)
+  }, [open])
 
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
@@ -42,31 +73,50 @@ export default function Modal({ open, onClose, title, children, actions }: Modal
 
   if (!mounted) return null
 
+  const panelVariants = isDesktop ? MODAL_CENTER_VARIANTS : SMOOTH_DRAWER_VARIANTS
+  const motionInitial = reduceMotion ? false : 'hidden'
+  const motionAnimate = reduceMotion ? false : 'visible'
+  const motionExit = reduceMotion ? undefined : 'hidden'
+
   return createPortal(
-    <AnimatePresence>
-      {open && (
+    <AnimatePresence mode="wait">
+      {open ? (
         <motion.div
+          key={`modal-overlay-${openSession}`}
           ref={overlayRef}
-          className="fixed inset-0 z-[100] flex h-[100dvh] w-full items-end justify-center p-0 sm:items-center sm:p-4 md:p-8"
-          initial={reduceMotion ? undefined : 'hidden'}
-          animate={reduceMotion ? undefined : 'visible'}
-          exit={reduceMotion ? undefined : 'hidden'}
+          className={cn(
+            'fixed inset-0 z-[100] flex h-[100dvh] w-full justify-center p-0 sm:p-4 md:p-8',
+            isDesktop ? 'items-center' : 'items-end',
+          )}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.15 }}
           onClick={(e) => {
             if (e.target === overlayRef.current) onClose()
           }}
         >
           <motion.div
             className="absolute inset-0 h-full w-full bg-black/40 backdrop-blur-sm"
-            variants={{ hidden: { opacity: 0 }, visible: { opacity: 1 } }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
             onClick={onClose}
           />
 
           <motion.div
-            className="relative flex max-h-[min(90dvh,calc(100dvh-env(safe-area-inset-bottom)))] w-full max-w-lg flex-col overflow-hidden self-end rounded-t-sm bg-card shadow-2xl sm:max-h-[calc(100dvh-4rem)] sm:self-center sm:rounded-sm"
-            initial={reduceMotion ? undefined : 'hidden'}
-            animate={reduceMotion ? undefined : 'visible'}
-            variants={SMOOTH_DRAWER_VARIANTS}
+            key={`modal-panel-${openSession}`}
+            className={cn(
+              'relative flex w-full max-w-lg flex-col overflow-hidden bg-card shadow-2xl',
+              isDesktop
+                ? 'max-h-[calc(100dvh-4rem)] self-center rounded-sm'
+                : 'max-h-[min(90dvh,calc(100dvh-env(safe-area-inset-bottom)))] self-end rounded-t-sm',
+            )}
+            initial={motionInitial}
+            animate={motionAnimate}
+            exit={motionExit}
+            variants={panelVariants}
           >
             <motion.div
               className="flex shrink-0 items-center justify-between border-b border-line px-5 py-4 sm:px-6"
@@ -102,7 +152,7 @@ export default function Modal({ open, onClose, title, children, actions }: Modal
             ) : null}
           </motion.div>
         </motion.div>
-      )}
+      ) : null}
     </AnimatePresence>,
     document.body,
   )

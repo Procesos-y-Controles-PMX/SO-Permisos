@@ -25,6 +25,32 @@ export const SMOOTH_DRAWER_VARIANTS = {
   },
 } as const
 
+/** Centered dialog on sm+ viewports — avoids bottom-sheet y:100% getting stuck after SPA navigation. */
+export const MODAL_CENTER_VARIANTS = {
+  hidden: {
+    opacity: 0,
+    scale: 0.97,
+    y: 10,
+    transition: {
+      duration: 0.18,
+      ease: [0.32, 0.72, 0, 1],
+    },
+  },
+  visible: {
+    opacity: 1,
+    scale: 1,
+    y: 0,
+    transition: {
+      type: 'spring',
+      stiffness: 320,
+      damping: 32,
+      mass: 0.75,
+      staggerChildren: 0.06,
+      delayChildren: 0.06,
+    },
+  },
+} as const
+
 export const SMOOTH_DRAWER_ITEM_VARIANTS = {
   hidden: {
     y: 16,
