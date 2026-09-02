@@ -55,6 +55,7 @@ export default function RootLayout({
           </AuthProvider>
           <Toaster richColors position="top-right" />
         </ThemeProvider>
+        <div id="so-modal-portal" />
       </body>
     </html>
   );

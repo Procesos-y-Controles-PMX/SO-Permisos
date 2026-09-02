@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { getModalPortalNode } from '@/lib/modal-portal'
 
 interface ModalProps {
   open: boolean
@@ -9,29 +10,6 @@ interface ModalProps {
   title: string
   children: React.ReactNode
   actions?: React.ReactNode
-}
-
-function lockBodyScroll() {
-  const scrollY = window.scrollY
-  const previous = {
-    overflow: document.body.style.overflow,
-    position: document.body.style.position,
-    top: document.body.style.top,
-    width: document.body.style.width,
-  }
-
-  document.body.style.overflow = 'hidden'
-  document.body.style.position = 'fixed'
-  document.body.style.top = `-${scrollY}px`
-  document.body.style.width = '100%'
-
-  return () => {
-    document.body.style.overflow = previous.overflow
-    document.body.style.position = previous.position
-    document.body.style.top = previous.top
-    document.body.style.width = previous.width
-    window.scrollTo(0, scrollY)
-  }
 }
 
 export default function Modal({ open, onClose, title, children, actions }: ModalProps) {
@@ -48,10 +26,14 @@ export default function Modal({ open, onClose, title, children, actions }: Modal
     }
     if (open) {
       document.addEventListener('keydown', handleEsc)
-      const unlockScroll = lockBodyScroll()
+      const previousHtmlOverflow = document.documentElement.style.overflow
+      const previousBodyOverflow = document.body.style.overflow
+      document.documentElement.style.overflow = 'hidden'
+      document.body.style.overflow = 'hidden'
       return () => {
         document.removeEventListener('keydown', handleEsc)
-        unlockScroll()
+        document.documentElement.style.overflow = previousHtmlOverflow
+        document.body.style.overflow = previousBodyOverflow
       }
     }
     return () => {
@@ -64,7 +46,7 @@ export default function Modal({ open, onClose, title, children, actions }: Modal
   return createPortal(
     <div
       ref={overlayRef}
-      className="fixed inset-0 z-[100]"
+      className="fixed inset-0 z-[100] grid place-items-center p-4 sm:p-6"
       onClick={(e) => {
         if (e.target === overlayRef.current) onClose()
       }}
@@ -80,7 +62,7 @@ export default function Modal({ open, onClose, title, children, actions }: Modal
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-title"
-        className="absolute left-1/2 top-1/2 z-10 flex max-h-[min(90dvh,calc(100dvh-env(safe-area-inset-bottom)))] w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-sm bg-card shadow-2xl sm:w-full"
+        className="relative z-10 flex max-h-[min(90dvh,calc(100dvh-env(safe-area-inset-bottom)))] w-full max-w-lg flex-col overflow-hidden rounded-sm bg-card shadow-2xl"
       >
         <div className="flex shrink-0 items-center justify-between border-b border-line px-5 py-4 sm:px-6">
           <h3 id="modal-title" className="font-display text-lg font-semibold tracking-tight text-fg">
@@ -109,6 +91,6 @@ export default function Modal({ open, onClose, title, children, actions }: Modal
         ) : null}
       </div>
     </div>,
-    document.body,
+    getModalPortalNode(),
   )
 }
