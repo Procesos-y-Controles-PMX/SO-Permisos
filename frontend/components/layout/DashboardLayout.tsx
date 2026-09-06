@@ -1,6 +1,6 @@
 'use client'
 
-import { InteractiveGridPattern } from '@promexma/ui'
+import { InteractiveGridPattern, NoiseField } from '@promexma/ui';
 import { useEffect, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import Sidebar from './Sidebar'
@@ -36,20 +36,22 @@ function AmbientCanvas() {
       aria-hidden
       data-ambient-grid-clip
     >
-      <InteractiveGridPattern
-        cellSize={40}
-        skewY={6}
-        wave={!spinner}
-        waveDuration={5}
-        waveGap={4}
-        spinner={spinner}
-        spinnerMs={1400}
-        spinnerRadius={3.5}
-        trailMs={750}
-        spinnerOrigin={origin}
-        className="absolute inset-0 [mask-image:radial-gradient(ellipse_90%_80%_at_50%_40%,white,transparent)]"
-        squaresClassName="stroke-slate-300/80"
-      />
+      {spinner ? (
+        <InteractiveGridPattern
+          cellSize={40}
+          skewY={6}
+          wave={false}
+          spinner
+          spinnerMs={1400}
+          spinnerRadius={3.5}
+          trailMs={750}
+          spinnerOrigin={origin}
+          className="absolute inset-0 [mask-image:radial-gradient(ellipse_90%_80%_at_50%_40%,white,transparent)]"
+          squaresClassName="stroke-slate-300/80"
+        />
+      ) : (
+        <NoiseField className="absolute inset-0 [mask-image:radial-gradient(ellipse_90%_80%_at_50%_40%,white,transparent)]" />
+      )}
     </div>
   )
 }

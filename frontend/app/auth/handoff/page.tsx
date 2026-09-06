@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { AlertCircle } from 'lucide-react'
-import { GridLoadingScreen, InteractiveGridPattern } from '@promexma/ui'
+import { GridLoadingScreen, NoiseField } from '@promexma/ui';
 
 const STORAGE_KEY = 'permisos_user'
 const ENTERING = 'Entrando a SO Permisos...'
@@ -46,7 +46,16 @@ function HandoffInner() {
           return
         }
 
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({ perfil: payload.perfil, rol: payload.rol }))
+        const now = Date.now()
+        localStorage.setItem(
+          STORAGE_KEY,
+          JSON.stringify({
+            perfil: payload.perfil,
+            rol: payload.rol,
+            issuedAt: now,
+            lastActivityAt: now,
+          })
+        )
         // Full navigation so AuthProvider re-mounts and reads the session;
         // replace() drops the token URL from history.
         window.location.replace('/')
@@ -61,11 +70,8 @@ function HandoffInner() {
   if (error) {
     return (
       <main className="relative flex min-h-dvh items-center justify-center overflow-hidden bg-[#0d1117] px-6">
-        <InteractiveGridPattern
-          cellSize={40}
-          skewY={6}
+        <NoiseField
           className="absolute inset-0 [mask-image:radial-gradient(ellipse_90%_80%_at_50%_40%,white,transparent)]"
-          squaresClassName="stroke-white/35"
         />
         <div className="relative z-10 w-full max-w-sm rounded-lg border border-red-500/30 bg-red-950/80 p-5 text-center backdrop-blur-sm">
           <AlertCircle aria-hidden="true" className="mx-auto mb-2 h-6 w-6 text-red-400" />
