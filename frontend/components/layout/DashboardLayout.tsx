@@ -1,6 +1,6 @@
 'use client'
 
-import { InteractiveGridPattern, NoiseField } from '@promexma/ui';
+import { NoiseField } from '@promexma/ui';
 import { useTheme } from 'next-themes'
 import { useEffect, useState } from 'react'
 import { usePathname } from 'next/navigation'
@@ -8,7 +8,7 @@ import Sidebar from './Sidebar'
 import MobileBottomNav from './MobileBottomNav'
 import { useUI } from '@/contexts/UIContext'
 import { useAuth } from '@/contexts/AuthContext'
-import { AmbientGridProvider, useAmbientGrid } from '@/contexts/AmbientGridContext'
+import { AmbientGridProvider } from '@/contexts/AmbientGridContext'
 import { cn } from '@/lib/utils'
 import { buildMobileBottomNavItems } from '@/components/layout/navConfig'
 
@@ -27,9 +27,6 @@ function LogoutIcon({ className }: { className?: string }) {
 }
 
 function AmbientCanvas() {
-  const ambient = useAmbientGrid()
-  const spinner = Boolean(ambient?.spinner)
-  const origin = ambient?.spinnerOrigin ?? [0.5, 0.55]
   const { resolvedTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
@@ -41,27 +38,12 @@ function AmbientCanvas() {
       aria-hidden
       data-ambient-grid-clip
     >
-      {spinner ? (
-        <InteractiveGridPattern
-          cellSize={40}
-          skewY={6}
-          wave={false}
-          spinner
-          spinnerMs={1400}
-          spinnerRadius={3.5}
-          trailMs={750}
-          spinnerOrigin={origin}
-          className="absolute inset-0 [mask-image:radial-gradient(ellipse_90%_80%_at_50%_40%,white,transparent)]"
-          squaresClassName="stroke-slate-300/80"
-        />
-      ) : (
-        <NoiseField
-          key={mounted ? resolvedTheme : 'light'}
-          className="absolute inset-0 [mask-image:radial-gradient(ellipse_90%_80%_at_50%_40%,white,transparent)]"
-          color={isDark ? [255, 255, 255] : [52, 80, 122]}
-          maxOpacity={isDark ? 0.5 : 0.7}
-        />
-      )}
+      <NoiseField
+        key={mounted ? resolvedTheme : 'light'}
+        className="absolute inset-0 [mask-image:radial-gradient(ellipse_90%_80%_at_50%_40%,white,transparent)]"
+        color={isDark ? [255, 255, 255] : [52, 80, 122]}
+        maxOpacity={isDark ? 0.5 : 0.7}
+      />
     </div>
   )
 }
