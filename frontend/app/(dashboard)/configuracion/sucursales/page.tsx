@@ -25,7 +25,6 @@ import {
   MOBILE_LIST_CARD,
   PANEL_INSET,
   BTN_SECONDARY,
-  BTN_DANGER,
   ALERT_ERROR,
   ALERT_WARNING,
 } from '@/components/ui/contentStyles'
