@@ -204,7 +204,7 @@ export default function PermisosPage() {
               setActionError(null)
               setDeleteTarget(p)
             }}
-            className="text-[12px] font-medium text-gray-500 hover:text-red-600 px-2 py-1 rounded-md hover:bg-red-50 transition-colors"
+            className={`${BTN_DANGER} min-h-8 px-2 py-1 text-xs`}
           >
             Eliminar
           </button>

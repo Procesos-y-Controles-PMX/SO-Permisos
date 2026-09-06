@@ -13,6 +13,7 @@ import { useUsuarios } from '@/hooks/useUsuarios'
 import TablePagination, { TABLE_PAGE_SIZE } from '@/components/ui/TablePagination'
 import Button from '@/components/ui/Button'
 import {
+  BTN_DANGER,
   FIELD_INPUT,
   FIELD_SELECT_TRIGGER,
   MOBILE_LIST_CARD,
@@ -359,7 +360,7 @@ export default function UsuariosPage() {
                 setActionError(null)
                 setDeleteTarget(u)
               }}
-              className="text-[12px] font-semibold text-fg-subtle hover:text-red-600 px-2 py-1 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              className={`${BTN_DANGER} min-h-8 px-2 py-1 text-xs disabled:opacity-40`}
             >
               Eliminar
             </button>
@@ -496,7 +497,7 @@ export default function UsuariosPage() {
                       setActionError(null)
                       setDeleteTarget(u)
                     }}
-                    className="flex-1 rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-sm font-semibold text-red-700"
+                    className={`${BTN_DANGER} flex-1 disabled:opacity-50`}
                   >
                     Eliminar
                   </button>
@@ -552,7 +553,7 @@ export default function UsuariosPage() {
             <Button variant="secondary" type="button" onClick={() => setDeleteTarget(null)} disabled={deleting}>
               Cancelar
             </Button>
-            <Button variant="primary" type="button" onClick={handleConfirmDelete} disabled={deleting}>
+            <Button variant="danger" type="button" onClick={handleConfirmDelete} disabled={deleting}>
               {deleting ? 'Eliminando...' : 'Eliminar'}
             </Button>
           </>

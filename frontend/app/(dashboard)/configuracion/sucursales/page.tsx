@@ -19,6 +19,7 @@ import {
 import TablePagination, { TABLE_PAGE_SIZE } from '@/components/ui/TablePagination'
 import Button from '@/components/ui/Button'
 import {
+  BTN_DANGER,
   FIELD_INPUT,
   FIELD_SELECT_TRIGGER,
   MOBILE_LIST_CARD,
@@ -326,7 +327,7 @@ export default function SucursalesPage() {
               setActionError(null)
               setDeleteRegionTarget(r)
             }}
-            className="text-[12px] font-medium text-gray-500 hover:text-red-600 px-2 py-1 rounded-md hover:bg-red-50 transition-colors"
+            className={`${BTN_DANGER} min-h-8 px-2 py-1 text-xs`}
           >
             Eliminar
           </button>
@@ -395,7 +396,7 @@ export default function SucursalesPage() {
               setActionError(null)
               setDeleteTarget(t)
             }}
-            className="text-[12px] font-medium text-gray-500 hover:text-red-600 px-2 py-1 rounded-md hover:bg-red-50 transition-colors"
+            className={`${BTN_DANGER} min-h-8 px-2 py-1 text-xs`}
           >
             Eliminar
           </button>
@@ -527,7 +528,7 @@ export default function SucursalesPage() {
                       setActionError(null)
                       setDeleteRegionTarget(r)
                     }}
-                    className="flex-1 rounded-sm border border-red-200 bg-red-50 px-3 py-2.5 text-sm font-semibold text-red-700"
+                    className={`${BTN_DANGER} flex-1`}
                   >
                     Eliminar
                   </button>
@@ -618,7 +619,7 @@ export default function SucursalesPage() {
                     setActionError(null)
                     setDeleteTarget(t)
                   }}
-                  className="flex-1 rounded-sm border border-red-200 bg-red-50 px-3 py-2.5 text-sm font-semibold text-red-700"
+                  className={`${BTN_DANGER} flex-1`}
                 >
                   Eliminar
                 </button>
