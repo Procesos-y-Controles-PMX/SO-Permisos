@@ -1,6 +1,7 @@
 'use client'
 
 import { InteractiveGridPattern, NoiseField } from '@promexma/ui';
+import { useTheme } from 'next-themes'
 import { useEffect, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import Sidebar from './Sidebar'
