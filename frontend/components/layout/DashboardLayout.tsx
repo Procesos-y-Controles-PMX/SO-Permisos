@@ -29,6 +29,10 @@ function AmbientCanvas() {
   const ambient = useAmbientGrid()
   const spinner = Boolean(ambient?.spinner)
   const origin = ambient?.spinnerOrigin ?? [0.5, 0.55]
+  const { resolvedTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
+  const isDark = resolvedTheme !== 'light'
 
   return (
     <div
@@ -50,7 +54,12 @@ function AmbientCanvas() {
           squaresClassName="stroke-slate-300/80"
         />
       ) : (
-        <NoiseField className="absolute inset-0 [mask-image:radial-gradient(ellipse_90%_80%_at_50%_40%,white,transparent)]" />
+        <NoiseField
+          key={mounted ? resolvedTheme : 'light'}
+          className="absolute inset-0 [mask-image:radial-gradient(ellipse_90%_80%_at_50%_40%,white,transparent)]"
+          color={isDark ? [255, 255, 255] : [52, 80, 122]}
+          maxOpacity={isDark ? 0.5 : 0.32}
+        />
       )}
     </div>
   )
