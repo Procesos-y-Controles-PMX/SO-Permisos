@@ -50,18 +50,24 @@ export async function getDashboardStats(actor: SessionActor): Promise<DashboardS
   const { data, error } = await query;
   if (error) throw new Error(error.message);
 
-  const rawData = data || [];
+  const rawData = (data || []) as Array<Record<string, any>>;
   const allStoresMap = new Map<number, StoreSummary>();
   rawData.forEach((item) => {
-    const tienda = firstJoin(item.tienda as StoreSummary | StoreSummary[]);
+    const tienda = firstJoin(item.tienda) as StoreSummary | null;
     if (tienda?.id && !allStoresMap.has(tienda.id)) {
-      allStoresMap.set(tienda.id, tienda);
+      allStoresMap.set(tienda.id, {
+        ...tienda,
+        region: firstJoin(tienda.region) as StoreSummary["region"],
+      });
     }
   });
 
   const allAlertsRaw = rawData
     .map((item) => {
-      const vigente = firstJoin(item.permiso_vigente as { estatus?: string; fecha_vencimiento?: string } | { estatus?: string; fecha_vencimiento?: string }[]);
+      const vigente = firstJoin(item.permiso_vigente) as {
+        estatus?: string;
+        fecha_vencimiento?: string;
+      } | null;
       const isExpiredByDate = Boolean(
         vigente?.fecha_vencimiento &&
           new Date(vigente.fecha_vencimiento).setHours(0, 0, 0, 0) < new Date().setHours(0, 0, 0, 0),
@@ -79,8 +85,8 @@ export async function getDashboardStats(actor: SessionActor): Promise<DashboardS
         id: item.id,
         tipo_alerta,
         fecha_vencimiento: vigente?.fecha_vencimiento || null,
-        tienda: item.tienda,
-        tipo_permiso: item.tipo_permiso,
+        tienda: firstJoin(item.tienda),
+        tipo_permiso: firstJoin(item.tipo_permiso),
       } as StoreAlertDetail;
     })
     .filter(Boolean) as StoreAlertDetail[];
@@ -92,7 +98,7 @@ export async function getDashboardStats(actor: SessionActor): Promise<DashboardS
 
   const storeMap: Record<number, { total: number; alerts: number }> = {};
   rawData.forEach((item) => {
-    const tid = item.id_tienda as number;
+    const tid = Number(item.id_tienda);
     if (!storeMap[tid]) storeMap[tid] = { total: 0, alerts: 0 };
     storeMap[tid].total++;
   });
@@ -114,7 +120,7 @@ export async function getDashboardStats(actor: SessionActor): Promise<DashboardS
     if (regiones) {
       regionalCounts = regiones.map((reg) => {
         const regReqs = rawData.filter((r) => {
-          const t = firstJoin(r.tienda as StoreSummary | StoreSummary[]);
+          const t = firstJoin(r.tienda) as StoreSummary | null;
           return t?.id_region === reg.id;
         }).length;
         const regAlerts = allAlertsRaw.filter((a) => {

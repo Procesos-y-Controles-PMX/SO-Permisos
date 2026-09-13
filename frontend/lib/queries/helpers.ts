@@ -6,8 +6,9 @@ import { isOwnerAdminEmail } from "../owner-admin";
 export const ACTIVE_STATUSES = new Set(["Activo", "Aprobado"]);
 
 export function firstJoin<T>(value: T | T[] | null | undefined): T | null {
-  if (Array.isArray(value)) return value[0] ?? null;
-  return value ?? null;
+  if (value == null) return null;
+  if (Array.isArray(value)) return (value[0] ?? null) as T | null;
+  return value;
 }
 
 export function isAdminActor(actor: SessionActor): boolean {
