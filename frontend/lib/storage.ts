@@ -1,6 +1,12 @@
-import { createClient } from '@/lib/supabase'
+import { apiDownload, apiSend, apiSendForm } from '@/lib/api/http'
 
-const BUCKET = process.env.NEXT_PUBLIC_SUPABASE_BUCKET || 'permisos-bucket'
+/**
+ * Extract file name from a storage path (last segment).
+ */
+export function getFileNameFromPath(filePath: string): string {
+  const segment = filePath.split('/').filter(Boolean).pop()
+  return segment || 'documento'
+}
 
 /**
  * Upload a file as a new request (solicitud).
@@ -11,25 +17,16 @@ export async function uploadFile(
   idTienda: number,
   nombrePermiso: string
 ): Promise<{ path: string | null; error: string | null }> {
-  const supabase = createClient()
-
-  // Sanitize permit name
-  const safePermitName = nombrePermiso.trim().replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_-]/g, '')
-  const extension = file.name.split('.').pop() || 'pdf'
-  const filePath = `solicitudes/${idTienda}/${safePermitName}_solicitud.${extension}`
-
-  const { error } = await supabase.storage
-    .from(BUCKET)
-    .upload(filePath, file, {
-      cacheControl: '3600',
-      upsert: true, // Overwrite if same permit is re-submitted
-    })
-
-  if (error) {
-    return { path: null, error: error.message }
-  }
-
-  return { path: filePath, error: null }
+  const form = new FormData()
+  form.set('op', 'upload')
+  form.set('file', file)
+  form.set('idTienda', String(idTienda))
+  form.set('nombrePermiso', nombrePermiso)
+  return apiSendForm<{ path: string | null; error: string | null }>(
+    '/api/storage',
+    form,
+    { path: null, error: 'No se pudo subir el archivo.' },
+  )
 }
 
 /**
@@ -42,30 +39,11 @@ export async function promoteFile(
   nombrePermiso: string
 ): Promise<{ newPath: string | null; error: string | null }> {
   if (!oldPath) return { newPath: null, error: 'Ruta original vacía' }
-
-  const supabase = createClient()
-  const safePermitName = nombrePermiso.trim().replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_-]/g, '')
-  const extension = oldPath.split('.').pop() || 'pdf'
-  const newPath = `activos/${idTienda}/${safePermitName}_activo.${extension}`
-
-  // 1. Move the file (effectively Copy + Delete in Supabase)
-  const { error: moveErr } = await supabase.storage
-    .from(BUCKET)
-    .move(oldPath, newPath)
-
-  if (moveErr) {
-    return { newPath: null, error: moveErr.message }
-  }
-
-  return { newPath, error: null }
-}
-
-/**
- * Extract file name from a storage path (last segment).
- */
-export function getFileNameFromPath(filePath: string): string {
-  const segment = filePath.split('/').filter(Boolean).pop()
-  return segment || 'documento'
+  return apiSend<{ newPath: string | null; error: string | null }>(
+    '/api/storage',
+    { op: 'promote', path: oldPath, idTienda, nombrePermiso },
+    { newPath: null, error: 'No se pudo mover el archivo.' },
+  )
 }
 
 /**
@@ -75,20 +53,13 @@ export async function downloadStorageFile(
   filePath: string,
   downloadName?: string,
 ): Promise<{ error: string | null }> {
-  const supabase = createClient()
+  const { blob, error, filename } = await apiDownload(
+    `/api/storage?op=download&path=${encodeURIComponent(filePath)}`,
+  )
+  if (error || !blob) return { error: error || 'No se pudo obtener el archivo.' }
 
-  const { data, error } = await supabase.storage.from(BUCKET).download(filePath)
-
-  if (error) {
-    return { error: error.message }
-  }
-
-  if (!data) {
-    return { error: 'No se pudo obtener el archivo.' }
-  }
-
-  const fileName = downloadName || getFileNameFromPath(filePath)
-  const url = URL.createObjectURL(data)
+  const fileName = downloadName || filename || getFileNameFromPath(filePath)
+  const url = URL.createObjectURL(blob)
   const link = document.createElement('a')
   link.href = url
   link.download = fileName
@@ -106,17 +77,11 @@ export async function downloadStorageFile(
 export async function getFileUrl(
   filePath: string,
 ): Promise<{ url: string | null; error: string | null }> {
-  const supabase = createClient()
-
-  const { data, error } = await supabase.storage
-    .from(BUCKET)
-    .createSignedUrl(filePath, 3600) // 1 hour
-
-  if (error) {
-    return { url: null, error: error.message }
-  }
-
-  return { url: data.signedUrl, error: null }
+  return apiSend<{ url: string | null; error: string | null }>(
+    '/api/storage',
+    { op: 'url', path: filePath },
+    { url: null, error: 'No se pudo obtener la URL del archivo.' },
+  )
 }
 
 /**
@@ -125,22 +90,11 @@ export async function getFileUrl(
 export async function deleteFile(
   filePath: string,
 ): Promise<{ error: string | null }> {
-  const supabase = createClient()
-
-  const { data, error } = await supabase.storage
-    .from(BUCKET)
-    .remove([filePath])
-
-  if (error) {
-    return { error: error.message }
-  }
-
-  // Supabase remove returns empty array if file wasn't deleted (e.g., due to RLS blocking or file not existing)
-  if (!data || data.length === 0) {
-    return { error: 'No se pudo eliminar el archivo del Storage (posible bloqueo de RLS).' }
-  }
-
-  return { error: null }
+  return apiSend<{ error: string | null }>(
+    '/api/storage',
+    { op: 'delete', path: filePath },
+    { error: 'No se pudo eliminar el archivo.' },
+  )
 }
 
 /**
@@ -152,23 +106,14 @@ export async function uploadActiveFile(
   idTienda: number,
   nombrePermiso: string
 ): Promise<{ path: string | null; error: string | null }> {
-  const supabase = createClient()
-
-  // Sanitize permit name
-  const safePermitName = nombrePermiso.trim().replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_-]/g, '')
-  const extension = file.name.split('.').pop() || 'pdf'
-  const filePath = `activos/${idTienda}/${safePermitName}_activo.${extension}`
-
-  const { error } = await supabase.storage
-    .from(BUCKET)
-    .upload(filePath, file, {
-      cacheControl: '3600',
-      upsert: true, // Overwrite if same permit is re-submitted
-    })
-
-  if (error) {
-    return { path: null, error: error.message }
-  }
-
-  return { path: filePath, error: null }
+  const form = new FormData()
+  form.set('op', 'upload-active')
+  form.set('file', file)
+  form.set('idTienda', String(idTienda))
+  form.set('nombrePermiso', nombrePermiso)
+  return apiSendForm<{ path: string | null; error: string | null }>(
+    '/api/storage',
+    form,
+    { path: null, error: 'No se pudo subir el archivo.' },
+  )
 }

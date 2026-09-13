@@ -11,7 +11,7 @@ import { useTiendaDetalle } from '@/hooks/useTiendaDetalle'
 import { useSolicitudes } from '@/hooks/useSolicitudes'
 import { useAuth } from '@/contexts/AuthContext'
 import { uploadFile, uploadActiveFile, deleteFile } from '@/lib/storage'
-import { createClient } from '@/lib/supabase'
+import { deletePermisoVigente, expireExpiredVigentes, upsertPermisoVigente } from '@/lib/api/permisos'
 import TopSearchBar from '@/components/layout/TopSearchBar'
 import PermisoArchivoActions from '@/components/permisos/PermisoArchivoActions'
 import PermisoNotasPanel, { PermisoNotasIndicator } from '@/components/permisos/PermisoNotasPanel'
@@ -306,7 +306,6 @@ export default function TiendaDetallePage() {
     if (permisos.length === 0) return
 
     const syncExpiredPermisos = async () => {
-      const supabase = createClient()
       const expired = permisos.filter(
         (p) =>
           p.permiso_vigente &&
@@ -316,27 +315,12 @@ export default function TiendaDetallePage() {
 
       if (expired.length === 0) return
 
-      for (const permiso of expired) {
-        try {
-          const path = permiso.permiso_vigente?.archivo_path
-          if (path) {
-            await deleteFile(path)
-          }
-          await supabase
-            .from('permisos_vigentes')
-            .update({
-              estatus: 'Vencido',
-              archivo_path: null,
-              ultima_actualizacion: new Date().toISOString(),
-            })
-            .eq('id_tienda', permiso.id_tienda)
-            .eq('id_tipo_permiso', permiso.id_tipo_permiso)
-        } catch (error) {
-          console.error('No se pudo sincronizar permiso vencido:', error)
-        }
+      try {
+        await expireExpiredVigentes(expired[0].id_tienda)
+        await refetch()
+      } catch (error) {
+        console.error('No se pudo sincronizar permiso vencido:', error)
       }
-
-      await refetch()
     }
 
     void syncExpiredPermisos()
@@ -426,42 +410,15 @@ export default function TiendaDetallePage() {
       )
       if (uploadErr) throw new Error(`Error subiendo archivo: ${uploadErr}`)
 
-      // 3. Update/Insert record in permisos_vigentes
-      const supabase = createClient()
-      const { data: existingVigentes, error: findErr } = await supabase
-        .from('permisos_vigentes')
-        .select('id')
-        .eq('id_tienda', selectedConfig.id_tienda)
-        .eq('id_tipo_permiso', selectedConfig.id_tipo_permiso)
-        .order('id', { ascending: false })
-
-      if (findErr) throw new Error(`Error consultando vigente actual: ${findErr.message}`)
-
-      const payload = {
+      const { error: dbErr } = await upsertPermisoVigente({
         id_tienda: selectedConfig.id_tienda,
         id_tipo_permiso: selectedConfig.id_tipo_permiso,
         fecha_vencimiento: vigenciaGuardar,
         archivo_path: path,
         estatus: 'Activo',
-        ultima_actualizacion: new Date().toISOString()
-      }
+      })
 
-      let dbErr = null
-      if ((existingVigentes || []).length > 0) {
-        const { error } = await supabase
-          .from('permisos_vigentes')
-          .update(payload)
-          .eq('id_tienda', selectedConfig.id_tienda)
-          .eq('id_tipo_permiso', selectedConfig.id_tipo_permiso)
-        dbErr = error
-      } else {
-        const { error } = await supabase
-          .from('permisos_vigentes')
-          .insert(payload)
-        dbErr = error
-      }
-
-      if (dbErr) throw new Error(`Error al actualizar estado en DB: ${dbErr.message}`)
+      if (dbErr) throw new Error(`Error al actualizar estado en DB: ${dbErr}`)
 
       setShowDirectUploadModal(false)
       await refetch()
@@ -510,22 +467,12 @@ export default function TiendaDetallePage() {
     setDeleteError(null)
 
     try {
-      // 1. Delete file physically from storage
-      const pathToDelete = permisoToDelete.permiso_vigente.archivo_path
-      if (pathToDelete) {
-        const { error: storageErr } = await deleteFile(pathToDelete)
-        if (storageErr) throw new Error(`Error eliminando archivo: ${storageErr}`)
-      }
+      const { error: dbErr } = await deletePermisoVigente(
+        permisoToDelete.id_tienda,
+        permisoToDelete.id_tipo_permiso,
+      )
 
-      // 2. Delete the record from DB
-      const supabase = createClient()
-      const { error: dbErr } = await supabase
-        .from('permisos_vigentes')
-        .delete()
-        .eq('id_tienda', permisoToDelete.id_tienda)
-        .eq('id_tipo_permiso', permisoToDelete.id_tipo_permiso)
-
-      if (dbErr) throw new Error(`Error en DB: ${dbErr.message}`)
+      if (dbErr) throw new Error(`Error en DB: ${dbErr}`)
 
       // 3. Success -> UI update
       setPermisoToDelete(null)

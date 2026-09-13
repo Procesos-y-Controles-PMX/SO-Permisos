@@ -1,16 +1,15 @@
 'use client'
 
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import PageHeader from '@/components/ui/PageHeader'
 import Card from '@/components/ui/Card'
 import Badge from '@/components/ui/Badge'
-import { createClient } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
+import { listSolicitudesPendientes } from '@/lib/api/solicitudes'
 
 export default function SolicitudesPendientesPage() {
   const router = useRouter()
-  const supabase = useMemo(() => createClient(), [])
   const { perfil, isAdmin, loading: authLoading } = useAuth()
 
   const [tiendas, setTiendas] = useState<any[]>([])
@@ -26,22 +25,7 @@ export default function SolicitudesPendientesPage() {
     setError(null)
 
     try {
-      // Fetch all pending solicitudes with tienda info
-      const { data, error: err } = await supabase
-        .from('solicitudes')
-        .select(`
-          id,
-          id_tienda,
-          id_tipo_permiso,
-          fecha_solicitud,
-          estatus_solicitud,
-          tienda:id_tienda(id, sucursal, gerente_tienda, region:id_region(nombre_region)),
-          tipo_permiso:id_tipo_permiso(nombre_permiso)
-        `)
-        .eq('estatus_solicitud', 'Pendiente')
-        .order('fecha_solicitud', { ascending: false })
-
-      if (err) throw err
+      const data = (await listSolicitudesPendientes()) as any[]
 
       // Group by id_tienda to get distinct tiendas with their pending count
       const tiendaMap = new Map<number, { tienda: any; pendientes: number; solicitudes: any[] }>()
@@ -68,7 +52,7 @@ export default function SolicitudesPendientesPage() {
     } finally {
       setLoading(false)
     }
-  }, [supabase, perfil])
+  }, [perfil])
 
   useEffect(() => {
     if (!authLoading && perfil) fetchTiendasConPendientes()

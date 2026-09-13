@@ -8,8 +8,8 @@ import Button from '@/components/ui/Button'
 import Modal from '@/components/ui/Modal'
 import Badge, { statusToBadgeVariant } from '@/components/ui/Badge'
 import { STAT_TILE, STAT_TILE_ACTIVE } from '@/components/ui/contentStyles'
-import { createClient } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
+import { listHistorial, type HistorialPermisoItem } from '@/lib/api/historial'
 import { uploadFile } from '@/lib/storage'
 import PermisoArchivoActions from '@/components/permisos/PermisoArchivoActions'
 import PermisoNotasPanel from '@/components/permisos/PermisoNotasPanel'
@@ -19,23 +19,8 @@ import { canSubmitVigencia, formatFechaVigencia, resolveVigenciaParaGuardar } fr
 import { useSolicitudes } from '@/hooks/useSolicitudes'
 import type { HistorialPermisoEstado } from '@/types'
 
-interface HistorialPermisoItem {
-  configId: number
-  idTienda: number
-  idTipoPermiso: number
-  nombrePermiso: string
-  obligatorio: boolean
-  estado: HistorialPermisoEstado
-  fechaActualizacion: string | null
-  vigencia: string | null
-  archivoPath: string | null
-  comentariosAdmin: string | null
-  notasPermiso: string | null
-}
-
 export default function HistorialPage() {
   const router = useRouter()
-  const supabase = useMemo(() => createClient(), [])
   const { perfil, isTienda, isAdmin, loading: authLoading } = useAuth()
   const { crearSolicitud } = useSolicitudes(perfil?.id_tienda ?? undefined)
   const { updateComentarios } = usePermisoComentarios()
@@ -64,143 +49,15 @@ export default function HistorialPage() {
     }
     setLoading(true)
     setError(null)
-    const tiendaId = perfil.id_tienda as number
 
     try {
-      const { data: configData, error: configErr } = await supabase
-        .from('configuracion_tienda_permisos')
-        .select(`
-          id,
-          id_tipo_permiso,
-          obligatorio,
-          comentarios,
-          tipo_permiso:id_tipo_permiso(id, nombre_permiso)
-        `)
-        .eq('id_tienda', perfil.id_tienda)
-        .order('id_tipo_permiso', { ascending: true })
-
-      if (configErr) throw configErr
-
-      const { data: solicitudesData, error: solicitudesErr } = await supabase
-        .from('solicitudes')
-        .select(`
-          *,
-          tipo_permiso:id_tipo_permiso(id, nombre_permiso)
-        `)
-        .eq('id_tienda', perfil.id_tienda)
-        .order('fecha_solicitud', { ascending: false })
-
-      if (solicitudesErr) throw solicitudesErr
-
-      const { data: vigentesData, error: vigentesErr } = await supabase
-        .from('permisos_vigentes')
-        .select('id_tipo_permiso, estatus, fecha_vencimiento, archivo_path, ultima_actualizacion')
-        .eq('id_tienda', perfil.id_tienda)
-        .order('ultima_actualizacion', { ascending: false })
-
-      if (vigentesErr) throw vigentesErr
-
-      const solicitudesPorPermiso = new Map<number, any[]>()
-      ;(solicitudesData || []).forEach((s) => {
-        const list = solicitudesPorPermiso.get(s.id_tipo_permiso) || []
-        list.push(s)
-        solicitudesPorPermiso.set(s.id_tipo_permiso, list)
-      })
-
-      const vigenteMasRecientePorPermiso = new Map<number, any>()
-      ;(vigentesData || []).forEach((v) => {
-        if (!vigenteMasRecientePorPermiso.has(v.id_tipo_permiso)) {
-          vigenteMasRecientePorPermiso.set(v.id_tipo_permiso, v)
-        }
-      })
-
-      const activeStatuses = new Set(['Activo', 'Aprobado'])
-      const today = new Date()
-      today.setHours(0, 0, 0, 0)
-
-      const resolvedItems: HistorialPermisoItem[] = (configData || []).map((cfg: any) => {
-        const idTipoPermiso = cfg.id_tipo_permiso
-        const nombrePermiso = cfg.tipo_permiso?.nombre_permiso || 'Permiso desconocido'
-        const solicitudes = solicitudesPorPermiso.get(idTipoPermiso) || []
-        const pendiente = solicitudes.find((s) => s.estatus_solicitud === 'Pendiente')
-        const ultimaSolicitud = solicitudes[0]
-        const vigente = vigenteMasRecientePorPermiso.get(idTipoPermiso)
-        const isExpired = Boolean(
-          vigente?.fecha_vencimiento &&
-          new Date(vigente.fecha_vencimiento).setHours(0, 0, 0, 0) < today.getTime()
-        )
-
-        const notasBase = {
-          configId: cfg.id as number,
-          notasPermiso: cfg.comentarios || null,
-        }
-
-        if (pendiente) {
-          return {
-            ...notasBase,
-            idTienda: tiendaId,
-            idTipoPermiso,
-            nombrePermiso,
-            obligatorio: cfg.obligatorio ?? true,
-            estado: 'En Revisión',
-            fechaActualizacion: pendiente.fecha_solicitud || null,
-            vigencia: pendiente.vigencia_propuesta || null,
-            archivoPath: pendiente.archivo_adjunto_path || null,
-            comentariosAdmin: null,
-          }
-        }
-
-        if (ultimaSolicitud?.estatus_solicitud === 'Rechazado') {
-          return {
-            ...notasBase,
-            idTienda: tiendaId,
-            idTipoPermiso,
-            nombrePermiso,
-            obligatorio: cfg.obligatorio ?? true,
-            estado: 'Rechazado',
-            fechaActualizacion: ultimaSolicitud.fecha_solicitud || null,
-            vigencia: ultimaSolicitud.vigencia_propuesta || null,
-            archivoPath: ultimaSolicitud.archivo_adjunto_path || null,
-            comentariosAdmin: ultimaSolicitud.comentarios_admin || null,
-          }
-        }
-
-        if (vigente && activeStatuses.has(vigente.estatus) && !isExpired) {
-          return {
-            ...notasBase,
-            idTienda: tiendaId,
-            idTipoPermiso,
-            nombrePermiso,
-            obligatorio: cfg.obligatorio ?? true,
-            estado: 'Aceptado',
-            fechaActualizacion: vigente.ultima_actualizacion || null,
-            vigencia: vigente.fecha_vencimiento || null,
-            archivoPath: vigente.archivo_path || null,
-            comentariosAdmin: null,
-          }
-        }
-
-        return {
-          ...notasBase,
-          idTienda: tiendaId,
-          idTipoPermiso,
-          nombrePermiso,
-          obligatorio: cfg.obligatorio ?? true,
-          estado: 'No Subido',
-          fechaActualizacion: null,
-          vigencia: null,
-          archivoPath: null,
-          comentariosAdmin: null,
-        }
-      })
-
-      setItems(resolvedItems)
-    } catch (e: any) {
-      setError(e.message)
+      setItems(await listHistorial())
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Error al cargar historial')
     } finally {
       setLoading(false)
     }
-  }, [supabase, perfil])
+  }, [perfil])
 
   useEffect(() => {
     if (!authLoading && perfil) fetchHistorial()

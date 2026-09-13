@@ -1,10 +1,10 @@
 'use client'
 
 import { createContext, useContext, useEffect, useState, useCallback } from 'react'
-import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import type { Perfil, RolUsuario } from '@/types'
-import { isOwnerAdminEmail, resolveSessionRol } from '@/lib/owner-admin'
+import { isOwnerAdminEmail } from '@/lib/owner-admin'
+import { getPerfilById } from '@/lib/api/perfiles'
 
 // ── Storage key ────────────────────────────────────────────
 const STORAGE_KEY = 'permisos_user'
@@ -32,7 +32,6 @@ const AuthContext = createContext<AuthState | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter()
-  const [supabase] = useState(() => createClient())
   const [perfil, setPerfil] = useState<Perfil | null>(null)
   const [rol, setRol] = useState<RolUsuario | null>(null)
   const [loading, setLoading] = useState(true)
@@ -61,31 +60,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // ─ Fetch perfil from DB by ID ─
   const fetchPerfil = useCallback(async (userId: number) => {
-    const { data, error } = await supabase
-      .from('perfiles')
-      .select('id, email, nombre_completo, id_rol, id_tienda, id_region, created_at, roles:id_rol(id, nombre_rol)')
-      .eq('id', userId)
-      .single()
-
-    if (error || !data) {
-      console.error('Error fetching perfil:', error?.message)
+    const result = await getPerfilById(userId)
+    if (!result?.perfil) {
+      console.error('Error fetching perfil')
       return
     }
-
-    const rolData = (data.roles as unknown) as { id: number; nombre_rol: RolUsuario } | null
-    const perfilData: Perfil = {
-      id: data.id,
-      email: data.email,
-      nombre_completo: data.nombre_completo,
-      id_rol: data.id_rol,
-      id_tienda: data.id_tienda,
-      id_region: data.id_region,
-      created_at: data.created_at,
-    }
-
-    setPerfil(perfilData)
-    setRol(resolveSessionRol(perfilData.email, rolData?.nombre_rol ?? null))
-  }, [supabase])
+    setPerfil(result.perfil)
+    setRol(result.rol)
+  }, [])
 
   // ─ Sign In via server API (service role + TLS-safe) ─
   const signIn = async (email: string, password: string) => {
