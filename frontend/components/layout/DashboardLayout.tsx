@@ -8,6 +8,7 @@ import Sidebar from './Sidebar'
 import MobileBottomNav from './MobileBottomNav'
 import { useUI } from '@/contexts/UIContext'
 import { useAuth } from '@/contexts/AuthContext'
+import { useCustomAmbientNoise, type AmbientNoiseTune } from '@/lib/ambient-noise'
 import { isOwnerAdminEmail } from '@/lib/owner-admin'
 import { AmbientGridProvider } from '@/contexts/AmbientGridContext'
 import { cn } from '@/lib/utils'
@@ -27,13 +28,18 @@ function LogoutIcon({ className }: { className?: string }) {
   )
 }
 
-function AmbientCanvas({ animated }: { animated: boolean }) {
+function AmbientCanvas({
+  animated,
+  field,
+}: {
+  animated: boolean
+  field?: AmbientNoiseTune | null
+}) {
   const { resolvedTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
   const isDark = resolvedTheme !== 'light'
 
-  /* Everyone but the Administrador general gets a flat canvas instead. */
   if (!animated) {
     return (
       <div
@@ -50,10 +56,11 @@ function AmbientCanvas({ animated }: { animated: boolean }) {
       data-ambient-grid-clip
     >
       <NoiseField
-        key={mounted ? resolvedTheme : 'light'}
+        key={mounted ? `${resolvedTheme}-${field ? 'custom' : 'default'}` : 'light'}
         className="absolute inset-0 [mask-image:radial-gradient(ellipse_90%_80%_at_50%_40%,white,transparent)]"
         color={isDark ? [255, 255, 255] : [52, 80, 122]}
         maxOpacity={isDark ? 0.5 : 0.7}
+        {...field}
       />
     </div>
   )
@@ -65,8 +72,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const { perfil, rol, signOut } = useAuth()
   const [meshReady, setMeshReady] = useState(false)
 
-  /** Only the Administrador general gets the animated field; the rest get flat. */
-  const ambientAnimated = isOwnerAdminEmail(perfil?.email)
+  const customField = useCustomAmbientNoise(perfil?.email)
+  const ambientAnimated = isOwnerAdminEmail(perfil?.email) || Boolean(customField)
 
   useEffect(() => {
     setMeshReady(true)
@@ -80,7 +87,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   )
 
   return (
-    <AmbientGridProvider meshReady={meshReady} animated={ambientAnimated}>
+    <AmbientGridProvider meshReady={meshReady} animated={ambientAnimated} fieldProps={customField}>
       <div className="min-h-screen app-canvas">
         <Sidebar />
 
@@ -90,7 +97,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             sidebarCollapsed ? 'lg:ml-[72px]' : 'lg:ml-[250px]',
           )}
         >
-          <AmbientCanvas animated={ambientAnimated} />
+          <AmbientCanvas animated={ambientAnimated} field={customField} />
 
           <header className="app-safe-x sticky top-0 z-30 flex items-center gap-3 bg-transparent pt-[max(0.75rem,env(safe-area-inset-top))] pb-3 lg:hidden">
             <div className="min-w-0 flex-1">
