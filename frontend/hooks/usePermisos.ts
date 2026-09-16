@@ -1,10 +1,9 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
-import { createClient } from '@/lib/supabase'
+import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
-import { deleteFile } from '@/lib/storage'
-import type { ConfiguracionTiendaPermiso, EstatusPermiso } from '@/types'
+import { listPermisos } from '@/lib/api/permisos'
+import type { ConfiguracionTiendaPermiso } from '@/types'
 
 interface UsePermisosReturn {
   data: ConfiguracionTiendaPermiso[]
@@ -22,8 +21,7 @@ interface UsePermisosReturn {
 }
 
 export function usePermisos(): UsePermisosReturn {
-  const supabase = useMemo(() => createClient(), [])
-  const { perfil, isTienda, isRegional } = useAuth()
+  const { perfil } = useAuth()
   const [data, setData] = useState<ConfiguracionTiendaPermiso[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -38,124 +36,24 @@ export function usePermisos(): UsePermisosReturn {
     setError(null)
 
     try {
-      // BASE QUERY: configuracion_tienda_permisos
-      // Join with permissions catalog and current status (permisos_vigentes)
-      let query = supabase
-        .from('configuracion_tienda_permisos')
-        .select(`
-          *,
-          tienda:id_tienda(id, sucursal, id_region),
-          tipo_permiso:id_tipo_permiso(id, nombre_permiso, ponderacion),
-          permiso_vigente:permisos_vigentes(
-            id,
-            fecha_vencimiento,
-            estatus,
-            archivo_path,
-            puntaje,
-            comentarios,
-            ultima_actualizacion
-          )
-        `)
-        .order('id_tienda', { ascending: true })
-
-      if (isTienda && perfil.id_tienda) {
-        query = query.eq('id_tienda', perfil.id_tienda)
-      } else if (isRegional && perfil.id_region) {
-        const { data: tiendasRegion } = await supabase
-          .from('tiendas')
-          .select('id')
-          .eq('id_region', perfil.id_region)
-
-        if (tiendasRegion && tiendasRegion.length > 0) {
-          query = query.in('id_tienda', tiendasRegion.map(t => t.id))
-        }
-      }
-
-      const { data: result, error: err } = await query
-      if (err) throw err
-
-      // Since permisos_vigentes is a join, Supabase might return it as an array
-      // even if there's only one. We transform it to a single object for convenience.
-      const transformed = (result || []).map((item: any) => ({
-        ...item,
-        permiso_vigente: Array.isArray(item.permiso_vigente) 
-          ? item.permiso_vigente[0] 
-          : item.permiso_vigente
-      }))
-
-      if (isTienda) {
-        const today = new Date()
-        today.setHours(0, 0, 0, 0)
-        const expired = transformed.filter((item: any) => {
-          const vigente = item.permiso_vigente
-          if (!vigente?.fecha_vencimiento) return false
-          if (!ACTIVE_STATUSES.has(vigente.estatus)) return false
-          const expiration = new Date(vigente.fecha_vencimiento)
-          expiration.setHours(0, 0, 0, 0)
-          return expiration < today
-        })
-
-        for (const item of expired) {
-          const path = item.permiso_vigente?.archivo_path
-          if (path) {
-            await deleteFile(path)
-          }
-          await supabase
-            .from('permisos_vigentes')
-            .update({
-              estatus: 'Vencido',
-              archivo_path: null,
-              ultima_actualizacion: new Date().toISOString(),
-            })
-            .eq('id_tienda', item.id_tienda)
-            .eq('id_tipo_permiso', item.id_tipo_permiso)
-
-          item.permiso_vigente = {
-            ...item.permiso_vigente,
-            estatus: 'Vencido',
-            archivo_path: null,
-          }
-        }
-      }
-
-      setData(transformed as ConfiguracionTiendaPermiso[])
-    } catch (e: any) {
-      setError(e.message)
+      setData(await listPermisos())
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Error al cargar permisos')
     } finally {
       setLoading(false)
     }
-  }, [supabase, perfil, isTienda, isRegional])
+  }, [perfil])
 
   useEffect(() => {
-    if (perfil) fetch()
+    if (perfil) void fetch()
   }, [perfil, fetch])
 
-  // Compute stats based on required vs status
   const total = data.length
   const vigentes = data.filter(p => p.permiso_vigente?.estatus && ACTIVE_STATUSES.has(p.permiso_vigente.estatus)).length
   const vencidos = data.filter(p => p.permiso_vigente?.estatus === 'Vencido').length
   const porVencer = 0
   const noSubidos = data.filter(p => !p.permiso_vigente).length
-  
   const cumplimiento = total > 0 ? Math.round((vigentes / total) * 1000) / 10 : 0
-
-  // ─ Real-time ─
-  useEffect(() => {
-    const channel = supabase.channel('permisos-updates')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'permisos_vigentes' },
-        () => {
-          console.log('[usePermisos] Real-time update triggered')
-          fetch()
-        }
-      )
-      .subscribe()
-
-    return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [supabase, fetch])
 
   return {
     data,
