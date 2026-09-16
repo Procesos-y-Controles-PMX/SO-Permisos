@@ -8,7 +8,7 @@ import Sidebar from './Sidebar'
 import MobileBottomNav from './MobileBottomNav'
 import { useUI } from '@/contexts/UIContext'
 import { useAuth } from '@/contexts/AuthContext'
-import { useCustomAmbientNoise, type AmbientNoiseTune } from '@/lib/ambient-noise'
+import { useAmbientBrand, useCustomAmbientNoise, type AmbientNoiseTune } from '@/lib/ambient-noise'
 import { isOwnerAdminEmail } from '@/lib/owner-admin'
 import { AmbientGridProvider } from '@/contexts/AmbientGridContext'
 import { cn } from '@/lib/utils'
@@ -73,6 +73,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [meshReady, setMeshReady] = useState(false)
 
   const customField = useCustomAmbientNoise(perfil?.email)
+  useAmbientBrand(customField?.color)
   const ambientAnimated = isOwnerAdminEmail(perfil?.email) || Boolean(customField)
 
   useEffect(() => {
