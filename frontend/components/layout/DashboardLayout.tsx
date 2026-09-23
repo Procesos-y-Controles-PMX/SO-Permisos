@@ -1,15 +1,10 @@
 'use client'
 
-import { NoiseField } from '@promexma/ui';
-import { useTheme } from 'next-themes'
-import { useEffect, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import Sidebar from './Sidebar'
 import MobileBottomNav from './MobileBottomNav'
 import { useUI } from '@/contexts/UIContext'
 import { useAuth } from '@/contexts/AuthContext'
-import { useAmbientBrand, useCustomAmbientNoise, type AmbientNoiseTune } from '@/lib/ambient-noise'
-import { isOwnerAdminEmail } from '@/lib/owner-admin'
 import { AmbientGridProvider } from '@/contexts/AmbientGridContext'
 import { cn } from '@/lib/utils'
 import { buildMobileBottomNavItems } from '@/components/layout/navConfig'
@@ -28,41 +23,12 @@ function LogoutIcon({ className }: { className?: string }) {
   )
 }
 
-function AmbientCanvas({
-  animated,
-  field,
-}: {
-  animated: boolean
-  field?: AmbientNoiseTune | null
-}) {
-  const { resolvedTheme } = useTheme()
-  const [mounted, setMounted] = useState(false)
-  useEffect(() => setMounted(true), [])
-  const isDark = resolvedTheme !== 'light'
-
-  if (!animated) {
-    return (
-      <div
-        className="pointer-events-none absolute inset-0 z-0 bg-[var(--ambient-flat)]"
-        aria-hidden
-      />
-    )
-  }
-
+function AmbientCanvas() {
   return (
     <div
-      className="pointer-events-none absolute inset-0 z-0 overflow-hidden"
+      className="pointer-events-none absolute inset-0 z-0 bg-[var(--ambient-flat)]"
       aria-hidden
-      data-ambient-grid-clip
-    >
-      <NoiseField
-        key={mounted ? `${resolvedTheme}-${field ? 'custom' : 'default'}` : 'light'}
-        className="absolute inset-0 [mask-image:radial-gradient(ellipse_90%_80%_at_50%_40%,white,transparent)]"
-        color={isDark ? [255, 255, 255] : [52, 80, 122]}
-        maxOpacity={isDark ? 0.5 : 0.7}
-        {...field}
-      />
-    </div>
+    />
   )
 }
 
@@ -70,15 +36,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const pathname = usePathname()
   const { sidebarCollapsed, mobileNavOpen, setMobileNavOpen } = useUI()
   const { perfil, rol, signOut } = useAuth()
-  const [meshReady, setMeshReady] = useState(false)
-
-  const customField = useCustomAmbientNoise(perfil?.email)
-  useAmbientBrand(customField?.color)
-  const ambientAnimated = isOwnerAdminEmail(perfil?.email) || Boolean(customField)
-
-  useEffect(() => {
-    setMeshReady(true)
-  }, [])
 
   const bottomNavItems = buildMobileBottomNavItems(
     pathname,
@@ -88,7 +45,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   )
 
   return (
-    <AmbientGridProvider meshReady={meshReady} animated={ambientAnimated} fieldProps={customField}>
+    <AmbientGridProvider meshReady={false} animated={false}>
       <div className="min-h-screen app-canvas">
         <Sidebar />
 
@@ -98,7 +55,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             sidebarCollapsed ? 'lg:ml-[72px]' : 'lg:ml-[250px]',
           )}
         >
-          <AmbientCanvas animated={ambientAnimated} field={customField} />
+          <AmbientCanvas />
 
           <header className="app-safe-x sticky top-0 z-30 flex items-center gap-3 bg-transparent pt-[max(0.75rem,env(safe-area-inset-top))] pb-3 lg:hidden">
             <div className="min-w-0 flex-1">
