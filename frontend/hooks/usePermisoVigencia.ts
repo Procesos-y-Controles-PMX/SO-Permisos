@@ -1,13 +1,12 @@
 'use client'
 
-import { useCallback, useMemo } from 'react'
-import { createClient } from '@/lib/supabase'
+import { useCallback } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { resolveVigenciaParaGuardar } from '@/lib/vigencia'
+import { updatePermisoVigencia } from '@/lib/api/permisos'
 import type { ConfiguracionTiendaPermiso } from '@/types'
 
 export function usePermisoVigencia() {
-  const supabase = useMemo(() => createClient(), [])
   const { isAdmin } = useAuth()
 
   const updateVigencia = useCallback(
@@ -30,19 +29,9 @@ export function usePermisoVigencia() {
       )
       if (vigenciaError) return { error: vigenciaError }
 
-      const { error } = await supabase
-        .from('permisos_vigentes')
-        .update({
-          fecha_vencimiento: vigenciaGuardar,
-          ultima_actualizacion: new Date().toISOString(),
-        })
-        .eq('id_tienda', config.id_tienda)
-        .eq('id_tipo_permiso', config.id_tipo_permiso)
-
-      if (error) return { error: error.message }
-      return { error: null }
+      return updatePermisoVigencia(config.id_tienda, config.id_tipo_permiso, vigenciaGuardar)
     },
-    [supabase, isAdmin],
+    [isAdmin],
   )
 
   return { updateVigencia }

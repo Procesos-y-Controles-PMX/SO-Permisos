@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
-import { createClient, type SupabaseClient } from '@supabase/supabase-js'
+import type { SupabaseClient } from '@supabase/supabase-js'
 import JSZip from 'jszip'
+import { requireAdminSession } from '@/lib/api-route'
+import { createSupabaseServerClient } from '@/lib/supabase-server'
 
 type Scope = 'all' | 'region' | 'store'
 
@@ -66,23 +68,24 @@ async function isAdminUser(supabase: SupabaseClient, adminId: number): Promise<b
 
 export async function POST(req: Request) {
   try {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-    const bucket = process.env.NEXT_PUBLIC_SUPABASE_BUCKET || 'permisos-bucket'
+    const session = requireAdminSession(req)
+    if (!session.ok) return session.response
 
-    if (!url || !key) {
+    const bucket = process.env.NEXT_PUBLIC_SUPABASE_BUCKET || 'permisos-bucket'
+    const supabase = createSupabaseServerClient()
+
+    if (!supabase) {
       return NextResponse.json({ error: 'Faltan variables de entorno de Supabase.' }, { status: 500 })
     }
 
-    const supabase = createClient(url, key)
     const body = await req.json()
     const scope = body?.scope as Scope
     const regionId = body?.regionId ? Number(body.regionId) : null
     const tiendaId = body?.tiendaId ? Number(body.tiendaId) : null
     const permisoId = body?.permisoId ? Number(body.permisoId) : null
-    const adminId = body?.adminId ? Number(body.adminId) : null
+    const adminId = body?.adminId ? Number(body.adminId) : session.actor.id
 
-    if (!adminId || Number.isNaN(adminId)) {
+    if (!adminId || Number.isNaN(adminId) || adminId !== session.actor.id) {
       return NextResponse.json({ error: 'Identificador de administrador inválido.' }, { status: 401 })
     }
 

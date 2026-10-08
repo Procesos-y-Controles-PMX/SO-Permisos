@@ -1,8 +1,12 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
-import { createClient } from '@/lib/supabase'
+import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
+import {
+  listNotificaciones,
+  markNotificacionRead,
+  markNotificacionesRead,
+} from '@/lib/api/notificaciones'
 
 interface UseNotificacionesReturn {
   data: any[]
@@ -15,7 +19,6 @@ interface UseNotificacionesReturn {
 }
 
 export function useNotificaciones(): UseNotificacionesReturn {
-  const supabase = useMemo(() => createClient(), [])
   const { perfil } = useAuth()
   const [data, setData] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -30,46 +33,29 @@ export function useNotificaciones(): UseNotificacionesReturn {
     setError(null)
 
     try {
-      // Filter by perfil.id (Integer) — no RLS, explicit filter
-      const { data: result, error: err } = await supabase
-        .from('notificaciones')
-        .select('*')
-        .eq('id_usuario', perfil.id)
-        .order('fecha_creacion', { ascending: false })
-
-      if (err) throw err
-      setData(result || [])
-    } catch (e: any) {
-      setError(e.message)
+      setData(await listNotificaciones())
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Error al cargar notificaciones')
     } finally {
       setLoading(false)
     }
-  }, [supabase, perfil])
+  }, [perfil])
 
   useEffect(() => {
-    if (perfil) fetch()
+    if (perfil) void fetch()
   }, [perfil, fetch])
 
   const unreadCount = data.filter(n => !n.leida).length
 
   const markAsRead = async (id: number) => {
-    await supabase
-      .from('notificaciones')
-      .update({ leida: true })
-      .eq('id', id)
-
+    await markNotificacionRead(id)
     setData(prev => prev.map(n => n.id === id ? { ...n, leida: true } : n))
   }
 
   const markAllRead = async () => {
     const unreadIds = data.filter(n => !n.leida).map(n => n.id)
     if (unreadIds.length === 0) return
-
-    await supabase
-      .from('notificaciones')
-      .update({ leida: true })
-      .in('id', unreadIds)
-
+    await markNotificacionesRead(unreadIds)
     setData(prev => prev.map(n => ({ ...n, leida: true })))
   }
 

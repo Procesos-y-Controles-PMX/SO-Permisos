@@ -1,60 +1,15 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
-import { createClient } from '@/lib/supabase'
+import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
-import type { Perfil, PerfilFormValues, Rol, Region, Tienda, RolUsuario } from '@/types'
+import type { Perfil, PerfilFormValues, Rol, Region, Tienda } from '@/types'
 import { ROL_IDS } from '@/types'
-
-const PERFIL_SELECT = `
-  id,
-  email,
-  nombre_completo,
-  id_rol,
-  id_tienda,
-  id_region,
-  created_at,
-  roles:id_rol(id, nombre_rol),
-  tienda:id_tienda(id, sucursal, region:id_region(id, nombre_region)),
-  region:id_region(id, nombre_region)
-`
-
-function mapPerfilRow(row: Record<string, unknown>): Perfil {
-  const rolData = row.roles as { id: number; nombre_rol: RolUsuario } | null
-  const tiendaData = row.tienda as {
-    id: number
-    sucursal: string
-    region?: { id: number; nombre_region: string } | null
-  } | null
-  const regionData = row.region as { id: number; nombre_region: string } | null
-
-  return {
-    id: row.id as number,
-    email: row.email as string,
-    nombre_completo: row.nombre_completo as string | null,
-    id_rol: row.id_rol as number,
-    id_tienda: row.id_tienda as number | null,
-    id_region: row.id_region as number | null,
-    created_at: row.created_at as string,
-    rol: rolData ? { id: rolData.id, nombre_rol: rolData.nombre_rol } : undefined,
-    tienda: tiendaData
-      ? ({
-          id: tiendaData.id,
-          sucursal: tiendaData.sucursal,
-          id_region: tiendaData.region?.id ?? 0,
-          region: tiendaData.region
-            ? ({
-                id: tiendaData.region.id,
-                nombre_region: tiendaData.region.nombre_region,
-              } as Region)
-            : undefined,
-        } as Tienda)
-      : undefined,
-    region: regionData
-      ? ({ id: regionData.id, nombre_region: regionData.nombre_region } as Region)
-      : undefined,
-  }
-}
+import {
+  createUsuario as createUsuarioApi,
+  deleteUsuario as deleteUsuarioApi,
+  listUsuariosCatalog,
+  updateUsuario as updateUsuarioApi,
+} from '@/lib/api/usuarios'
 
 export function buildPerfilPayload(values: PerfilFormValues): {
   email: string
@@ -136,7 +91,6 @@ interface UseUsuariosReturn {
 }
 
 export function useUsuarios(): UseUsuariosReturn {
-  const supabase = useMemo(() => createClient(), [])
   const { isAdmin, perfil } = useAuth()
 
   const [usuarios, setUsuarios] = useState<Perfil[]>([])
@@ -157,32 +111,21 @@ export function useUsuarios(): UseUsuariosReturn {
     setError(null)
 
     try {
-      const [perfilesRes, rolesRes, tiendasRes, regionesRes] = await Promise.all([
-        supabase.from('perfiles').select(PERFIL_SELECT),
-        supabase.from('roles').select('id, nombre_rol').order('id'),
-        supabase.from('tiendas').select('id, sucursal, id_region').order('sucursal'),
-        supabase.from('regiones').select('id, nombre_region').order('nombre_region'),
-      ])
-
-      if (perfilesRes.error) throw perfilesRes.error
-      if (rolesRes.error) throw rolesRes.error
-      if (tiendasRes.error) throw tiendasRes.error
-      if (regionesRes.error) throw regionesRes.error
-
-      setUsuarios((perfilesRes.data || []).map((row) => mapPerfilRow(row as Record<string, unknown>)))
-      setRoles((rolesRes.data || []) as Rol[])
-      setTiendas((tiendasRes.data || []) as TiendaFormOption[])
-      setRegiones((regionesRes.data || []) as Pick<Region, 'id' | 'nombre_region'>[])
+      const catalog = await listUsuariosCatalog()
+      setUsuarios(catalog.usuarios)
+      setRoles(catalog.roles)
+      setTiendas(catalog.tiendas)
+      setRegiones(catalog.regiones)
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : 'Error al cargar usuarios'
       setError(message)
     } finally {
       setLoading(false)
     }
-  }, [supabase, isAdmin])
+  }, [isAdmin])
 
   useEffect(() => {
-    fetchAll()
+    void fetchAll()
   }, [fetchAll])
 
   const createUsuario = useCallback(
@@ -196,24 +139,12 @@ export function useUsuarios(): UseUsuariosReturn {
         return { error: 'La contraseña es obligatoria al crear un usuario.' }
       }
 
-      const { error: err } = await supabase.from('perfiles').insert({
-        email: payload.email,
-        password: payload.password,
-        nombre_completo: payload.nombre_completo,
-        id_rol: payload.id_rol,
-        id_tienda: payload.id_tienda,
-        id_region: payload.id_region,
-      })
-
-      if (err) {
-        if (err.code === '23505') return { error: 'Ya existe un usuario con ese correo.' }
-        return { error: err.message }
-      }
-
+      const result = await createUsuarioApi(payload)
+      if (result.error) return result
       await fetchAll()
       return { error: null }
     },
-    [supabase, fetchAll, tiendas, isAdmin],
+    [fetchAll, tiendas, isAdmin],
   )
 
   const updateUsuario = useCallback(
@@ -226,49 +157,23 @@ export function useUsuarios(): UseUsuariosReturn {
       const validationError = validatePerfilForm(values, true, tiendas)
       if (validationError) return { error: validationError }
 
-      const payload = buildPerfilPayload(values)
-      const updateBody: Record<string, unknown> = {
-        email: payload.email,
-        nombre_completo: payload.nombre_completo,
-        id_rol: payload.id_rol,
-        id_tienda: payload.id_tienda,
-        id_region: payload.id_region,
-      }
-      if (payload.password) {
-        updateBody.password = payload.password
-      }
-
-      const { error: err } = await supabase.from('perfiles').update(updateBody).eq('id', id)
-
-      if (err) {
-        if (err.code === '23505') return { error: 'Ya existe un usuario con ese correo.' }
-        return { error: err.message }
-      }
-
+      const result = await updateUsuarioApi(id, buildPerfilPayload(values))
+      if (result.error) return result
       await fetchAll()
       return { error: null }
     },
-    [supabase, fetchAll, perfil?.id, tiendas, isAdmin],
+    [fetchAll, perfil?.id, tiendas, isAdmin],
   )
 
   const deleteUsuario = useCallback(
     async (id: number) => {
       if (!isAdmin) return { error: 'No autorizado.' }
-      const { error: clearErr } = await supabase
-        .from('solicitudes')
-        .update({ id_admin_revisor: null })
-        .eq('id_admin_revisor', id)
-
-      if (clearErr) return { error: clearErr.message }
-
-      const { error: delErr } = await supabase.from('perfiles').delete().eq('id', id)
-
-      if (delErr) return { error: delErr.message }
-
+      const result = await deleteUsuarioApi(id)
+      if (result.error) return result
       await fetchAll()
       return { error: null }
     },
-    [supabase, fetchAll, isAdmin],
+    [fetchAll, isAdmin],
   )
 
   return {

@@ -13,7 +13,8 @@ import {
 } from '@/components/ui/contentStyles'
 import FilterSelect from '@/components/common/FilterSelect'
 import { useAuth } from '@/contexts/AuthContext'
-import { createClient } from '@/lib/supabase'
+import { listDescargasOptions } from '@/lib/api/descargas'
+import { PERMISOS_USER_HEADER, readSessionActor } from '@/lib/session-actor'
 
 type Scope = 'all' | 'region' | 'store'
 
@@ -41,7 +42,6 @@ function getFileNameFromDisposition(value: string | null): string | null {
 
 export default function AdminDescargasPage() {
   const router = useRouter()
-  const supabase = useMemo(() => createClient(), [])
   const { perfil, isAdmin, loading: authLoading } = useAuth()
 
   const [scope, setScope] = useState<Scope>('all')
@@ -67,25 +67,16 @@ export default function AdminDescargasPage() {
     setError(null)
 
     try {
-      const [regionsRes, storesRes, permisosRes] = await Promise.all([
-        supabase.from('regiones').select('id, nombre_region').order('nombre_region'),
-        supabase.from('tiendas').select('id, sucursal, id_region').order('sucursal'),
-        supabase.from('catalogo_permisos').select('id, nombre_permiso').order('nombre_permiso'),
-      ])
-
-      if (regionsRes.error) throw new Error(regionsRes.error.message)
-      if (storesRes.error) throw new Error(storesRes.error.message)
-      if (permisosRes.error) throw new Error(permisosRes.error.message)
-
-      setRegions((regionsRes.data || []) as RegionOption[])
-      setStores((storesRes.data || []) as StoreOption[])
-      setPermisosCatalogo((permisosRes.data || []) as PermisoOption[])
-    } catch (e: any) {
-      setError(`No se pudieron cargar regiones/tiendas: ${e.message}`)
+      const options = await listDescargasOptions()
+      setRegions(options.regions)
+      setStores(options.stores)
+      setPermisosCatalogo(options.permisosCatalogo)
+    } catch (e: unknown) {
+      setError(`No se pudieron cargar regiones/tiendas: ${e instanceof Error ? e.message : 'Error'}`)
     } finally {
       setLoadingOptions(false)
     }
-  }, [supabase])
+  }, [])
 
   useEffect(() => {
     if (!authLoading && isAdmin) {
@@ -137,9 +128,13 @@ export default function AdminDescargasPage() {
     setSuccess(null)
 
     try {
+      const actor = readSessionActor()
       const response = await fetch('/api/admin/permisos-activos-zip', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(actor ? { [PERMISOS_USER_HEADER]: JSON.stringify(actor) } : {}),
+        },
         body: JSON.stringify({
           scope,
           regionId: scope === 'region' || (scope === 'store' && regionId) ? Number(regionId) : null,

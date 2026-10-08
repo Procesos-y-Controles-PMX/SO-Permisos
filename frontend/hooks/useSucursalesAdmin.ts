@@ -1,9 +1,18 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
-import { createClient } from '@/lib/supabase'
+import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import type { CatalogoPermiso, Region, Tienda } from '@/types'
+import {
+  createRegion as createRegionApi,
+  createTienda as createTiendaApi,
+  deleteRegion as deleteRegionApi,
+  deleteTienda as deleteTiendaApi,
+  getPermisosAsignados as getPermisosAsignadosApi,
+  listSucursalesCatalog,
+  updateRegion as updateRegionApi,
+  updateTienda as updateTiendaApi,
+} from '@/lib/api/sucursales'
 
 export interface TiendaFormValues {
   sucursal: string
@@ -33,21 +42,16 @@ export interface RegionAdminRow extends Pick<Region, 'id' | 'nombre_region' | 'g
   usuarioCount: number
 }
 
-const REGION_SEQUENCE_ERROR =
-  'No se pudo crear la región por un conflicto de ID en la base de datos. Contacta al administrador para sincronizar la secuencia de regiones (ver db/fix-sequences.sql).'
-
-function mapRegionInsertError(err: { code?: string; message: string }): string {
-  if (err.code === '23505' && err.message.includes('regiones_pkey')) {
-    return REGION_SEQUENCE_ERROR
-  }
-  return err.message
-}
-
 export function validateRegionForm(values: RegionFormValues): string | null {
   if (!values.nombre_region.trim()) return 'El nombre de la región es obligatorio.'
   if (!values.gerente_regional.trim()) return 'El gerente regional es obligatorio.'
   if (!values.correo.trim()) return 'El correo es obligatorio.'
   return null
+}
+
+function optionalString(value: string): string | null {
+  const trimmed = value.trim()
+  return trimmed || null
 }
 
 export function buildRegionPayload(values: RegionFormValues) {
@@ -57,34 +61,6 @@ export function buildRegionPayload(values: RegionFormValues) {
     celular: optionalString(values.celular),
     correo: values.correo.trim(),
   }
-}
-
-function optionalString(value: string): string | null {
-  const trimmed = value.trim()
-  return trimmed || null
-}
-
-async function checkDuplicateRegionName(
-  supabase: ReturnType<typeof createClient>,
-  nombre: string,
-  excludeId?: number,
-): Promise<string | null> {
-  const { data, error } = await supabase
-    .from('regiones')
-    .select('id, nombre_region')
-    .ilike('nombre_region', nombre.trim())
-
-  if (error) return error.message
-
-  const duplicate = (data || []).find(
-    (r) => r.nombre_region.trim().toLowerCase() === nombre.trim().toLowerCase() && r.id !== excludeId,
-  )
-
-  if (duplicate) {
-    return 'Ya existe una región con ese nombre.'
-  }
-
-  return null
 }
 
 export function buildTiendaPayload(values: TiendaFormValues) {
@@ -111,47 +87,6 @@ export function validateTiendaForm(values: TiendaFormValues): string | null {
   return null
 }
 
-async function syncPermisosConfig(
-  supabase: ReturnType<typeof createClient>,
-  idTienda: number,
-  selectedIds: number[],
-): Promise<{ error: string | null }> {
-  const { data: current, error: fetchErr } = await supabase
-    .from('configuracion_tienda_permisos')
-    .select('id_tipo_permiso')
-    .eq('id_tienda', idTienda)
-
-  if (fetchErr) return { error: fetchErr.message }
-
-  const currentIds = new Set((current || []).map((r) => r.id_tipo_permiso as number))
-  const selectedSet = new Set(selectedIds)
-
-  const toRemove = [...currentIds].filter((id) => !selectedSet.has(id))
-  const toAdd = selectedIds.filter((id) => !currentIds.has(id))
-
-  for (const idTipo of toRemove) {
-    const { error } = await supabase
-      .from('configuracion_tienda_permisos')
-      .delete()
-      .eq('id_tienda', idTienda)
-      .eq('id_tipo_permiso', idTipo)
-    if (error) return { error: error.message }
-  }
-
-  if (toAdd.length > 0) {
-    const { error } = await supabase.from('configuracion_tienda_permisos').insert(
-      toAdd.map((id_tipo_permiso) => ({
-        id_tienda: idTienda,
-        id_tipo_permiso,
-        obligatorio: true,
-      })),
-    )
-    if (error) return { error: error.message }
-  }
-
-  return { error: null }
-}
-
 interface UseSucursalesAdminReturn {
   tiendas: TiendaAdminRow[]
   regiones: RegionAdminRow[]
@@ -169,7 +104,6 @@ interface UseSucursalesAdminReturn {
 }
 
 export function useSucursalesAdmin(): UseSucursalesAdminReturn {
-  const supabase = useMemo(() => createClient(), [])
   const { isAdmin } = useAuth()
 
   const [tiendas, setTiendas] = useState<TiendaAdminRow[]>([])
@@ -189,267 +123,98 @@ export function useSucursalesAdmin(): UseSucursalesAdminReturn {
     setError(null)
 
     try {
-      const [tiendasRes, regionesRes, catalogoRes, configRes, perfilesRes] = await Promise.all([
-        supabase
-          .from('tiendas')
-          .select('*, region:id_region(id, nombre_region)')
-          .order('sucursal'),
-        supabase
-          .from('regiones')
-          .select('id, nombre_region, gerente_regional, celular, correo')
-          .order('nombre_region'),
-        supabase.from('catalogo_permisos').select('id, nombre_permiso, ponderacion').order('nombre_permiso'),
-        supabase.from('configuracion_tienda_permisos').select('id_tienda'),
-        supabase.from('perfiles').select('id_region'),
-      ])
-
-      if (tiendasRes.error) throw tiendasRes.error
-      if (regionesRes.error) throw regionesRes.error
-      if (catalogoRes.error) throw catalogoRes.error
-      if (configRes.error) throw configRes.error
-      if (perfilesRes.error) throw perfilesRes.error
-
-      const countByTienda = new Map<number, number>()
-      ;(configRes.data || []).forEach((row) => {
-        const tid = row.id_tienda as number
-        countByTienda.set(tid, (countByTienda.get(tid) || 0) + 1)
-      })
-
-      const rows: TiendaAdminRow[] = (tiendasRes.data || []).map((t) => ({
-        ...(t as Tienda),
-        permisoCount: countByTienda.get((t as Tienda).id) || 0,
-      }))
-
-      const countByRegion = new Map<number, number>()
-      rows.forEach((t) => {
-        const rid = t.id_region ?? t.region?.id
-        if (rid) countByRegion.set(rid, (countByRegion.get(rid) || 0) + 1)
-      })
-
-      const countUsersByRegion = new Map<number, number>()
-      ;(perfilesRes.data || []).forEach((p) => {
-        const rid = p.id_region as number | null
-        if (rid) countUsersByRegion.set(rid, (countUsersByRegion.get(rid) || 0) + 1)
-      })
-
-      const regionRows: RegionAdminRow[] = (regionesRes.data || []).map((r) => ({
-        ...(r as RegionAdminRow),
-        tiendaCount: countByRegion.get((r as RegionAdminRow).id) || 0,
-        usuarioCount: countUsersByRegion.get((r as RegionAdminRow).id) || 0,
-      }))
-
-      setTiendas(rows)
-      setRegiones(regionRows)
-      setCatalogo((catalogoRes.data || []) as CatalogoPermiso[])
+      const catalog = await listSucursalesCatalog()
+      setTiendas(catalog.tiendas)
+      setRegiones(catalog.regiones)
+      setCatalogo(catalog.catalogo)
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : 'Error al cargar sucursales'
       setError(message)
     } finally {
       setLoading(false)
     }
-  }, [supabase, isAdmin])
+  }, [isAdmin])
 
   useEffect(() => {
-    fetchAll()
+    void fetchAll()
   }, [fetchAll])
 
-  const getPermisosAsignados = useCallback(
-    async (idTienda: number) => {
-      const { data, error: err } = await supabase
-        .from('configuracion_tienda_permisos')
-        .select('id_tipo_permiso')
-        .eq('id_tienda', idTienda)
-
-      if (err) return []
-      return (data || []).map((r) => r.id_tipo_permiso as number)
-    },
-    [supabase],
-  )
+  const getPermisosAsignados = useCallback(async (idTienda: number) => {
+    return getPermisosAsignadosApi(idTienda)
+  }, [])
 
   const createRegion = useCallback(
     async (values: RegionFormValues) => {
       if (!isAdmin) return { error: 'No autorizado.' }
-
       const validationError = validateRegionForm(values)
       if (validationError) return { error: validationError }
-
-      const duplicateError = await checkDuplicateRegionName(supabase, values.nombre_region)
-      if (duplicateError) return { error: duplicateError }
-
-      const payload = buildRegionPayload(values)
-
-      const { error: insertErr } = await supabase.from('regiones').insert(payload)
-
-      if (insertErr) return { error: mapRegionInsertError(insertErr) }
-
+      const result = await createRegionApi(buildRegionPayload(values))
+      if (result.error) return result
       await fetchAll()
       return { error: null }
     },
-    [supabase, isAdmin, fetchAll],
+    [isAdmin, fetchAll],
   )
 
   const updateRegion = useCallback(
     async (id: number, values: RegionFormValues) => {
       if (!isAdmin) return { error: 'No autorizado.' }
-
       const validationError = validateRegionForm(values)
       if (validationError) return { error: validationError }
-
-      const duplicateError = await checkDuplicateRegionName(supabase, values.nombre_region, id)
-      if (duplicateError) return { error: duplicateError }
-
-      const payload = buildRegionPayload(values)
-
-      const { error: updateErr } = await supabase.from('regiones').update(payload).eq('id', id)
-
-      if (updateErr) return { error: updateErr.message }
-
+      const result = await updateRegionApi(id, buildRegionPayload(values))
+      if (result.error) return result
       await fetchAll()
       return { error: null }
     },
-    [supabase, isAdmin, fetchAll],
+    [isAdmin, fetchAll],
   )
 
   const deleteRegion = useCallback(
     async (id: number) => {
       if (!isAdmin) return { error: 'No autorizado.' }
-
-      const { data: tiendasLinked, error: tiendasErr } = await supabase
-        .from('tiendas')
-        .select('id')
-        .eq('id_region', id)
-
-      if (tiendasErr) return { error: tiendasErr.message }
-
-      const tiendaCount = (tiendasLinked || []).length
-      if (tiendaCount > 0) {
-        return {
-          error: `No se puede eliminar: hay ${tiendaCount} sucursal${tiendaCount !== 1 ? 'es' : ''} en esta región. Reasígnalas o elimínalas primero.`,
-        }
-      }
-
-      const { data: users, error: usersErr } = await supabase
-        .from('perfiles')
-        .select('id')
-        .eq('id_region', id)
-
-      if (usersErr) return { error: usersErr.message }
-
-      const usuarioCount = (users || []).length
-      if (usuarioCount > 0) {
-        return {
-          error: `No se puede eliminar: hay ${usuarioCount} usuario${usuarioCount !== 1 ? 's' : ''} Regional asignado${usuarioCount !== 1 ? 's' : ''}. Reasígnalos en Usuarios primero.`,
-        }
-      }
-
-      const { error: delErr } = await supabase.from('regiones').delete().eq('id', id)
-
-      if (delErr) {
-        if (delErr.code === '23503') {
-          return {
-            error:
-              'No se puede eliminar la región porque tiene datos relacionados. Revisa sucursales o usuarios vinculados.',
-          }
-        }
-        return { error: delErr.message }
-      }
-
+      const result = await deleteRegionApi(id)
+      if (result.error) return result
       await fetchAll()
       return { error: null }
     },
-    [supabase, isAdmin, fetchAll],
+    [isAdmin, fetchAll],
   )
 
   const createTienda = useCallback(
     async (values: TiendaFormValues) => {
       if (!isAdmin) return { error: 'No autorizado.' }
-
       const validationError = validateTiendaForm(values)
       if (validationError) return { error: validationError }
-
-      const payload = buildTiendaPayload(values)
-
-      const { data: inserted, error: insertErr } = await supabase
-        .from('tiendas')
-        .insert(payload)
-        .select('id')
-        .single()
-
-      if (insertErr) return { error: insertErr.message }
-      if (!inserted?.id) return { error: 'No se pudo crear la sucursal.' }
-
-      const syncResult = await syncPermisosConfig(
-        supabase,
-        inserted.id as number,
-        values.permisosSeleccionados,
-      )
-      if (syncResult.error) {
-        await supabase.from('tiendas').delete().eq('id', inserted.id)
-        return { error: syncResult.error }
-      }
-
+      const result = await createTiendaApi(buildTiendaPayload(values), values.permisosSeleccionados)
+      if (result.error) return result
       await fetchAll()
       return { error: null }
     },
-    [supabase, isAdmin, fetchAll],
+    [isAdmin, fetchAll],
   )
 
   const updateTienda = useCallback(
     async (id: number, values: TiendaFormValues) => {
       if (!isAdmin) return { error: 'No autorizado.' }
-
       const validationError = validateTiendaForm(values)
       if (validationError) return { error: validationError }
-
-      const payload = buildTiendaPayload(values)
-
-      const { error: updateErr } = await supabase.from('tiendas').update(payload).eq('id', id)
-
-      if (updateErr) return { error: updateErr.message }
-
-      const syncResult = await syncPermisosConfig(supabase, id, values.permisosSeleccionados)
-      if (syncResult.error) return { error: syncResult.error }
-
+      const result = await updateTiendaApi(id, buildTiendaPayload(values), values.permisosSeleccionados)
+      if (result.error) return result
       await fetchAll()
       return { error: null }
     },
-    [supabase, isAdmin, fetchAll],
+    [isAdmin, fetchAll],
   )
 
   const deleteTienda = useCallback(
     async (id: number) => {
       if (!isAdmin) return { error: 'No autorizado.' }
-
-      const { data: users, error: usersErr } = await supabase
-        .from('perfiles')
-        .select('id')
-        .eq('id_tienda', id)
-
-      if (usersErr) return { error: usersErr.message }
-
-      if ((users || []).length > 0) {
-        const n = users!.length
-        return {
-          error: `No se puede eliminar: hay ${n} usuario${n !== 1 ? 's' : ''} asignado${n !== 1 ? 's' : ''} a esta sucursal. Reasígnalos o elimínalos primero.`,
-        }
-      }
-
-      const { error: delErr } = await supabase.from('tiendas').delete().eq('id', id)
-
-      if (delErr) {
-        if (delErr.code === '23503') {
-          return {
-            error:
-              'No se puede eliminar la sucursal porque tiene datos relacionados. Revisa usuarios u otras referencias.',
-          }
-        }
-        return { error: delErr.message }
-      }
-
+      const result = await deleteTiendaApi(id)
+      if (result.error) return result
       await fetchAll()
       return { error: null }
     },
-    [supabase, isAdmin, fetchAll],
+    [isAdmin, fetchAll],
   )
 
   return {

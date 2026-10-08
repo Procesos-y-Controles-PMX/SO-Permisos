@@ -1,8 +1,8 @@
 'use client'
 
-import { useCallback, useMemo } from 'react'
-import { createClient } from '@/lib/supabase'
+import { useCallback } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
+import { updatePermisoComentarios } from '@/lib/api/permisos'
 
 export const MAX_PERMISO_COMENTARIOS_LENGTH = 2000
 
@@ -21,7 +21,6 @@ export function validatePermisoComentarios(value: string): string | null {
 }
 
 export function usePermisoComentarios() {
-  const supabase = useMemo(() => createClient(), [])
   const { isAdmin } = useAuth()
 
   const updateComentarios = useCallback(
@@ -38,15 +37,9 @@ export function usePermisoComentarios() {
         if (validationError) return { error: validationError }
       }
 
-      const { error } = await supabase
-        .from('configuracion_tienda_permisos')
-        .update({ comentarios: normalized })
-        .eq('id', configId)
-
-      if (error) return { error: error.message }
-      return { error: null }
+      return updatePermisoComentarios(configId, normalized)
     },
-    [supabase, isAdmin],
+    [isAdmin],
   )
 
   return { updateComentarios }
